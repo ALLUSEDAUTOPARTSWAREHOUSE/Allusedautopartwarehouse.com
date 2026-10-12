@@ -187,3 +187,52 @@ test('Google checkout rejects excluded, hidden, and unavailable items', async ()
     assert.equal((await getCheckoutItem()).status, 404)
   }
 })
+test('reservation checkout accepts quote-only items and returns delivery-only total', async () => {
+  const quoteOnly = { ...product, salesMode: 'quote', tiers: undefined }
+  const reservationCatalog = {
+    ...catalog,
+    getBrandProductBySlug: (brand, slug) => brand === 'acura' && slug === quoteOnly.canonicalSlug ? quoteOnly : undefined,
+  }
+  const { priceReservationCart: quoteReservationPricing } = load('lib/order-pricing.ts', {
+    '@/lib/brand-catalog': reservationCatalog,
+    '@/lib/catalog-fields': load('lib/catalog-fields.ts', {}),
+    '@/lib/merchant': merchant,
+    '@/lib/site-policy': load('lib/site-policy.ts', {}),
+    '@/lib/manual-products': manualProducts,
+  })
+
+  const result = await quoteReservationPricing([{ id: 'test-engine', make: 'Acura', quantity: 2 }], 'standard')
+  assert.equal(result.ok, true)
+  assert.equal(result.subtotal, 0)
+  assert.equal(result.tax, 0)
+  assert.equal(result.shippingCost, 240)
+  assert.equal(result.totalAmount, 240)
+})
+test('reservation checkout enforces max units per part across duplicate lines', async () => {
+  const quoteOnly = { ...product, salesMode: 'quote', tiers: undefined }
+  const reservationCatalog = {
+    ...catalog,
+    getBrandProductBySlug: (brand, slug) => brand === 'acura' && slug === quoteOnly.canonicalSlug ? quoteOnly : undefined,
+  }
+  const { priceReservationCart: quoteReservationPricing } = load('lib/order-pricing.ts', {
+    '@/lib/brand-catalog': reservationCatalog,
+    '@/lib/catalog-fields': load('lib/catalog-fields.ts', {}),
+    '@/lib/merchant': merchant,
+    '@/lib/site-policy': load('lib/site-policy.ts', {}),
+    '@/lib/manual-products': manualProducts,
+  })
+
+  assert.equal((await quoteReservationPricing([{ id: 'test-engine', make: 'Acura', quantity: 5 }], 'liftgate')).ok, true)
+  assert.equal(
+    (
+      await quoteReservationPricing(
+        [
+          { id: 'test-engine', make: 'Acura', quantity: 3 },
+          { id: 'acura/test-engine', make: 'Acura', quantity: 3 },
+        ],
+        'standard',
+      )
+    ).ok,
+    false,
+  )
+})
