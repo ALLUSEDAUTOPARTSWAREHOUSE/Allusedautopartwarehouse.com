@@ -13,7 +13,7 @@ function load(relativePath, dependencies) {
     fileName: filename,
   })
   const module = { exports: {} }
-  new Function('require', 'module', 'exports', outputText)((name) => {
+  new Function('require', 'module', 'exports', `${outputText}\n//# sourceURL=${filename}`)((name) => {
     if (name === 'server-only') return {}
     if (Object.hasOwn(dependencies, name)) return dependencies[name]
     if (name.startsWith('node:')) return require(name)
