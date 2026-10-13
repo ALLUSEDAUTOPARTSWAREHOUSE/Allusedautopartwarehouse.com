@@ -8,14 +8,19 @@ import { cn } from '@/lib/utils'
 import type { AdminAssistantMessage } from '@/lib/admin-assistant'
 
 const SUGGESTIONS = [
-  'Check website configuration and database readiness',
-  'How healthy is the Google feed right now?',
-  'Show the latest reservations and orders',
-  'Any open quote requests or unread chats?',
-  'Which BMW pages are missing a price?',
+  'Give me a full operations health report',
+  'What should the team prioritize today?',
+  'Compare the latest 7 Google feed health snapshots',
+  'Find pending orders that have not been updated for 24 hours',
+  'Show new quote requests waiting for follow-up',
+  'Find BMW catalog pages missing a price',
+  'Search recent orders for order number AUA-',
 ]
 
 const TOOL_LABELS: Record<string, string> = {
+  getOperationsOverview: 'Prepared operations overview',
+  getPriorityWorkQueue: 'Reviewed priority work queue',
+  getGoogleFeedHistory: 'Reviewed Google feed history',
   checkWebsiteConfiguration: 'Checked website configuration',
   findOrderByNumber: 'Looked up order status',
   getFeedStats: 'Checked feed health',
@@ -42,7 +47,7 @@ function describeAction(part: ToolPart): string {
   return 'Run this action'
 }
 
-export function AssistantPanel() {
+export function AssistantPanel({ layout = 'compact' }: { layout?: 'compact' | 'full' }) {
   const [input, setInput] = useState('')
   const { messages, sendMessage, addToolApprovalResponse, status, error } = useChat<AdminAssistantMessage>({
     transport: new DefaultChatTransport({ api: '/api/admin/assistant' }),
@@ -80,14 +85,14 @@ export function AssistantPanel() {
           <Bot className="size-4" />
         </span>
         <div>
-          <h2 className="text-sm font-bold text-foreground">Store Assistant</h2>
+          <h2 className="text-sm font-bold text-foreground">AUAPW Operations Agent</h2>
           <p className="text-xs text-muted-foreground">
-            Ask about the feed, catalog, orders, quotes, and chats. Changes always need your approval.
+            Live read-only operations insights plus approval-gated catalog actions. Customer-facing promises are never sent automatically.
           </p>
         </div>
       </header>
 
-      <div className="flex max-h-[28rem] min-h-40 flex-col gap-3 overflow-y-auto p-4" aria-live="polite">
+      <div className={`flex ${layout === 'full' ? 'max-h-[65vh] min-h-[28rem]' : 'max-h-[28rem] min-h-40'} flex-col gap-3 overflow-y-auto p-4`} aria-live="polite">
         {messages.length === 0 ? (
           <div className="flex flex-wrap gap-2">
             {SUGGESTIONS.map((s) => (
