@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
 import { pool } from "@/lib/db"
+import { ensureLeadProductColumns } from "@/lib/followup"
 
 const iso = (value: unknown) => value instanceof Date ? value.toISOString() : value ? String(value) : null
 const safeInternalPath = (value: unknown): string | null => {
@@ -20,6 +21,8 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Add only missing quote-link columns before reading the dashboard; existing rows remain unchanged.
+    await ensureLeadProductColumns()
     const [orderResult, quoteResult] = await Promise.all([
       pool.query(
         `SELECT ordernumber, status, createdat, totalamount, items
