@@ -4,6 +4,7 @@ import { ORDER_STATUSES, countByStatus, listOrders } from "@/lib/followup"
 import { FollowupFilters } from "@/components/admin/followup-filters"
 import { ExportLink } from "@/components/admin/export-link"
 import { OrderCard } from "@/components/admin/order-card"
+import { getActiveSalesSupportStaff, getFollowupAssignments } from "@/lib/followup-assignments"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Orders | AUAPW Admin", robots: { index: false } }
@@ -18,7 +19,8 @@ export default async function AdminOrdersPage({
   const { status: rawStatus, q } = await searchParams
   const status = ORDER_STATUSES.find((s) => s === rawStatus)
   const query = q?.trim().slice(0, 100) || undefined
-  const [orders, counts] = await Promise.all([listOrders(status, query), countByStatus("orders")])
+  const [orders, counts, staff] = await Promise.all([listOrders(status, query), countByStatus("orders"), getActiveSalesSupportStaff()])
+  const assignments = await getFollowupAssignments("order", orders.map((order) => order.id))
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
@@ -49,7 +51,7 @@ export default async function AdminOrdersPage({
       ) : (
         <div className="flex flex-col gap-4">
           {orders.map((order) => (
-            <OrderCard key={order.id} order={order} statuses={ORDER_STATUSES} />
+            <OrderCard key={order.id} order={order} statuses={ORDER_STATUSES} staffOptions={staff} assignment={assignments.get(order.id) ?? null} />
           ))}
         </div>
       )}
