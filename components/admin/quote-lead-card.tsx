@@ -10,11 +10,20 @@ import { FollowupAssignmentSelect } from "@/components/admin/followup-assignment
 import type { FollowupStaffOption, FollowupAssignment } from "@/lib/followup-assignments"
 
 const initial: FollowupActionState = { ok: false, message: "" }
+const money = (amount: number) => `${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+function safeInternalPath(value: string | null): string | null {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes(String.fromCharCode(92)) || value.includes("://")) return null
+  const path = value.split(/[?#]/, 1)[0]
+  if (path.split("/").some((segment) => segment === "." || segment === "..")) return null
+  return path
+}
 
 export function QuoteLeadCard({ lead, statuses, staffOptions, assignment, productInfo }: { lead: QuoteLead; statuses: readonly string[]; staffOptions: FollowupStaffOption[]; assignment: FollowupAssignment | null; productInfo: { name: string | null; url: string | null; priceMissing: boolean; priceEditorUrl: string | null } | null }) {
   const [state, action, pending] = useActionState(saveQuoteFollowup, initial)
   const vehicle = [lead.year, lead.make, lead.model].filter(Boolean).join(" ") || "Vehicle not specified"
   const location = [lead.state, lead.zip].filter(Boolean).join(" ")
+  const sourcePath = safeInternalPath(lead.pageUrl)
 
   return (
     <article className="rounded-lg border border-border bg-card p-5">
@@ -24,9 +33,16 @@ export function QuoteLeadCard({ lead, statuses, staffOptions, assignment, produc
             <span className="font-mono text-xs text-muted-foreground">#{lead.id}</span>
             <StatusBadge status={lead.status} />
             <time className="text-xs text-muted-foreground" dateTime={lead.createdAt}>
-              {new Date(lead.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
+              Created {new Date(lead.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
+            </time>
+            <time className="text-xs text-muted-foreground" dateTime={lead.updatedAt}>
+              Updated {new Date(lead.updatedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
             </time>
             {lead.source && <span className="text-xs text-muted-foreground">via {lead.source}</span>}
+            <span className="ml-auto text-right">
+              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Quote amount</span>
+              <span className="text-base font-bold text-foreground">{lead.quoteAmount === null ? "Not quoted" : money(lead.quoteAmount)}</span>
+            </span>
           </div>
           <h2 className="text-lg font-semibold text-foreground">
             {vehicle} <span className="text-muted-foreground">— {lead.partType}</span>
@@ -42,6 +58,11 @@ export function QuoteLeadCard({ lead, statuses, staffOptions, assignment, produc
                 ? <Link href={productInfo.priceEditorUrl} className="mt-2 block text-xs font-semibold text-amber-600 underline">Missing catalog price — set it now →</Link>
                 : null}
             </div>
+          ) : null}
+          {sourcePath && sourcePath !== productInfo?.url ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Request source: <Link href={sourcePath} target="_blank" className="text-primary underline">{sourcePath} ↗</Link>
+            </p>
           ) : null}
 
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
