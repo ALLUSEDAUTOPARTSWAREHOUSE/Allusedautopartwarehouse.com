@@ -20,9 +20,9 @@ export default async function AdminQuotesPage({
   const { status: rawStatus, q } = await searchParams
   const status = QUOTE_STATUSES.find((s) => s === rawStatus)
   const query = q?.trim().slice(0, 100) || undefined
-  const [leads, counts, staff] = await Promise.all([listQuoteLeads(status, query), countByStatus("leads"), getActiveSalesSupportStaff()])
+  const [leads, counts, staff] = await Promise.all([listQuoteLeads(status, query), countByStatus("leads"), getActiveSalesSupportStaff().catch(() => [])])
   const [assignments, productInfoEntries] = await Promise.all([
-    getFollowupAssignments("quote", leads.map((lead) => String(lead.id))),
+    getFollowupAssignments("quote", leads.map((lead) => String(lead.id))).catch(() => new Map()),
     Promise.all(leads.map(async (lead) => [String(lead.id), await getQuoteProductInfo(lead)] as const)),
   ])
   const productInfos = new Map(productInfoEntries)
