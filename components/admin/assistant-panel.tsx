@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import type { AdminAssistantMessage } from '@/lib/admin-assistant'
 
 const SUGGESTIONS = [
+  'Check website configuration and database readiness',
   'How healthy is the Google feed right now?',
   'Show the latest reservations and orders',
   'Any open quote requests or unread chats?',
@@ -15,6 +16,7 @@ const SUGGESTIONS = [
 ]
 
 const TOOL_LABELS: Record<string, string> = {
+  checkWebsiteConfiguration: 'Checked website configuration',
   getFeedStats: 'Checked feed health',
   searchProducts: 'Searched catalog',
   listRecentOrders: 'Looked up orders',
