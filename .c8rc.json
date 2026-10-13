@@ -1,0 +1,18 @@
+{
+  "all": true,
+  "include": [
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "lib/**/*.ts"
+  ],
+  "exclude": [
+    "**/*.test.*",
+    "**/*.d.ts",
+    "lib/test-utils.ts"
+  ],
+  "reporter": [
+    "text",
+    "cobertura"
+  ],
+  "reports-dir": "coverage"
+}
