@@ -101,7 +101,7 @@ export default function CheckoutPage() {
     orderNumber: string
     totalAmount: number
     reserved?: boolean
-    emailStatus?: { teamNotified?: boolean; customerConfirmationAccepted?: boolean }
+    emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null
   } | null>(null)
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
 
@@ -172,7 +172,7 @@ export default function CheckoutPage() {
     }
   }
 
-  const handleStripePaid = (result: { orderNumber: string; totalAmount: number }) => {
+  const handleStripePaid = (result: { orderNumber: string; totalAmount: number; emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null }) => {
     setPaymentConfirmed(true)
     setPlacedOrder(result)
     clearCart()
