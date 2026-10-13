@@ -12,6 +12,7 @@ import {
 import { notifyNewOrder, sendCustomerOrderInvoice } from "@/lib/followup-notify"
 
 export interface StripeCheckoutCustomer {
+  userId?: string
   firstName: string
   lastName: string
   email: string
@@ -37,6 +38,7 @@ export async function createStripeCheckoutSession(customer: StripeCheckoutCustom
   if (!pricing.ok) return { ok: false as const, error: pricing.error }
 
   const order = await createOrder({
+    userId: customer.userId,
     customerName: `${customer.firstName} ${customer.lastName}`,
     customerEmail: customer.email,
     customerPhone: customer.phone,
