@@ -130,16 +130,18 @@ export async function bulkEditManualProducts(_prev: CatalogActionState, formData
   const brand = String(formData.get("brand") ?? "")
   const slugs = [...new Set(formData.getAll("slug").map(String))]
   const action = String(formData.get("operation") ?? "")
-  if (!isValidBrand(brand) || !slugs.length || slugs.length > 200) return { ok: false, message: "Select a brand and 1–200 products." }
+  const all = formData.get("scope") === "all"
+  if (all && String(formData.get("confirmBrand") ?? "") !== brand) return { ok: false, message: "Type the selected brand slug to confirm applying to all uploaded/manual products." }
+  if (!isValidBrand(brand) || (!all && (!slugs.length || slugs.length > 200))) return { ok: false, message: "Select a brand and 1–200 products." }
   if (!["prices", "images", "delete"].includes(action)) return { ok: false, message: "Choose an action." }
   try {
     if (action === "delete") {
-      const count = await removeManualProducts(brand, slugs)
+      const count = await removeManualProducts(brand, all ? null : slugs)
       revalidateCatalog(brand)
       return { ok: true, message: `Removed ${count} uploaded products; matching source products are hidden from the website and feed. Restore visibility in product fixes.` }
     }
-    const sql = `UPDATE manual_products SET ${action === "prices" ? "price" : "image_url"} = NULL, updated_at = now() WHERE brand = $1 AND slug = ANY($2::text[])`
-    const result = await pool.query(sql, [brand, slugs])
+    const sql = `UPDATE manual_products SET ${action === "prices" ? "price" : "image_url"} = NULL, updated_at = now() WHERE brand = $1 AND ($2::text[] IS NULL OR slug = ANY($2::text[]))`
+    const result = await pool.query(sql, [brand, all ? null : slugs])
     revalidateCatalog(brand)
     return { ok: true, message: `Updated ${result.rowCount ?? 0} selected products. Website and feed refreshed.` }
   } catch { return { ok: false, message: "Database update failed. Please retry." } }
