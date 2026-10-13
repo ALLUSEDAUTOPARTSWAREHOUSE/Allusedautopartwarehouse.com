@@ -124,7 +124,31 @@ export async function createManualProduct(brand: string, input: ManualProductInp
 }
 
 export async function deleteManualProduct(brand: string, slug: string): Promise<void> {
-  await pool.query("DELETE FROM manual_products WHERE brand = $1 AND slug = $2", [brand, slug])
+  await removeManualProducts(brand, [slug])
+}
+
+/** Preserve a recoverable hide marker when an uploaded replacement is removed. */
+export async function removeManualProducts(brand: string, slugs: string[]): Promise<number> {
+  const client = await pool.connect()
+  try {
+    await client.query("BEGIN")
+    const removed = await client.query<{ slug: string }>(
+      "DELETE FROM manual_products WHERE brand = $1 AND slug = ANY($2::text[]) RETURNING slug", [brand, slugs],
+    )
+    for (const row of removed.rows) {
+      await client.query(
+        `INSERT INTO product_overrides (brand, slug, hidden, exclude_from_feed, updated_at)
+         VALUES ($1, $2, true, true, now())
+         ON CONFLICT (brand, slug) DO UPDATE SET hidden = true, exclude_from_feed = true, updated_at = now()`,
+        [brand, row.slug],
+      )
+    }
+    await client.query("COMMIT")
+    return removed.rows.length
+  } catch (error) {
+    await client.query("ROLLBACK")
+    throw error
+  } finally { client.release() }
 }
 
 /** Reads the admin-provided workbook and upserts every row as a manual product for `brand`. */

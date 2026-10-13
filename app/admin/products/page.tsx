@@ -99,7 +99,9 @@ export default async function AdminMerchantPage({
             return <article key={b.slug} className={`rounded-xl border bg-card p-4 ${brand === b.slug ? "border-primary" : ""}`}>
               <Link href={`/admin/products?brand=${b.slug}#fix-pages`} className="font-bold text-primary">{b.label} →</Link>
               <dl className="my-3 space-y-2 text-xs">
-                <div className="flex justify-between"><dt>Catalog products</dt><dd>{stats?.total.toLocaleString() ?? 'Unavailable'}</dd></div>
+                <div className="flex justify-between"><dt>All catalog records</dt><dd>{stats?.total.toLocaleString() ?? 'Unavailable'}</dd></div>
+                <div className="flex justify-between"><dt>Visible website products</dt><dd>{stats ? (stats.total - stats.issues.hidden).toLocaleString() : 'Unavailable'}</dd></div>
+                <div className="flex justify-between"><dt>Hidden products</dt><dd>{stats?.issues.hidden.toLocaleString() ?? 'Unavailable'}</dd></div>
                 <div className="flex justify-between"><dt>Google feed eligible</dt><dd>{stats?.eligible.toLocaleString() ?? 'Unavailable'}</dd></div>
                 <div className="flex justify-between"><dt>Missing prices</dt><dd>{stats?.issues.no_price.toLocaleString() ?? 'Unavailable'}</dd></div>
                 <div><dt>Google published status</dt><dd className="text-muted-foreground">Account not connected</dd></div>
