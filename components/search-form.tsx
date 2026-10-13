@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { CAR_MAKES, CAR_MODELS, PART_CATEGORIES, YEARS, US_STATES } from "@/lib/data"
+import { CAR_MAKES, CAR_MODELS, PART_CATEGORIES, YEARS } from "@/lib/data"
 import { Search, Phone, MessageSquare, AlertCircle } from "lucide-react"
 import { getPartsSearchUrl } from "@/lib/parts-search-routing"
 
@@ -10,20 +10,13 @@ interface SearchFormProps {
   compact?: boolean
 }
 
-const ZIP_RE = /^\d{5}$/
-
 export function SearchForm({ compact = false }: SearchFormProps) {
   const router = useRouter()
   const [year,  setYear]  = useState("")
   const [make,  setMake]  = useState("")
   const [model, setModel] = useState("")
   const [part,  setPart]  = useState("")
-  const [state, setState] = useState("")
-  const [city,  setCity]  = useState("")
-  const [zip,   setZip]   = useState("")
-
   const [makeError, setMakeError] = useState<string | null>(null)
-  const [zipError,  setZipError]  = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
 
   const models = make ? CAR_MODELS[make] || [] : []
@@ -38,18 +31,11 @@ export function SearchForm({ compact = false }: SearchFormProps) {
     }
     setMakeError(null)
 
-    const zipErr = zip && !ZIP_RE.test(zip) ? "ZIP code must be exactly 5 digits." : null
-    setZipError(zipErr)
-    if (zipErr) return
-
-    const location = [city.trim(), state].filter(Boolean).join(", ")
     router.push(getPartsSearchUrl({
       year,
       make,
       model,
       partType: part,
-      location,
-      zipCode: zip,
     }))
   }
 
@@ -156,64 +142,6 @@ export function SearchForm({ compact = false }: SearchFormProps) {
             </div>
 
           </div>
-
-          {/* Row 2: State / City / ZIP — hidden in compact mode */}
-          {!compact && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-
-              {/* State */}
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="sf-state" className="text-[0.6rem] font-black tracking-[0.2em] uppercase text-muted-foreground">
-                  State
-                </label>
-                <select id="sf-state" className={cls(false)} value={state} onChange={(e) => setState(e.target.value)}>
-                  <option value="">All States</option>
-                  {US_STATES.map((s) => <option key={s.abbr} value={s.abbr}>{s.name}</option>)}
-                </select>
-              </div>
-
-              {/* City */}
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="sf-city" className="text-[0.6rem] font-black tracking-[0.2em] uppercase text-muted-foreground">
-                  City <span className="font-normal normal-case tracking-normal text-muted-foreground/50">(optional)</span>
-                </label>
-                <input
-                  id="sf-city" type="text" className={cls(false)}
-                  placeholder="e.g. Los Angeles"
-                  value={city} onChange={(e) => setCity(e.target.value)}
-                  autoComplete="address-level2"
-                />
-              </div>
-
-              {/* ZIP */}
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="sf-zip" className="text-[0.6rem] font-black tracking-[0.2em] uppercase text-muted-foreground">
-                  ZIP Code
-                </label>
-                <input
-                  id="sf-zip" type="text" inputMode="numeric"
-                  className={cls(!!zipError && submitted)}
-                  placeholder="e.g. 90001" maxLength={5}
-                  value={zip}
-                  onChange={(e) => {
-                    const v = e.target.value.replace(/\D/g, "").slice(0, 5)
-                    setZip(v)
-                    setZipError(v && !ZIP_RE.test(v) ? "ZIP must be 5 digits." : null)
-                  }}
-                  aria-invalid={!!zipError}
-                  aria-describedby={zipError ? "sf-zip-err" : undefined}
-                  autoComplete="postal-code"
-                />
-                {zipError && submitted && (
-                  <p id="sf-zip-err" role="alert" className="flex items-center gap-1 text-[11px] text-red-400">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    {zipError}
-                  </p>
-                )}
-              </div>
-
-            </div>
-          )}
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3">

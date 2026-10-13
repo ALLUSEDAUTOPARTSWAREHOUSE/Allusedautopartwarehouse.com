@@ -1,7 +1,9 @@
 const assert = require('node:assert/strict')
 const { test, beforeEach } = require('node:test')
-const { readFileSync } = require('node:fs')
-const { resolve } = require('node:path')
+const { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } = require('node:fs')
+const { spawnSync } = require('node:child_process')
+const { tmpdir } = require('node:os')
+const { join, resolve } = require('node:path')
 const ts = require('typescript')
 
 // Load the real server modules without Next's server-only guard; replace only
@@ -75,6 +77,191 @@ function getCheckoutItem() {
   })
 }
 beforeEach(() => { rows = []; databaseUnavailable = false })
+
+let marketplaceListings = []
+let stripeSessionInput
+const marketplaceCheckout = load('app/api/checkout/route.ts', {
+  'next/server': { NextResponse: { json: (data, init) => Response.json(data, init) } },
+  'next/headers': { headers: async () => new Headers({ cookie: 'session=test' }) },
+  'drizzle-orm': {
+    and: (...conditions) => conditions,
+    eq: (column, value) => [column, value],
+    inArray: (column, values) => [column, values],
+  },
+  '@/lib/auth': { auth: { api: { getSession: async () => ({ user: { id: 'buyer-1' } }) } } },
+  '@/lib/stripe': {
+    stripe: {
+      checkout: {
+        sessions: {
+          create: async (input) => {
+            stripeSessionInput = input
+            return { id: 'session-1', url: 'https://stripe.test/session-1' }
+          },
+        },
+      },
+    },
+  },
+  '@/lib/db': {
+    db: { select: () => ({ from: () => ({ where: async () => marketplaceListings }) }) },
+  },
+  '@/lib/db/schema': { listings: { id: 'id', status: 'status' } },
+  zod: require('zod'),
+})
+
+const dailyCalls = []
+let dailyEmailResult = false
+const dailyRoute = load('app/api/cron/daily/route.ts', {
+  'next/server': { NextResponse: { json: (data, init) => Response.json(data, init) } },
+  '@/lib/admin-metrics': { getDashboardMetrics: async () => { dailyCalls.push('metrics'); return {} } },
+  '@/lib/followup-notify': {
+    sendDailyReport: async () => { dailyCalls.push('email'); return dailyEmailResult },
+  },
+  '@/lib/merchant': {
+    SITE_URL: 'https://example.com',
+    getFeedStats: async () => [],
+    listFeedFetches: async () => ({ lastGoogle: null }),
+  },
+  '@/lib/merchant-health': {
+    prepareDailySnapshot: async () => {
+      dailyCalls.push('prepare')
+      return { snapshot: { day: '2026-01-01', eligible: 0, alerts: [] }, previous: null }
+    },
+    pruneFeedFetchLog: async () => { dailyCalls.push('prune'); return 0 },
+    recordDailySnapshot: async () => { dailyCalls.push('record'); return true },
+  },
+  '@/lib/stripe-checkout': {
+    reconcilePendingStripeOrders: async () => { dailyCalls.push('reconcile'); return { checked: 0, paid: 0 } },
+  },
+})
+const vinDecoder = load('app/api/vin-decode/route.ts', {})
+
+test('marketplace checkout uses the active listing price and seller, not client data', async () => {
+  marketplaceListings = [{
+    id: 'listing-1', title: 'Actual engine', price: '250.59', sellerId: 'seller-actual',
+    quantity: 3, status: 'active',
+  }]
+  stripeSessionInput = undefined
+
+  const response = await marketplaceCheckout.POST(new Request('https://example.com/api/checkout', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      items: [
+        { listingId: 'listing-1', quantity: 2, price: 0.01, sellerId: 'attacker' },
+        { listingId: 'listing-1', quantity: 1 },
+      ],
+    }),
+  }))
+
+  assert.equal(response.status, 200)
+  assert.equal(stripeSessionInput.line_items[0].price_data.unit_amount, 25059)
+  assert.equal(stripeSessionInput.line_items[0].price_data.product_data.name, 'Actual engine')
+  assert.equal(stripeSessionInput.line_items[0].price_data.product_data.metadata.sellerId, 'seller-actual')
+})
+
+test('marketplace checkout rejects inventory quantities above database stock', async () => {
+  marketplaceListings = [{
+    id: 'listing-1', title: 'Actual engine', price: '250.59', sellerId: 'seller-actual',
+    quantity: 2, status: 'active',
+  }]
+  stripeSessionInput = undefined
+
+  const response = await marketplaceCheckout.POST(new Request('https://example.com/api/checkout', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ items: [{ listingId: 'listing-1', quantity: 3 }] }),
+  }))
+
+  assert.equal(response.status, 422)
+  assert.equal(stripeSessionInput, undefined)
+})
+
+test('daily cron fails closed and does not complete a report when email fails', async () => {
+  const previousSecret = process.env.CRON_SECRET
+  try {
+    delete process.env.CRON_SECRET
+    dailyCalls.length = 0
+    const spoofed = await dailyRoute.GET(new Request('https://example.com/api/cron/daily', {
+      headers: { 'user-agent': 'vercel-cron/1.0' },
+    }))
+    assert.equal(spoofed.status, 401)
+    assert.deepEqual(dailyCalls, [])
+
+    process.env.CRON_SECRET = 'cron-test-secret'
+    dailyEmailResult = false
+    const failed = await dailyRoute.GET(new Request('https://example.com/api/cron/daily', {
+      headers: { authorization: ['Bearer', 'cron-test-secret'].join(' ') },
+    }))
+    assert.equal(failed.status, 500)
+    assert.deepEqual(dailyCalls, ['prepare', 'reconcile', 'metrics', 'prune', 'email'])
+  } finally {
+    if (previousSecret === undefined) delete process.env.CRON_SECRET
+    else process.env.CRON_SECRET = previousSecret
+  }
+})
+
+test('VIN decoding returns the upstream vehicle data and never fabricates results', async () => {
+  const originalFetch = global.fetch
+  let fetchCalls = 0
+  try {
+    global.fetch = async () => {
+      fetchCalls++
+      return {
+        ok: true,
+        json: async () => ({
+          Results: [{
+            ModelYear: '2022',
+            Make: 'Honda',
+            Model: 'Civic',
+            Trim: 'LX',
+            DisplacementL: '2.0',
+            TransmissionStyle: 'Automatic',
+            BodyClass: 'Sedan',
+            DriveType: 'FWD',
+          }],
+        }),
+      }
+    }
+    const decoded = await vinDecoder.POST(new Request('https://example.com/api/vin-decode', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ vin: '1HGCV1F30NA000000' }),
+    }))
+    assert.equal(decoded.status, 200)
+    assert.equal((await decoded.json()).vehicle.model, 'Civic')
+
+    const invalid = await vinDecoder.POST(new Request('https://example.com/api/vin-decode', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ vin: 'INVALIDVIN0000000' }),
+    }))
+    assert.equal(invalid.status, 400)
+    assert.equal(fetchCalls, 1)
+  } finally {
+    global.fetch = originalFetch
+  }
+})
+
+test('Acura catalog repair handles relative and missing product URLs', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'auapw-catalog-'))
+  try {
+    mkdirSync(join(directory, 'lib'))
+    mkdirSync(join(directory, 'data', 'brands'), { recursive: true })
+    writeFileSync(join(directory, 'lib', 'acura-products.json'), JSON.stringify({
+      products: [
+        { id: '1', name: 'Part', slug: 'fallback', productUrl: '/brands/acura/canonical-part' },
+        { id: '2', name: 'Part', slug: 'missing-url' },
+      ],
+    }))
+    const script = resolve(__dirname, 'repair-acura-catalog.mjs')
+    const result = spawnSync(process.execPath, [script], { cwd: directory, encoding: 'utf8' })
+    assert.equal(result.status, 0, result.stderr)
+    const repaired = JSON.parse(readFileSync(join(directory, 'data', 'brands', 'acura.json'), 'utf8'))
+    assert.deepEqual(repaired.products.map((product) => product.canonicalSlug), ['canonical-part', 'missing-url'])
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
+})
 
 test('accepts catalog prices and preserves mileage tiers', async () => {
   for (const price of [1000, 1200, 1400]) {

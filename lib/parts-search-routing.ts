@@ -3,8 +3,6 @@ export type PartsSearchFilters = {
   model?: string
   year?: string
   partType?: string
-  location?: string
-  zipCode?: string
 }
 
 function isTransmissionPart(partType: string) {

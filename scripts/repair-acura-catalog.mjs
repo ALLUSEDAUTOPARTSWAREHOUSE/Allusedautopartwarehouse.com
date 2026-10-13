@@ -8,8 +8,10 @@ const source = JSON.parse(fs.readFileSync(sourcePath, 'utf8'))
 const sourceProducts = source.products ?? source
 
 const products = sourceProducts.map((product) => {
-  const productUrl = new URL(product.productUrl)
-  const canonicalSlug = productUrl.pathname.split('/').filter(Boolean).at(-1) ?? product.slug
+  const canonicalSlug =
+    typeof product.productUrl === 'string' && product.productUrl
+      ? new URL(product.productUrl, 'https://www.allusedautopartswarehouse.com').pathname.split('/').filter(Boolean).at(-1) ?? product.slug
+      : product.slug
 
   return {
     id: product.id,

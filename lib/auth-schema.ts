@@ -1,40 +1,54 @@
-// Database schema for authentication
-// Run these SQL commands in your Neon database to set up the auth tables
+// Database schema for Better Auth.
 
 export const createAuthTables = `
--- Users table
-CREATE TABLE IF NOT EXISTS public."users" (
+CREATE TABLE IF NOT EXISTS public."user" (
   "id" text PRIMARY KEY NOT NULL,
-  "email" text NOT NULL UNIQUE,
   "name" text NOT NULL,
-  "password_hash" text NOT NULL,
-  "email_verified" boolean NOT NULL DEFAULT false,
-  "email_verified_at" timestamp,
-  "created_at" timestamp NOT NULL DEFAULT now(),
-  "updated_at" timestamp NOT NULL DEFAULT now()
+  "email" text NOT NULL UNIQUE,
+  "emailVerified" boolean NOT NULL DEFAULT false,
+  "image" text,
+  "role" text DEFAULT 'buyer',
+  "createdAt" timestamp NOT NULL DEFAULT now(),
+  "updatedAt" timestamp NOT NULL DEFAULT now()
 );
 
--- Email verification tokens
-CREATE TABLE IF NOT EXISTS public."email_verifications" (
+CREATE TABLE IF NOT EXISTS public."session" (
   "id" text PRIMARY KEY NOT NULL,
-  "user_id" text NOT NULL REFERENCES public."users"("id") ON DELETE CASCADE,
+  "expiresAt" timestamp NOT NULL,
   "token" text NOT NULL UNIQUE,
-  "expires_at" timestamp NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT now()
+  "createdAt" timestamp NOT NULL DEFAULT now(),
+  "updatedAt" timestamp NOT NULL DEFAULT now(),
+  "ipAddress" text,
+  "userAgent" text,
+  "userId" text NOT NULL REFERENCES public."user"("id") ON DELETE CASCADE
 );
 
--- Sessions
-CREATE TABLE IF NOT EXISTS public."sessions" (
+CREATE TABLE IF NOT EXISTS public."account" (
   "id" text PRIMARY KEY NOT NULL,
-  "user_id" text NOT NULL REFERENCES public."users"("id") ON DELETE CASCADE,
-  "token" text NOT NULL UNIQUE,
-  "expires_at" timestamp NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT now()
+  "accountId" text NOT NULL,
+  "providerId" text NOT NULL,
+  "userId" text NOT NULL REFERENCES public."user"("id") ON DELETE CASCADE,
+  "accessToken" text,
+  "refreshToken" text,
+  "idToken" text,
+  "accessTokenExpiresAt" timestamp,
+  "refreshTokenExpiresAt" timestamp,
+  "scope" text,
+  "password" text,
+  "createdAt" timestamp NOT NULL DEFAULT now(),
+  "updatedAt" timestamp NOT NULL DEFAULT now()
 );
 
--- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_email_verifications_user_id ON public."email_verifications"("user_id");
-CREATE INDEX IF NOT EXISTS idx_email_verifications_token ON public."email_verifications"("token");
-CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON public."sessions"("user_id");
-CREATE INDEX IF NOT EXISTS idx_sessions_token ON public."sessions"("token");
+CREATE TABLE IF NOT EXISTS public."verification" (
+  "id" text PRIMARY KEY NOT NULL,
+  "identifier" text NOT NULL,
+  "value" text NOT NULL,
+  "expiresAt" timestamp NOT NULL,
+  "createdAt" timestamp DEFAULT now(),
+  "updatedAt" timestamp DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS "session_userId_idx" ON public."session"("userId");
+CREATE INDEX IF NOT EXISTS "account_userId_idx" ON public."account"("userId");
+CREATE INDEX IF NOT EXISTS "verification_identifier_idx" ON public."verification"("identifier");
 `;

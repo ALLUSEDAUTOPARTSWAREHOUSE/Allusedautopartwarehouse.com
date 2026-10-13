@@ -1,11 +1,34 @@
 'use client'
 
+import { useState, useTransition } from 'react'
+import { saveVehicle } from '@/app/actions/customer'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link'
 
 export function VehicleDetails({ vehicle }: { vehicle: any }) {
+  const [isSaving, startSaving] = useTransition()
+  const [saveMessage, setSaveMessage] = useState('')
+
   if (!vehicle) return null
+
+  const handleSave = () => {
+    startSaving(async () => {
+      try {
+        await saveVehicle({
+          year: Number(vehicle.year),
+          make: vehicle.make,
+          model: vehicle.model,
+          vin: vehicle.vin,
+          engine: vehicle.engine,
+          transmission: vehicle.transmission,
+        })
+        setSaveMessage('Vehicle saved to your dashboard.')
+      } catch {
+        setSaveMessage('Sign in to save this vehicle.')
+      }
+    })
+  }
 
   return (
     <Card className="p-6">
@@ -53,10 +76,11 @@ export function VehicleDetails({ vehicle }: { vehicle: any }) {
             Find Compatible Parts
           </Link>
         </Button>
-        <Button variant="outline" className="flex-1">
-          Save Vehicle
+        <Button variant="outline" className="flex-1" onClick={handleSave} disabled={isSaving}>
+          {isSaving ? 'Saving…' : 'Save Vehicle'}
         </Button>
       </div>
+      {saveMessage && <p className="mt-3 text-sm text-muted-foreground" role="status">{saveMessage}</p>}
     </Card>
   )
 }
