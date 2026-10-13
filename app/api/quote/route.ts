@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     const origin = new URL(request.url).origin
     const [teamNotice, customerNotice] = await Promise.all([
       notifyNewQuote(lead, origin).catch(() => ({ ok: false })),
-      sendCustomerQuoteAcknowledgement(lead).catch(() => ({ ok: false })),
+      sendCustomerQuoteAcknowledgement(lead, origin).catch(() => ({ ok: false })),
     ])
     return NextResponse.json({
       ok: true,
