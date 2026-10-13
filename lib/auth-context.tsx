@@ -1,6 +1,7 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useEffect } from 'react'
+import { authClient } from '@/lib/auth-client'
 
 export interface User {
   id: string
@@ -14,86 +15,46 @@ interface AuthContextType {
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   signup: (email: string, password: string, name: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+/** Browser state reflects the server session, never a locally fabricated identity. */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Load user from localStorage on mount
+  const { data, isPending, refetch } = authClient.useSession()
   useEffect(() => {
-    const storedUser = localStorage.getItem('auth-user')
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser))
-      } catch {
-        localStorage.removeItem('auth-user')
-      }
-    }
-    setIsLoading(false)
-  }, [])
-
-  const login = async (email: string, password: string) => {
-    setIsLoading(true)
-    try {
-      // Mock auth - in real app would call API
-      if (email && password.length >= 6) {
-        const mockUser: User = {
-          id: `user-${Date.now()}`,
-          email,
-          name: email.split('@')[0],
-          createdAt: Date.now(),
-        }
-        setUser(mockUser)
-        localStorage.setItem('auth-user', JSON.stringify(mockUser))
-      } else {
-        throw new Error('Invalid credentials')
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const signup = async (email: string, password: string, name: string) => {
-    setIsLoading(true)
-    try {
-      // Mock auth - in real app would call API
-      if (email && password.length >= 6 && name) {
-        const mockUser: User = {
-          id: `user-${Date.now()}`,
-          email,
-          name,
-          createdAt: Date.now(),
-        }
-        setUser(mockUser)
-        localStorage.setItem('auth-user', JSON.stringify(mockUser))
-      } else {
-        throw new Error('Invalid credentials')
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const logout = () => {
-    setUser(null)
+    // Discard identities created by the retired mock login implementation.
     localStorage.removeItem('auth-user')
+  }, [])
+  const user = data?.user ? {
+    id: data.user.id,
+    email: data.user.email,
+    name: data.user.name,
+    createdAt: new Date(data.user.createdAt).getTime(),
+  } : null
+
+  async function login(email: string, password: string) {
+    const result = await authClient.signIn.email({ email, password })
+    if (result.error) throw new Error(result.error.message || 'Sign in failed')
+    await refetch()
+  }
+  async function signup(email: string, password: string, name: string) {
+    const result = await authClient.signUp.email({ email, password, name })
+    if (result.error) throw new Error(result.error.message || 'Account creation failed')
+    await refetch()
+  }
+  async function logout() {
+    const result = await authClient.signOut()
+    if (result.error) throw new Error(result.error.message || 'Sign out failed')
+    await refetch()
   }
 
-  return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout }}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={{ user, isLoading: isPending, login, signup, logout }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider')
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider')
   return context
 }
