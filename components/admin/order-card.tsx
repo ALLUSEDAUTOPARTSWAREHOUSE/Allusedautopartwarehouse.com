@@ -22,13 +22,19 @@ export function OrderCard({ order, statuses, staffOptions, assignment }: { order
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <span className="font-mono text-sm font-semibold text-foreground">{order.orderNumber}</span>
             <StatusBadge status={order.status} />
+            <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+              {order.status === "reserved_pending_fitment" ? "Reservation" : "Checkout order"}
+            </span>
             {order.paymentGateway && (
               <span className="rounded-full border border-border px-2 py-0.5 text-xs capitalize text-muted-foreground">
                 {order.paymentGateway}
               </span>
             )}
             <time className="text-xs text-muted-foreground" dateTime={order.createdAt}>
-              {new Date(order.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
+              Created {new Date(order.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
+            </time>
+            <time className="text-xs text-muted-foreground" dateTime={order.updatedAt}>
+              Updated {new Date(order.updatedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
             </time>
             <span className="ml-auto text-lg font-bold text-foreground">{money(order.totalAmount)}</span>
           </div>
@@ -64,8 +70,9 @@ export function OrderCard({ order, statuses, staffOptions, assignment }: { order
                 <Link href={line.url} target="_blank" className="min-w-0 truncate text-foreground hover:text-primary">
                   {line.name}
                 </Link>
-                <span className="shrink-0 text-muted-foreground">
-                  {line.quantity} × {money(line.unitPrice)}
+                <span className="shrink-0 text-right text-muted-foreground">
+                  <span className="block">{line.quantity} × {money(line.unitPrice)}</span>
+                  <span className="block text-xs">Line total: {money(line.lineTotal)}</span>
                 </span>
               </li>
             ))}
