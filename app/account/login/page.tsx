@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight, CheckCircle2, Eye, EyeOff, Mail, LockKeyhole, UserRound, PackageCheck, ShieldCheck } from 'lucide-react'
@@ -18,9 +18,9 @@ export default function AccountLoginPage() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
-  if (user && !isLoading) {
-    router.replace('/')
-  }
+  useEffect(() => {
+    if (user && !isLoading) router.replace('/')
+  }, [user, isLoading, router])
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
