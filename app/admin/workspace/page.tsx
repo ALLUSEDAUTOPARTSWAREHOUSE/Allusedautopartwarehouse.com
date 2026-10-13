@@ -2,7 +2,7 @@ import Link from 'next/link'
 import {
   ArrowUpRight, Boxes, ChartNoAxesCombined, CreditCard, Facebook, Gauge,
   Headset, Megaphone, Package, Settings2, ShieldCheck, ShoppingBag, Store,
-  Users, Wrench, Workflow,
+  Users, Wrench, Workflow, Code2, Bot, KeyRound, PlugZap, Globe,
 } from 'lucide-react'
 
 const workspaces = [
@@ -52,6 +52,19 @@ const workspaces = [
       { label: 'Team members', href: '/admin/team', icon: Users },
     ],
   },
+  {
+    title: 'AI development, APIs & security',
+    description: 'Plan website page changes, new features, bug fixes and API integrations, then manage settings and access.',
+    icon: Bot,
+    accent: 'indigo',
+    links: [
+      { label: 'AI development assistant', href: '/admin/ai-chat', icon: Bot },
+      { label: 'API & integration setup', href: '/admin/development', icon: PlugZap },
+      { label: 'Website products & content', href: '/admin/products', icon: Globe },
+      { label: 'System health & settings', href: '/admin/settings', icon: Settings2 },
+      { label: 'Password management', href: '/admin/security', icon: KeyRound },
+    ],
+  },
 ]
 
 export default function AdminWorkspacePage() {
@@ -63,10 +76,9 @@ export default function AdminWorkspacePage() {
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
               <Gauge className="size-3.5" /> ADMINISTRATOR WORKSPACE
             </div>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">One command center. Four workspaces.</h1>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">One command center. Five workspaces.</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-              Manage All Used Auto Parts Warehouse operations from one secure admin portal—store and inventory,
-              Google Merchant, social growth, and sales support.
+              Manage store and inventory, Google Merchant, social accounts, payment methods, sales support, API setup, security and AI-assisted development from one secure admin portal.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link href="/admin/dashboard" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90">
@@ -86,6 +98,7 @@ export default function AdminWorkspacePage() {
                 ['02', 'Google Merchant'],
                 ['03', 'Social & growth'],
                 ['04', 'Sales & support'],
+                ['05', 'AI & API development'],
               ].map(([n, label]) => (
                 <div key={n} className="rounded-lg border border-border bg-card p-3">
                   <span className="text-xs font-semibold text-primary">{n}</span>
@@ -101,7 +114,7 @@ export default function AdminWorkspacePage() {
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold tracking-tight">Your workspaces</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Direct access to the tools already organized in your admin portal.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Direct access to commerce, marketing, payment, development and security tools.</p>
           </div>
           <span className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex"><ShieldCheck className="size-4" /> Admin access required</span>
         </div>
@@ -134,7 +147,7 @@ export default function AdminWorkspacePage() {
         </div>
       </section>
       <p className="text-xs leading-5 text-muted-foreground">
-        Payment-provider changes, product deletions, and publishing actions should be completed in their dedicated modules and confirmed against the connected production service.
+        API keys and payment secrets belong in Vercel Environment Variables, never in chat or ordinary forms. Social publishing and direct Google Merchant account authorization require provider connections. AI can help plan code changes; changes must be reviewed and deployed before they affect the live website.
       </p>
     </div>
   )
