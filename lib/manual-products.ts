@@ -128,12 +128,12 @@ export async function deleteManualProduct(brand: string, slug: string): Promise<
 }
 
 /** Preserve a recoverable hide marker when an uploaded replacement is removed. */
-export async function removeManualProducts(brand: string, slugs: string[]): Promise<number> {
+export async function removeManualProducts(brand: string, slugs: string[] | null): Promise<number> {
   const client = await pool.connect()
   try {
     await client.query("BEGIN")
     const removed = await client.query<{ slug: string }>(
-      "DELETE FROM manual_products WHERE brand = $1 AND slug = ANY($2::text[]) RETURNING slug", [brand, slugs],
+      "DELETE FROM manual_products WHERE brand = $1 AND ($2::text[] IS NULL OR slug = ANY($2::text[])) RETURNING slug", [brand, slugs],
     )
     for (const row of removed.rows) {
       await client.query(
