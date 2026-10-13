@@ -43,7 +43,6 @@ export default function QuotePage() {
     const productPath = url.split(/[?#]/, 1)[0]
     const pathParts = productPath.split("/").filter(Boolean)
     const safePath = productPath.startsWith("/") && !productPath.startsWith("//") && !productPath.includes(String.fromCharCode(92)) && !productPath.includes("://") && !pathParts.some((part) => part === "." || part === "..")
-    const pathParts = url.split("/").filter(Boolean)
     if (safePath) setProductUrl(productPath)
   }, [])
 
