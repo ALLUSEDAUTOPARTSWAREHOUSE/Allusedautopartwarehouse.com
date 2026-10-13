@@ -5,10 +5,12 @@ import { Mail, Phone } from "lucide-react"
 import { saveQuoteFollowup, type FollowupActionState } from "@/app/admin/followup-actions"
 import type { QuoteLead } from "@/lib/followup"
 import { StatusBadge } from "@/components/admin/status-badge"
+import { FollowupAssignmentSelect } from "@/components/admin/followup-assignment-select"
+import type { FollowupStaffOption, FollowupAssignment } from "@/lib/followup-assignments"
 
 const initial: FollowupActionState = { ok: false, message: "" }
 
-export function QuoteLeadCard({ lead, statuses }: { lead: QuoteLead; statuses: readonly string[] }) {
+export function QuoteLeadCard({ lead, statuses, staffOptions, assignment }: { lead: QuoteLead; statuses: readonly string[]; staffOptions: FollowupStaffOption[]; assignment: FollowupAssignment | null }) {
   const [state, action, pending] = useActionState(saveQuoteFollowup, initial)
   const vehicle = [lead.year, lead.make, lead.model].filter(Boolean).join(" ") || "Vehicle not specified"
   const location = [lead.state, lead.zip].filter(Boolean).join(" ")
@@ -29,6 +31,9 @@ export function QuoteLeadCard({ lead, statuses }: { lead: QuoteLead; statuses: r
             {vehicle} <span className="text-muted-foreground">— {lead.partType}</span>
           </h2>
           {lead.partOption && <p className="text-sm text-muted-foreground">Option: {lead.partOption}</p>}
+          {lead.pageUrl && lead.pageUrl.startsWith("/") && !lead.pageUrl.startsWith("//") ? (
+            <a href={lead.pageUrl} className="mt-2 inline-flex text-xs font-medium text-primary underline-offset-4 hover:underline" target="_blank" rel="noreferrer">View customer&apos;s submitted product/page ↗</a>
+          ) : null}
 
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <span className="font-medium text-foreground">{lead.fullName}</span>
@@ -49,7 +54,9 @@ export function QuoteLeadCard({ lead, statuses }: { lead: QuoteLead; statuses: r
           )}
         </div>
 
-        <form action={action} className="flex w-full flex-col gap-3 lg:w-80">
+        <div className="flex w-full flex-col gap-3 lg:w-80">
+          <FollowupAssignmentSelect recordType="quote" recordId={String(lead.id)} staff={staffOptions} assignment={assignment} />
+          <form action={action} className="flex w-full flex-col gap-3">
           <input type="hidden" name="id" value={lead.id} />
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
@@ -127,7 +134,8 @@ export function QuoteLeadCard({ lead, statuses }: { lead: QuoteLead; statuses: r
               {pending ? "Saving…" : "Save"}
             </button>
           </div>
-        </form>
+          </form>
+        </div>
       </div>
     </article>
   )
