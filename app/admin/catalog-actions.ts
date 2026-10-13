@@ -7,6 +7,7 @@ import { BRAND_DIRECTORY, getBrandProductUrl, isValidBrand } from "@/lib/brand-c
 import {
   createManualProduct,
   deleteManualProduct,
+  removeManualProducts,
   importProductSheet,
   toBrandProduct,
 } from "@/lib/manual-products"
@@ -80,7 +81,7 @@ export async function removeManualProduct(_prev: CatalogActionState, formData: F
   if (!isValidBrand(brand) || !slug) return { ok: false, message: "Product not found." }
   await deleteManualProduct(brand, slug)
   revalidateCatalog(brand)
-  return { ok: true, message: "Removed." }
+  return { ok: true, message: "Removed. Any matching source product is hidden from the website and Google feed; restore it in product fixes." }
 }
 
 export async function uploadProductSheet(_prev: CatalogActionState, formData: FormData): Promise<CatalogActionState> {
@@ -132,9 +133,12 @@ export async function bulkEditManualProducts(_prev: CatalogActionState, formData
   if (!isValidBrand(brand) || !slugs.length || slugs.length > 200) return { ok: false, message: "Select a brand and 1–200 products." }
   if (!["prices", "images", "delete"].includes(action)) return { ok: false, message: "Choose an action." }
   try {
-    const sql = action === "delete"
-      ? "DELETE FROM manual_products WHERE brand = $1 AND slug = ANY($2::text[])"
-      : `UPDATE manual_products SET ${action === "prices" ? "price" : "image_url"} = NULL, updated_at = now() WHERE brand = $1 AND slug = ANY($2::text[])`
+    if (action === "delete") {
+      const count = await removeManualProducts(brand, slugs)
+      revalidateCatalog(brand)
+      return { ok: true, message: `Removed ${count} uploaded products; matching source products are hidden from the website and feed. Restore visibility in product fixes.` }
+    }
+    const sql = `UPDATE manual_products SET ${action === "prices" ? "price" : "image_url"} = NULL, updated_at = now() WHERE brand = $1 AND slug = ANY($2::text[])`
     const result = await pool.query(sql, [brand, slugs])
     revalidateCatalog(brand)
     return { ok: true, message: `Updated ${result.rowCount ?? 0} selected products. Website and feed refreshed.` }

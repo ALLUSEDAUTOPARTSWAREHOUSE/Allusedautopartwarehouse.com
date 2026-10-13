@@ -52,3 +52,18 @@ test('preview reports rows and missing prices without writing products', async (
   assert.deepEqual(await run('acura', Buffer.alloc(0), 'all', true), { inserted: 2, skipped: 0, missingPrices: 1 })
   assert.ok(!calls.some(c => c.sql.startsWith('INSERT')))
 })
+
+test('removal creates hidden source markers atomically and preserves other override fields', async () => {
+  const calls = []
+  const client = { query: async (sql, args) => { calls.push({ sql, args }); return { rows: sql.startsWith('DELETE') ? [{ slug: 'engine-p-1' }] : [] } }, release() {} }
+  const module = { exports: {} }
+  const { outputText } = ts.transpileModule(fs.readFileSync('lib/manual-products.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } })
+  const dependencies = { 'server-only': {}, xlsx: {}, '@/lib/db': { pool: { connect: async () => client } }, '@/lib/brand-catalog': {} }
+  new Function('require', 'module', 'exports', outputText)(name => dependencies[name], module, module.exports)
+  assert.equal(await module.exports.removeManualProducts('acura', ['engine-p-1']), 1)
+  assert.equal(calls[0].sql, 'BEGIN')
+  assert.deepEqual(calls[1].args, ['acura', ['engine-p-1']])
+  assert.match(calls[2].sql, /hidden = true, exclude_from_feed = true/)
+  assert.doesNotMatch(calls[2].sql, /price =|image_url =/)
+  assert.equal(calls.at(-1).sql, 'COMMIT')
+})
