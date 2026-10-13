@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useState } from "react"
+import { useActionState, useState, useRef } from "react"
 import { RefreshCw, Upload, PlusCircle, Trash2, ExternalLink } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -220,6 +220,8 @@ function ManualProductRow({ product }: { product: CatalogSyncPanelProps["manualP
 }
 
 function BulkProductForm({ brands, manualProducts }: CatalogSyncPanelProps) {
+  const form = useRef<HTMLFormElement>(null)
+  const [selectionCount, setSelectionCount] = useState(0)
   const [brand, setBrand] = useState(brands[0]?.slug ?? "")
   const [query, setQuery] = useState("")
   const [missingImage, setMissingImage] = useState(false)
@@ -227,7 +229,7 @@ function BulkProductForm({ brands, manualProducts }: CatalogSyncPanelProps) {
   const [missingPrice, setMissingPrice] = useState(false)
   const [state, action, pending] = useActionState(bulkEditManualProducts, initial)
   const products = manualProducts.filter(p => p.brand === brand && p.name.toLowerCase().includes(query.toLowerCase()) && (!missingPrice || !p.price) && (!missingImage || !p.imageUrl) && (!category || p.category === category))
-  return <form action={action} className="space-y-3 rounded-md border p-3">
+  return <form ref={form} action={action} onChange={() => setSelectionCount(form.current?.querySelectorAll('input[name="slug"]:checked').length ?? 0)} className="space-y-3 rounded-md border p-3">
     <h3 className="font-semibold">Single / bulk edits — uploaded and manual products</h3>
     <select aria-label="Brand filter" name="brand" value={brand} onChange={e => setBrand(e.target.value)} className={inputClass}>
       {brands.map(b => <option key={b.slug} value={b.slug}>{b.label}</option>)}
@@ -236,6 +238,19 @@ function BulkProductForm({ brands, manualProducts }: CatalogSyncPanelProps) {
     <label className="flex gap-2"><input type="checkbox" checked={missingPrice} onChange={e => setMissingPrice(e.target.checked)} />Missing prices only</label>
     <label className="flex gap-2"><input type="checkbox" checked={missingImage} onChange={e => setMissingImage(e.target.checked)} />Missing image URLs only</label>
     <select aria-label="Category filter" value={category} onChange={e => setCategory(e.target.value)} className={inputClass}><option value="">All categories</option><option value="engine">Engine</option><option value="transmission">Transmission</option></select>
+    <div className="flex flex-wrap gap-2">
+      <button type="button" className={inputClass} onClick={() => {
+        const boxes = form.current?.querySelectorAll<HTMLInputElement>('input[name="slug"]')
+        boxes?.forEach((box, index) => { box.checked = index < 200 })
+        setSelectionCount(Math.min(boxes?.length ?? 0, 200))
+      }}>Select filtered products (up to 200)</button>
+      <button type="button" className={inputClass} onClick={() => {
+        form.current?.querySelectorAll<HTMLInputElement>('input[name="slug"]').forEach(box => { box.checked = false })
+        setSelectionCount(0)
+      }}>Clear selection</button>
+      <span className="text-sm">{selectionCount} selected · {products.length} matching uploaded/manual products</span>
+    </div>
+    {!products.length && <p role="status" className="text-sm">No uploaded/manual products match these filters. Upload this brand's sheet first, or clear the filters. Bundled catalog products are edited in the product cards below; this bulk panel does not remove them.</p>}
     <div key={`${brand}-${query}-${missingPrice}-${missingImage}-${category}-${state.message}`} className="max-h-64 overflow-auto">
       {products.map(p => <label key={p.slug} className="flex gap-2 py-1"><input name="slug" type="checkbox" value={p.slug} />{p.name}</label>)}
     </div>
@@ -245,7 +260,7 @@ function BulkProductForm({ brands, manualProducts }: CatalogSyncPanelProps) {
       <option value="delete">Delete uploaded/manual products</option>
     </select>
     <label className="flex gap-2"><input name="confirm" value="yes" type="checkbox" required />I confirm these removals for the selected products.</label>
-    <button type="submit" disabled={pending} className={inputClass}>{pending ? "Saving…" : "Apply to selected products"}</button>
+    <button type="submit" disabled={pending || !products.length} className={inputClass}>{pending ? "Saving…" : "Apply to selected products"}</button>
     <p role="status">{state.message}</p>
   </form>
 }
