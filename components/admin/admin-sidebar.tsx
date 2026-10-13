@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, FileText, Settings, Code, Megaphone, Star, Share2, Bot, CreditCard, PanelsTopLeft } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, FileText, Settings, Code, Megaphone, KeyRound, Star, Share2, Bot, CreditCard, PanelsTopLeft } from 'lucide-react'
 
 const GROUPS = [
   { title: 'Overview', links: [
@@ -22,6 +22,7 @@ const GROUPS = [
     { href: '/admin/development', label: 'API & setup', icon: Code },
     { href: '/admin/team', label: 'Team', icon: Users },
     { href: '/admin/settings', label: 'System settings', icon: Settings },
+    { href: '/admin/security', label: 'Password management', icon: KeyRound },
     { href: '/admin/ai-chat', label: 'AI planning', icon: Bot },
   ] },
   { title: 'Marketing', links: [
