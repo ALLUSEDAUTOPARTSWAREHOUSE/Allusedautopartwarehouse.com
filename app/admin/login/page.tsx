@@ -111,6 +111,11 @@ export default function AdminLoginPage() {
             >
               {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
+            <div className="pt-3 text-center text-sm">
+              <Link href="/admin/forgot-password" className="font-medium text-primary underline underline-offset-4">
+                Forgot password? Send OTP to email
+              </Link>
+            </div>
           </form>
 
           {/* Help Text */}
