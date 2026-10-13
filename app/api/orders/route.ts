@@ -88,11 +88,16 @@ export async function POST(request: Request) {
         status: "reserved_pending_fitment",
       })
       const origin = new URL(request.url).origin
-      await notifyNewOrder(order, origin)
-      await sendCustomerOrderInvoice(order, origin).catch((err) =>
-        console.error("[orders] Customer invoice email failed:", err instanceof Error ? err.message : err),
-      )
-      return NextResponse.json({ ok: true, orderNumber: order.orderNumber, totalAmount: order.totalAmount })
+      const [teamNotice, customerNotice] = await Promise.all([
+        notifyNewOrder(order, origin).catch(() => ({ ok: false })),
+        sendCustomerOrderInvoice(order, origin).catch(() => ({ ok: false })),
+      ])
+      return NextResponse.json({
+        ok: true,
+        orderNumber: order.orderNumber,
+        totalAmount: order.totalAmount,
+        emailStatus: { teamNotified: teamNotice.ok, customerConfirmationSent: customerNotice.ok },
+      })
     } catch (err) {
       console.error("[orders] Failed to save reservation order:", err instanceof Error ? err.message : err)
       return NextResponse.json(
@@ -127,11 +132,16 @@ export async function POST(request: Request) {
       paymentGateway: paymentGateway && paymentGateway !== "stripe" ? paymentGateway : undefined,
     })
     const origin = new URL(request.url).origin
-    await notifyNewOrder(order, origin)
-    await sendCustomerOrderInvoice(order, origin).catch((err) =>
-      console.error("[orders] Customer invoice email failed:", err instanceof Error ? err.message : err),
-    )
-    return NextResponse.json({ ok: true, orderNumber: order.orderNumber, totalAmount: order.totalAmount })
+    const [teamNotice, customerNotice] = await Promise.all([
+      notifyNewOrder(order, origin).catch(() => ({ ok: false })),
+      sendCustomerOrderInvoice(order, origin).catch(() => ({ ok: false })),
+    ])
+    return NextResponse.json({
+      ok: true,
+      orderNumber: order.orderNumber,
+      totalAmount: order.totalAmount,
+      emailStatus: { teamNotified: teamNotice.ok, customerConfirmationSent: customerNotice.ok },
+    })
   } catch (err) {
     console.error("[orders] Failed to save order:", err instanceof Error ? err.message : err)
     return NextResponse.json(
