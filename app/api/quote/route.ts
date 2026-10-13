@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { auth } from "@/lib/auth"
 import { createQuoteLead } from "@/lib/followup"
 import { notifyNewQuote, sendCustomerQuoteAcknowledgement } from "@/lib/followup-notify"
 
@@ -51,7 +52,10 @@ export async function POST(request: Request) {
   if (d.website) return NextResponse.json({ ok: true, id: 0 })
 
   try {
+    // Associate with the actual Better Auth session when signed in; never trust a user ID from the form.
+    const authSession = await auth.api.getSession({ headers: request.headers })
     const lead = await createQuoteLead({
+      userId: authSession?.user?.id,
       fullName: d.name,
       phone: d.phone,
       email: d.email,
