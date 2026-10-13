@@ -107,7 +107,7 @@ export function MerchantOverview({
           {issueTotals.map((i) => (
             <li key={i.code}>
               <a
-                href={`/admin/merchant?issue=${i.code}#fix-pages`}
+                href={`/admin/products?issue=${i.code}#fix-pages`}
                 className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2 text-sm hover:border-primary"
               >
                 <span className="text-foreground">{ISSUE_LABELS[i.code]}</span>
@@ -137,7 +137,7 @@ export function MerchantOverview({
               {stats.map((b) => (
                 <tr key={b.slug} className="border-t border-border">
                   <td className="px-5 py-2">
-                    <a href={`/admin/merchant?brand=${b.slug}#fix-pages`} className="text-foreground hover:text-primary">
+                    <a href={`/admin/products?brand=${b.slug}#fix-pages`} className="text-foreground hover:text-primary">
                       {b.label}
                     </a>
                   </td>
