@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { createQuoteLead } from "@/lib/followup"
-import { notifyNewQuote } from "@/lib/followup-notify"
+import { notifyNewQuote, sendCustomerQuoteAcknowledgement } from "@/lib/followup-notify"
 
 const text = (max: number) => z.string().trim().max(max).optional().default("")
 
@@ -59,8 +59,19 @@ export async function POST(request: Request) {
       source: d.source || "website",
       pageUrl: d.pageUrl,
     })
-    await notifyNewQuote(lead, new URL(request.url).origin)
-    return NextResponse.json({ ok: true, id: lead.id })
+    const origin = new URL(request.url).origin
+    const [teamNotice, customerNotice] = await Promise.all([
+      notifyNewQuote(lead, origin).catch(() => ({ ok: false })),
+      sendCustomerQuoteAcknowledgement(lead).catch(() => ({ ok: false })),
+    ])
+    return NextResponse.json({
+      ok: true,
+      id: lead.id,
+      emailStatus: {
+        teamNotified: teamNotice.ok,
+        customerConfirmationSent: customerNotice.ok,
+      },
+    })
   } catch (err) {
     console.error("[quote] Failed to save quote:", err instanceof Error ? err.message : err)
     return NextResponse.json(
