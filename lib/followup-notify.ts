@@ -64,11 +64,11 @@ async function operationsRecipients(): Promise<string[]> {
         WHERE status = 'active' AND role IN ('sales_agent', 'support_team')
         ORDER BY name ASC LIMIT 30`,
     )
-    const recipients = [...new Set(rows
+    const activeStaffEmails = rows
       .map((row: { email: string }) => String(row.email).trim().toLowerCase())
       .filter((email: string) => email.includes("@") && !email.startsWith("@") && !email.endsWith("@") && !email.includes(" "))
-    )]
-    return recipients.length ? recipients : [STAFF_EMAIL]
+    // Keep the configured operations inbox copied in while also notifying the roster.
+    return [...new Set([STAFF_EMAIL.toLowerCase(), ...activeStaffEmails])].slice(0, 31)
   } catch {
     console.error("[followup] Could not read team notification recipients; using FOLLOWUP_EMAIL fallback.")
     return [STAFF_EMAIL]
