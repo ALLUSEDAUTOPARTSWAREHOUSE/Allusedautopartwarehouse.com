@@ -124,7 +124,7 @@ test('the sales workspace combines orders and quote leads in one status-filtered
   const quoteCard = read('components/admin/quote-lead-card.tsx')
   assert.match(sales, /const queue: QueueItem\[\]/)
   assert.match(sales, /\.sort\(\(a, b\) =>/)
-  assert.match(sales, /ORDER_STATUSES, QUOTE_STATUSES/)
+  assert.match(sales, /ORDER_STATUSES,[\\s\\S]*QUOTE_STATUSES/)
   assert.match(sales, /Search order #, customer, phone, email, make, model/)
   assert.match(followup, /product_name ILIKE \$2/)
   assert.match(followup, /product_url ILIKE \$2/)
