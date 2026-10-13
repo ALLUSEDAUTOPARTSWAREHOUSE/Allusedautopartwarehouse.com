@@ -66,7 +66,7 @@ const TABLES: { table: string; columns: string; purpose: string }[] = [
   {
     table: "leads",
     columns:
-      "id, full_name, phone, email, part_type, make, model, year, part_option, state, zip, notes, source, page_url, status, quote_amount, internal_notes, created_at, updated_at",
+      "id, full_name, phone, email, part_type, make, model, year, part_option, state, zip, notes, source, page_url, product_name, product_url, status, quote_amount, internal_notes, created_at, updated_at",
     purpose: "Quote requests, win rate, customers",
   },
   { table: "chat_conversations", columns: "id, guest_id, status, unread_for_admin, last_message_at", purpose: "Live chat inbox" },
@@ -103,7 +103,9 @@ const REPAIR_SQL = `
   ALTER TABLE IF EXISTS public.leads
     ADD COLUMN IF NOT EXISTS zip text,
     ADD COLUMN IF NOT EXISTS state text,
-    ADD COLUMN IF NOT EXISTS part_option text;
+    ADD COLUMN IF NOT EXISTS part_option text,
+    ADD COLUMN IF NOT EXISTS product_name text,
+    ADD COLUMN IF NOT EXISTS product_url text;
 
   ALTER TABLE IF EXISTS public.orders
     ADD COLUMN IF NOT EXISTS customer_name text,
