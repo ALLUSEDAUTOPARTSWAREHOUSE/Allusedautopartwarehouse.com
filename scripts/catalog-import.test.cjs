@@ -46,3 +46,9 @@ test('field-only updates do not create unknown products', async () => {
   assert.equal(result.skipped, 1)
   assert.ok(!calls.some(c => c.sql.startsWith('INSERT')))
 })
+
+test('preview reports rows and missing prices without writing products', async () => {
+  const { run, calls } = importer({ Products: [{ Name: 'Engine', 'Price ($)': 1200 }, { Name: 'Transmission' }] })
+  assert.deepEqual(await run('acura', Buffer.alloc(0), 'all', true), { inserted: 2, skipped: 0, missingPrices: 1 })
+  assert.ok(!calls.some(c => c.sql.startsWith('INSERT')))
+})

@@ -128,7 +128,7 @@ export async function deleteManualProduct(brand: string, slug: string): Promise<
 }
 
 /** Reads the admin-provided workbook and upserts every row as a manual product for `brand`. */
-export async function importProductSheet(brand: string, buffer: Buffer, mode: "all" | "prices" | "images" = "all"): Promise<{ inserted: number; skipped: number; missingPrices: number }> {
+export async function importProductSheet(brand: string, buffer: Buffer, mode: "all" | "prices" | "images" = "all", dryRun = false): Promise<{ inserted: number; skipped: number; missingPrices: number }> {
   let wb
   try { wb = read(buffer, { type: "buffer" }) } catch {
     throw new Error("INVALID_WORKBOOK")
@@ -174,7 +174,7 @@ export async function importProductSheet(brand: string, buffer: Buffer, mode: "a
         const exists = await client.query("SELECT 1 FROM manual_products WHERE brand = $1 AND slug = $2", [brand, slug])
         if (!exists.rows.length) { skipped++; continue }
       }
-      await client.query(
+      if (!dryRun) await client.query(
         `INSERT INTO manual_products (brand, slug, name, description, price, image_url, category, model, year, source)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'upload')
          ON CONFLICT (brand, slug) DO UPDATE SET
