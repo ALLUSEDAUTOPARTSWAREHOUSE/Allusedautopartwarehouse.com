@@ -1,7 +1,11 @@
 import { randomUUID } from "crypto"
 import { after, NextResponse, type NextRequest } from "next/server"
+import { generateChatReply } from "@/lib/chat-bot"
+import { PHONE_DISPLAY } from "@/lib/site-policy"
 import {
+  addBotReply,
   addCustomerMessage,
+  hasRecentHumanReply,
   CHAT_GUEST_COOKIE,
   cleanBody,
   cleanOptional,
@@ -67,6 +71,19 @@ export async function POST(req: NextRequest) {
   if (result.isNew) {
     const siteUrl = req.nextUrl.origin
     after(() => notifyNewChat({ conversationId: result.conversationId, name, email, pageUrl, body }, siteUrl))
+  }
+
+  try {
+    if (!(await hasRecentHumanReply(result.conversationId))) {
+      const reply = await generateChatReply(await listMessages(result.conversationId))
+      if (reply) await addBotReply(result.conversationId, reply)
+    }
+  } catch (err) {
+    console.error("[chat] AI auto-reply failed:", err)
+    await addBotReply(
+      result.conversationId,
+      `Thanks for your message! A parts specialist will reply here shortly. For faster help, call ${PHONE_DISPLAY}.`,
+    ).catch(() => {})
   }
 
   const res = NextResponse.json({ ok: true, conversationId: result.conversationId })

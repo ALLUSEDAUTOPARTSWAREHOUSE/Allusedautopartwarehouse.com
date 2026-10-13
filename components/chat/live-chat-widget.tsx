@@ -33,6 +33,7 @@ export function LiveChatWidget() {
   const [email, setEmail] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pendingBody, setPendingBody] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
   const { data, mutate } = useSWR<WidgetData>(open ? '/api/chat?markRead=1' : '/api/chat', fetcher, {
@@ -46,7 +47,7 @@ export function LiveChatWidget() {
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
-  }, [messages.length, open])
+  }, [messages.length, open, sending])
 
   if (pathname?.startsWith('/admin')) return null
 
@@ -56,6 +57,8 @@ export function LiveChatWidget() {
     if (!body || sending) return
     setSending(true)
     setError(null)
+    setPendingBody(body)
+    setDraft('')
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -69,11 +72,12 @@ export function LiveChatWidget() {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Could not send message')
-      setDraft('')
       await mutate()
     } catch (err) {
+      setDraft(body)
       setError(err instanceof Error ? err.message : 'Could not send message')
     } finally {
+      setPendingBody(null)
       setSending(false)
     }
   }
@@ -129,6 +133,19 @@ export function LiveChatWidget() {
                 </div>
               ))
             )}
+            {pendingBody ? (
+              <div className="max-w-[85%] self-end whitespace-pre-wrap break-words rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground opacity-80">
+                {pendingBody}
+              </div>
+            ) : null}
+            {sending ? (
+              <div className="flex items-center gap-1 self-start rounded-lg bg-muted px-3 py-3" role="status">
+                <span className="sr-only">AUAPW is typing</span>
+                <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
+                <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
+                <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground" />
+              </div>
+            ) : null}
           </div>
 
           <form onSubmit={send} className="flex flex-col gap-2 border-t border-border p-3">
