@@ -2,6 +2,7 @@ import { ReactNode } from 'react'
 import Link from 'next/link'
 import { LogOut } from 'lucide-react'
 import { getAdminSession } from '@/lib/admin-auth'
+import { AssistantPanel } from '@/components/admin/assistant-panel'
 import { AdminNav } from '@/components/admin/admin-nav'
 
 export const metadata = {
@@ -43,6 +44,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       </header>
 
       <main className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8">{children}</main>
+      {session ? (
+        <aside className="mx-4 mb-6 sm:mx-6 lg:mx-8" aria-label="Store assistant available on all admin pages">
+          <details className="rounded-xl border bg-card">
+            <summary className="cursor-pointer p-4 font-semibold">Ask the store assistant — catalog, orders, quotes and chats</summary>
+            <div className="p-4 pt-0"><AssistantPanel /></div>
+          </details>
+        </aside>
+      ) : null}
     </div>
   )
 }
