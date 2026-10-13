@@ -4,7 +4,7 @@ import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import { bulkSetExcludeFromFeed } from "@/app/admin/merchant-actions"
 import { getBrandProductBySlug, getBrandProductUrl, isValidBrand } from "@/lib/brand-catalog"
-import { countByStatus, listOrders, listQuoteLeads } from "@/lib/followup"
+import { getOrderByNumber, countByStatus, listOrders, listQuoteLeads } from "@/lib/followup"
 import { listConversations } from "@/lib/live-chat"
 import { getFeedStats, getProductOverride, searchProductsForAdmin, upsertOverride, type IssueCode } from "@/lib/merchant"
 
@@ -20,6 +20,15 @@ const ISSUE_CODES = [
 const productRef = z.object({ brand: z.string().max(60), slug: z.string().max(300) })
 
 const tools = {
+  findOrderByNumber: tool({
+    description: "Look up one exact order number for an authenticated administrator. Returns recorded status only; no inferred delivery dates or changes.",
+    inputSchema: z.object({ orderNumber: z.string().trim().min(1).max(100) }),
+    execute: async ({ orderNumber }) => {
+      const order = await getOrderByNumber(orderNumber)
+      return order ? { found: true, orderNumber: order.orderNumber, status: order.status, createdAt: order.createdAt, total: order.totalAmount }
+        : { found: false, message: "No matching order found. Check the order number." }
+    },
+  }),
   checkWebsiteConfiguration: tool({
     description: "Check website configuration presence and database schema readiness. Read-only; does not inspect deployment logs, execute code or repair the website.",
     inputSchema: z.object({}),

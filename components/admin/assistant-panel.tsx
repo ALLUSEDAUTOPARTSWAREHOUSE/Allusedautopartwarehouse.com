@@ -17,6 +17,7 @@ const SUGGESTIONS = [
 
 const TOOL_LABELS: Record<string, string> = {
   checkWebsiteConfiguration: 'Checked website configuration',
+  findOrderByNumber: 'Looked up order status',
   getFeedStats: 'Checked feed health',
   searchProducts: 'Searched catalog',
   listRecentOrders: 'Looked up orders',
