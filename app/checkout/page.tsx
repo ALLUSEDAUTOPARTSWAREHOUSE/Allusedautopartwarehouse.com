@@ -101,7 +101,7 @@ export default function CheckoutPage() {
     orderNumber: string
     totalAmount: number
     reserved?: boolean
-    emailStatus?: { teamNotified?: boolean; customerConfirmationSent?: boolean }
+    emailStatus?: { teamNotified?: boolean; customerConfirmationAccepted?: boolean }
   } | null>(null)
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
 
@@ -304,9 +304,9 @@ export default function CheckoutPage() {
               </p>
               {placedOrder?.emailStatus ? (
                 <p role="status" className="mx-auto mb-5 max-w-xl text-sm text-foreground/70">
-                  {placedOrder.emailStatus.customerConfirmationSent
-                    ? `A confirmation email was sent to ${formData.email}.`
-                    : "Your order is saved, but we couldn't send the confirmation email. A parts specialist will still follow up; please check that your email address is correct."}
+                  {placedOrder.emailStatus.customerConfirmationAccepted
+                    ? `The email service accepted a confirmation for ${formData.email}.`
+                    : "Your order is saved, but the email service did not accept the confirmation email. A parts specialist will still follow up; please check that your email address is correct."}
                 </p>
               ) : null}
               <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-8 text-left">
