@@ -67,11 +67,11 @@ export function QuoteForm({ defaultPart = "", compact = false }: QuoteFormProps)
       }
       setQuoteId(data.id ?? null)
       setCustomerEmailNotice(
-        data.emailStatus?.customerConfirmationSent
-          ? `A confirmation email was sent to ${email.trim()}.`
+        data.emailStatus?.customerConfirmationAccepted
+          ? `The email service accepted a confirmation for ${email.trim()}.`
           : email.trim()
-            ? "Your quote request is saved, but we couldn't send a confirmation email. Please check your inbox address; a parts specialist will still call you."
-            : "No email address was provided, so we couldn't send a confirmation email. A parts specialist will still call you.",
+            ? "Your quote request is saved, but the email service did not accept the confirmation email. Please check your inbox address; a parts specialist will still call you."
+            : "No email address was provided, so the email service did not accept the confirmation email. A parts specialist will still call you.",
       )
       setSuccess(true)
     } catch {
