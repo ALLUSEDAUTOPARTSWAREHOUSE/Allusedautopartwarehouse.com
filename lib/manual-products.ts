@@ -134,7 +134,7 @@ export async function importProductSheet(brand: string, buffer: Buffer, mode: "a
     throw new Error("INVALID_WORKBOOK")
   }
   const candidates = [wb.SheetNames.find((n: string) => n.toLowerCase() === brand.toLowerCase()), "Products", ...wb.SheetNames]
-  const sheetName = candidates.find((n: string) => n && wb.Sheets[n] &&
+  const sheetName = candidates.find((n: string | undefined) => n && wb.Sheets[n] &&
     utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[n]).some((r: Record<string, unknown>) => "name" in r || "Name" in r || "Product Name" in r))
   if (!sheetName) throw new Error("NO_PRODUCT_SHEET")
   const rows = utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[sheetName])
