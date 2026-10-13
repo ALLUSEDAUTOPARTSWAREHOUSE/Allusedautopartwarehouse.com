@@ -144,7 +144,7 @@ export interface NewQuoteInput {
 
 let leadProductColumnsReady: Promise<void> | null = null
 
-async function ensureLeadProductColumns(): Promise<void> {
+export async function ensureLeadProductColumns(): Promise<void> {
   leadProductColumnsReady ??= pool.query(
     `ALTER TABLE public.leads
        ADD COLUMN IF NOT EXISTS product_name text,
