@@ -34,6 +34,7 @@ async function resolveTarget(formData: FormData) {
 function revalidate(url: string) {
   revalidatePath(url)
   revalidatePath("/admin/merchant")
+  revalidatePath("/admin/products")
 }
 
 export async function saveProductOverride(
@@ -115,6 +116,7 @@ export async function bulkSetExcludeFromFeed(
     updated++
   }
   revalidatePath("/admin/merchant")
+  revalidatePath("/admin/products")
   return {
     ok: true,
     message: `${exclude ? "Excluded" : "Included"} ${updated} page${updated === 1 ? "" : "s"} ${exclude ? "from" : "in"} the Google feed.`,

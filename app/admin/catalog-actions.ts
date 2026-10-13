@@ -18,6 +18,7 @@ export interface CatalogActionState {
 
 function revalidateCatalog(brand?: string) {
   revalidatePath("/admin/merchant")
+  revalidatePath("/admin/products")
   revalidatePath("/feeds/google-shopping.xml")
   if (brand) {
     revalidatePath(`/brands/${brand}`)
