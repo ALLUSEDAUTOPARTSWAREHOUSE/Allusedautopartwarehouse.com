@@ -17,8 +17,11 @@ export interface QuoteProductInfo {
 export async function getQuoteProductInfo(input: {
   productName?: string | null
   productUrl?: string | null
+  pageUrl?: string | null
 }): Promise<QuoteProductInfo> {
-  const candidateUrl = input.productUrl ?? ""
+  // Product-page quote forms may record the product path in pageUrl when the
+  // explicit productUrl field is absent. Prefer the explicit relationship.
+  const candidateUrl = input.productUrl || input.pageUrl || ""
   const pathOnly = candidateUrl.split(/[?#]/, 1)[0]
   const segments = pathOnly.split("/").filter(Boolean)
   const url = pathOnly.startsWith("/") && !pathOnly.startsWith("//") && !pathOnly.includes(String.fromCharCode(92)) && !pathOnly.includes("://") && !segments.some((segment) => segment === "." || segment === "..") ? pathOnly : null
