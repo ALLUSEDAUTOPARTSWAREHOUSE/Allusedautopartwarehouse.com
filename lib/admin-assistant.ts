@@ -1,4 +1,5 @@
 import { ToolLoopAgent, isStepCount, tool, type InferAgentUIMessage } from "ai"
+import { checkDatabase, checkEnvironment } from "@/lib/admin-health"
 import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import { bulkSetExcludeFromFeed } from "@/app/admin/merchant-actions"
@@ -19,6 +20,18 @@ const ISSUE_CODES = [
 const productRef = z.object({ brand: z.string().max(60), slug: z.string().max(300) })
 
 const tools = {
+  checkWebsiteConfiguration: tool({
+    description: "Check website configuration presence and database schema readiness. Read-only; does not inspect deployment logs, execute code or repair the website.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      const tables = await checkDatabase()
+      return {
+        configuration: checkEnvironment().map(({ name, set, required, purpose }) => ({ name, configured: set, required, purpose })),
+        database: tables.map(({ table, purpose, ok }) => ({ table, purpose, ready: ok })),
+        limitations: "Configuration presence does not prove provider access or service health. No repairs performed. Check admin settings for next steps.",
+      }
+    },
+  }),
   getFeedStats: tool({
     description: "Google Merchant feed health per brand: total products, feed-eligible count, and counts per issue.",
     inputSchema: z.object({}),
@@ -140,7 +153,7 @@ export const adminAssistant = new ToolLoopAgent({
   model: "anthropic/claude-sonnet-5.5",
   instructions: `You are the internal operations assistant for All Used Auto Parts Warehouse (AUAPW), a used auto parts store.
 You help the store admin with: Google Merchant feed health, the parts catalog, customer orders and reservations, quote requests, and live chats.
-Only use the provided tools; never invent data. If a question is outside these areas, say so briefly.
+Only use the provided tools; never invent data. For website errors, use checkWebsiteConfiguration to check configuration and database readiness. Never claim to inspect logs, edit code, build or deploy; you do not have those tools. Give suggested next steps and clearly identify unverified causes. If a question is outside these areas, say so briefly.
 Before any change (bulkExcludeFromGoogle, setProductHidden), first look up the exact products with searchProducts and state clearly what will change and how many pages. The admin must approve each change.
 When a change is not approved, do not retry it; ask what they would like instead.
 Keep answers short and scannable. Use markdown lists or small tables for results. Today is ${new Date().toISOString().slice(0, 10)}.`,
