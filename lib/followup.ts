@@ -139,6 +139,7 @@ export interface NewQuoteInput {
   pageUrl?: string
   productName?: string
   productUrl?: string
+  userId?: string
 }
 
 let leadProductColumnsReady: Promise<void> | null = null
@@ -147,7 +148,8 @@ async function ensureLeadProductColumns(): Promise<void> {
   leadProductColumnsReady ??= pool.query(
     `ALTER TABLE public.leads
        ADD COLUMN IF NOT EXISTS product_name text,
-       ADD COLUMN IF NOT EXISTS product_url text`,
+       ADD COLUMN IF NOT EXISTS product_url text,
+       ADD COLUMN IF NOT EXISTS user_id text`,
   ).then(() => undefined).catch((error) => {
     leadProductColumnsReady = null
     throw error
@@ -160,10 +162,11 @@ export async function createQuoteLead(input: NewQuoteInput): Promise<QuoteLead> 
   await ensureLeadProductColumns()
   const { rows } = await pool.query(
     `INSERT INTO public.leads
-       (full_name, phone, email, part_type, make, model, year, part_option, state, zip, notes, source, page_url, product_name, product_url)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+       (user_id, full_name, phone, email, part_type, make, model, year, part_option, state, zip, notes, source, page_url, product_name, product_url)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
      RETURNING *`,
     [
+      input.userId || null,
       input.fullName,
       input.phone,
       input.email,
@@ -185,6 +188,7 @@ export async function createQuoteLead(input: NewQuoteInput): Promise<QuoteLead> 
 }
 
 export interface NewOrderInput {
+  userId?: string
   customerName: string
   customerEmail: string
   customerPhone: string
@@ -214,10 +218,11 @@ export async function createOrder(input: NewOrderInput): Promise<CustomerOrder> 
       `INSERT INTO public.orders
          (id, userid, ordernumber, status, totalamount, subtotal, tax, shippingcost,
           shippingaddress, items, customer_name, customer_email, customer_phone, customer_notes, payment_gateway)
-       VALUES ($1,'guest',$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,$13,$14)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11,$12,$13,$14,$15)
        RETURNING *`,
       [
         id,
+        input.userId || "guest",
         makeOrderNumber(),
         input.status ?? "pending",
         input.totalAmount,
