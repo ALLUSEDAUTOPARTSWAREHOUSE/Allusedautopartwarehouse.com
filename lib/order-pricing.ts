@@ -133,6 +133,7 @@ export async function priceReservationCart(
     return { ok: false, error: "We couldn't verify current availability. Please try again shortly." }
   }
 
+  const unitsByProduct = new Map<string, number>()
   const lines: OrderLine[] = []
 
   for (const item of cart) {
@@ -155,6 +156,12 @@ export async function priceReservationCart(
     if (getSalesMode(product) !== "quote") {
       return { ok: false, error: `${product.name} is priced online — please use the standard checkout.` }
     }
+    const productKey = `${brand}/${product.canonicalSlug}`
+    const units = (unitsByProduct.get(productKey) ?? 0) + quantity
+    if (units > MAX_UNITS_PER_PRODUCT) {
+      return { ok: false, error: `Online orders are limited to ${MAX_UNITS_PER_PRODUCT} of the same part. Call us for fleet orders.` }
+    }
+    unitsByProduct.set(productKey, units)
 
     lines.push({
       productId: product.id,
