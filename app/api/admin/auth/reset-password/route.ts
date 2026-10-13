@@ -9,6 +9,9 @@ function validNewPassword(value: unknown): value is string {
 }
 
 export async function POST(request: NextRequest) {
+  if (request.headers.get("origin") !== request.nextUrl.origin) {
+    return NextResponse.json({ error: "Invalid origin" }, { status: 403 })
+  }
   try {
     const body = await request.json()
     const email = typeof body.email === "string" ? body.email : ""
