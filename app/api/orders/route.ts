@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { auth } from "@/lib/auth"
 import { createOrder } from "@/lib/followup"
 import { notifyNewOrder, sendCustomerOrderInvoice } from "@/lib/followup-notify"
 import { priceCart, priceReservationCart } from "@/lib/order-pricing"
@@ -63,6 +64,9 @@ export async function POST(request: Request) {
   }
 
   const isReserve = (json as { mode?: string } | null)?.mode === "reserve"
+  // Link only an authenticated Better Auth session; otherwise preserve guest checkout semantics.
+  const authSession = await auth.api.getSession({ headers: request.headers })
+  const userId = authSession?.user?.id
 
   if (isReserve) {
     const parsed = ReservationOrderSchema.safeParse(json)
@@ -75,6 +79,7 @@ export async function POST(request: Request) {
 
     try {
       const order = await createOrder({
+        userId,
         customerName: `${customer.firstName} ${customer.lastName}`,
         customerEmail: customer.email,
         customerPhone: customer.phone,
@@ -118,6 +123,7 @@ export async function POST(request: Request) {
 
   try {
     const order = await createOrder({
+      userId,
       customerName: `${customer.firstName} ${customer.lastName}`,
       customerEmail: customer.email,
       customerPhone: customer.phone,
