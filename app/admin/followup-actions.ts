@@ -14,6 +14,8 @@ import {
 } from "@/lib/followup"
 import { sendOrderStatusEmail, sendQuoteEmail } from "@/lib/followup-notify"
 import { SITE_URL } from "@/lib/merchant"
+import { getFollowupAssignments, setFollowupAssignment, type FollowupRecordType } from "@/lib/followup-assignments"
+import { notifyFollowupAssignment } from "@/lib/followup-notify"
 
 export interface FollowupActionState {
   ok: boolean
@@ -21,6 +23,56 @@ export interface FollowupActionState {
 }
 
 const notes = (v: FormDataEntryValue | null) => String(v ?? "").trim().slice(0, 4000)
+
+export async function saveFollowupAssignment(
+  _prev: FollowupActionState,
+  formData: FormData,
+): Promise<FollowupActionState> {
+  const session = await getAdminSession()
+  if (!session) return { ok: false, message: "Session expired. Please sign in again." }
+
+  const recordType = String(formData.get("recordType") ?? "") as FollowupRecordType
+  const recordId = String(formData.get("recordId") ?? "").trim()
+  const staffId = String(formData.get("staffId") ?? "").trim()
+
+  if (recordType !== "order" && recordType !== "quote") return { ok: false, message: "Invalid follow-up type." }
+  if (recordType === "quote" && (!/^\\d{1,12}$/.test(recordId) || Number(recordId) < 1)) return { ok: false, message: "Invalid quote reference." }
+  if (recordType === "order" && !/^[\\w-]{1,64}$/.test(recordId)) return { ok: false, message: "Invalid order reference." }
+
+  try {
+    const record = recordType === "order" ? await getOrderById(recordId) : await getQuoteLeadById(Number(recordId))
+    if (!record) return { ok: false, message: "The customer record no longer exists." }
+
+    const before = (await getFollowupAssignments(recordType, [recordId])).get(recordId) ?? null
+    const saved = await setFollowupAssignment(recordType, recordId, staffId, session.email)
+    revalidatePath("/admin/sales")
+    revalidatePath("/admin/orders")
+    revalidatePath("/admin/quotes")
+
+    if (!saved) return { ok: true, message: "Assignment cleared." }
+    if (before?.staffId === saved.staffId) return { ok: true, message: `Still assigned to ${saved.staffName}.` }
+
+    const reference = recordType === "order" ? (record as Awaited<ReturnType<typeof getOrderById>> & {}).orderNumber : `Quote #${(record as NonNullable<Awaited<ReturnType<typeof getQuoteLeadById>>>).id}`
+    const summary = recordType === "order"
+      ? ((record as NonNullable<Awaited<ReturnType<typeof getOrderById>>>).items.map((item) => item.name).join(", ") || "Customer order")
+      : [ (record as NonNullable<Awaited<ReturnType<typeof getQuoteLeadById>>>).year, (record as NonNullable<Awaited<ReturnType<typeof getQuoteLeadById>>>).make, (record as NonNullable<Awaited<ReturnType<typeof getQuoteLeadById>>>).model, (record as NonNullable<Awaited<ReturnType<typeof getQuoteLeadById>>>).partType ].filter(Boolean).join(" ")
+
+    const email = await notifyFollowupAssignment({
+      email: saved.staffEmail ?? "",
+      name: saved.staffName ?? "team member",
+      recordType,
+      reference,
+      summary,
+      siteUrl: SITE_URL,
+    }).catch(() => ({ ok: false, error: "Could not send assignment notification." }))
+    return email.ok
+      ? { ok: true, message: `Assigned to ${saved.staffName}. Email notification sent.` }
+      : { ok: true, message: `Assigned to ${saved.staffName}, but the email was not sent. Check Settings → System Health and Resend sender configuration.` }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Assignment could not be saved."
+    return { ok: false, message }
+  }
+}
 
 export async function saveQuoteFollowup(
   _prev: FollowupActionState,
