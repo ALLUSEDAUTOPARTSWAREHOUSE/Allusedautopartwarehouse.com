@@ -59,7 +59,7 @@ export function QuoteLeadCard({ lead, statuses, staffOptions, assignment, produc
                 : null}
             </div>
           ) : null}
-          {sourcePath && sourcePath !== productInfo?.url ? (
+          {sourcePath && sourcePath !== productInfo?.url && sourcePath !== "/quote" ? (
             <p className="mt-2 text-xs text-muted-foreground">
               Request source: <Link href={sourcePath} target="_blank" className="text-primary underline">{sourcePath} ↗</Link>
             </p>
