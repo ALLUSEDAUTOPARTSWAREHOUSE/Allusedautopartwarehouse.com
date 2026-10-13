@@ -1,7 +1,7 @@
 import "server-only"
 
 import { pool } from "@/lib/db"
-import { PHONE_DISPLAY, RETURNS, SHIPPING, WARRANTY_SUMMARY } from "@/lib/site-policy"
+import { PHONE_DISPLAY, RETURNS, SHIPPING } from "@/lib/site-policy"
 
 export type EditableStorePolicy = {
   phone: string
