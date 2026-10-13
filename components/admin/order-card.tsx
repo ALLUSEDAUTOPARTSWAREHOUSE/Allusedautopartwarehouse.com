@@ -6,11 +6,13 @@ import { Mail, MapPin, Phone } from "lucide-react"
 import { saveOrderFollowup, type FollowupActionState } from "@/app/admin/followup-actions"
 import type { CustomerOrder } from "@/lib/followup"
 import { StatusBadge } from "@/components/admin/status-badge"
+import { FollowupAssignmentSelect } from "@/components/admin/followup-assignment-select"
+import type { FollowupStaffOption, FollowupAssignment } from "@/lib/followup-assignments"
 
 const initial: FollowupActionState = { ok: false, message: "" }
 const money = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
-export function OrderCard({ order, statuses }: { order: CustomerOrder; statuses: readonly string[] }) {
+export function OrderCard({ order, statuses, staffOptions, assignment }: { order: CustomerOrder; statuses: readonly string[]; staffOptions: FollowupStaffOption[]; assignment: FollowupAssignment | null }) {
   const [state, action, pending] = useActionState(saveOrderFollowup, initial)
 
   return (
@@ -79,7 +81,9 @@ export function OrderCard({ order, statuses }: { order: CustomerOrder; statuses:
           )}
         </div>
 
-        <form action={action} className="flex w-full flex-col gap-3 lg:w-80">
+        <div className="flex w-full flex-col gap-3 lg:w-80">
+          <FollowupAssignmentSelect recordType="order" recordId={order.id} staff={staffOptions} assignment={assignment} />
+          <form action={action} className="flex w-full flex-col gap-3">
           <input type="hidden" name="id" value={order.id} />
           <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
             Status
@@ -143,7 +147,8 @@ export function OrderCard({ order, statuses }: { order: CustomerOrder; statuses:
               {pending ? "Saving…" : "Save"}
             </button>
           </div>
-        </form>
+          </form>
+        </div>
       </div>
     </article>
   )
