@@ -15,7 +15,7 @@ const money = (n: number) => `${n.toLocaleString("en-US", { minimumFractionDigit
 function productEditorPath(value: string): string | null {
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("://") || value.includes(String.fromCharCode(92))) return null
   const path = value.split(/[?#]/, 1)[0]
-  const match = path.match(/^\\/brands\\/([a-z0-9-]+)\\/([a-z0-9-]+)\\/?$/i)
+  const match = path.match(/^\/brands\/([a-z0-9-]+)\/([a-z0-9-]+)\/?$/i)
   if (!match || match[1] === "." || match[2] === "." || match[1] === ".." || match[2] === "..") return null
   return `/admin/products?brand=${encodeURIComponent(match[1].toLowerCase())}&q=${encodeURIComponent(match[2])}#fix-pages`
 }
