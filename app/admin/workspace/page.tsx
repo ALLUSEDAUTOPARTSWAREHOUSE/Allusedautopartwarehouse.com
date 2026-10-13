@@ -2,7 +2,7 @@ import Link from 'next/link'
 import {
   ArrowUpRight, Boxes, ChartNoAxesCombined, CreditCard, Facebook, Gauge,
   Headset, Megaphone, Package, Settings2, ShieldCheck, ShoppingBag, Store,
-  Users, Wrench, Workflow, Bot, KeyRound,
+  Users, Wrench, Workflow, Bot, KeyRound, PlugZap, Globe,
 } from 'lucide-react'
 
 const workspaces = [
