@@ -201,7 +201,7 @@ export const ISSUE_LABELS: Record<IssueCode, string> = {
 
 export function auditProduct(effective: EffectiveProduct): IssueCode[] {
   const issues: IssueCode[] = []
-  if (effective.price === null) issues.push("no_price")
+  if (effective.price === null || effective.price <= 0) issues.push("no_price")
   if (effective.title.length > TITLE_LIMIT) issues.push("title_too_long")
   if (effective.description.length < DESCRIPTION_MIN) issues.push("short_description")
   if (effective.imageIsIllustrative) issues.push("illustrative_image")
