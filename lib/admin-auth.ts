@@ -1,5 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from 'crypto'
 import { cookies } from 'next/headers'
+import { getAdminSecurityState, getAdminSessionVersion, verifyPassword } from '@/lib/admin-passwords'
 
 /**
  * Admin authentication backend.
@@ -64,7 +65,8 @@ export async function validateAdminCredentials(
   }
 
   const creds = getAdminCredentials()
-  if (!creds.password || !getSecret()) {
+  const security = await getAdminSecurityState()
+  if ((!security.passwordHash && !creds.password) || !getSecret()) {
     // Names only, never values: say exactly what to add and where, because
     // Vercel keeps separate settings for Production and Preview deployments.
     const where = deploymentLabel()
@@ -79,7 +81,9 @@ export async function validateAdminCredentials(
   }
 
   const emailOk = safeEqual(email.trim().toLowerCase(), creds.email.toLowerCase())
-  const passwordOk = safeEqual(password, creds.password)
+  const passwordOk = security.passwordHash
+    ? await verifyPassword(password, security.passwordHash)
+    : safeEqual(password, creds.password)
 
   if (!emailOk || !passwordOk) {
     return { valid: false, message: 'Invalid email or password' }
@@ -92,12 +96,13 @@ export async function validateAdminCredentials(
  * Generate a stateless, signed admin session token.
  * Format: base64url(payload).signature
  */
-export function generateAdminToken(adminEmail: string): string {
+export function generateAdminToken(adminEmail: string, sessionVersion = 0): string {
   const secret = getSecret()
   if (!secret) throw new Error('Admin session secret is not configured')
   const payload = {
     email: adminEmail,
     role: 'admin',
+    sessionVersion,
     exp: Date.now() + SESSION_TTL_MS,
   }
   const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url')
@@ -140,6 +145,9 @@ export async function getAdminSession(): Promise<{ email: string } | null> {
   const token = cookieStore.get(ADMIN_COOKIE)?.value
   const result = verifyAdminToken(token)
   if (!result.valid || !result.email) return null
+  const currentVersion = await getAdminSessionVersion()
+  const tokenPayload = JSON.parse(Buffer.from(token!.split('.')[0], 'base64url').toString())
+  if (Number(tokenPayload.sessionVersion ?? 0) !== currentVersion) return null
   return { email: result.email }
 }
 
