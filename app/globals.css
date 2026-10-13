@@ -5059,3 +5059,45 @@ html:not(.hydrating) .cinematic-frame {
 .admin-shell table tbody tr:hover {
   background-color: var(--muted);
 }
+
+/* Admin glass theme: opaque fallback, readable controls, no storefront changes. */
+.admin-shell {
+  background-image: radial-gradient(ellipse at top left, color-mix(in srgb, var(--primary) 10%, transparent), transparent 65%);
+}
+.admin-shell :is(section.bg-card, article.bg-card, details.bg-card, a.bg-card) {
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+@supports (backdrop-filter: blur(12px)) {
+  .admin-shell :is(section.bg-card, article.bg-card, details.bg-card, a.bg-card) {
+    background-color: color-mix(in srgb, var(--card) 92%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .admin-shell nav[aria-label="Admin"] a {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+.admin-shell button:not(:disabled) {
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+@media (hover: hover) {
+  .admin-shell button:not(:disabled):hover {
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 12%, transparent), 0 4px 12px color-mix(in srgb, var(--foreground) 8%, transparent);
+  }
+}
+.admin-shell button:not(:disabled):active { transform: translateY(1px); }
+.admin-shell :is(input, textarea, select) { backdrop-filter: none; }
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell button { transition: none; }
+  .admin-shell button:not(:disabled):active { transform: none; }
+}
+@media (forced-colors: active) {
+  .admin-shell { background-image: none; }
+  .admin-shell :is(section, article, details, a, button) {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+  }
+}
