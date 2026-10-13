@@ -18,9 +18,10 @@ export async function getQuoteProductInfo(input: {
   productName?: string | null
   productUrl?: string | null
 }): Promise<QuoteProductInfo> {
-  const url = input.productUrl && input.productUrl.startsWith("/") && !input.productUrl.startsWith("//")
-    ? input.productUrl
-    : null
+  const candidateUrl = input.productUrl ?? ""
+  const pathOnly = candidateUrl.split(/[?#]/, 1)[0]
+  const segments = pathOnly.split("/").filter(Boolean)
+  const url = pathOnly.startsWith("/") && !pathOnly.startsWith("//") && !pathOnly.includes(String.fromCharCode(92)) && !pathOnly.includes("://") && !segments.some((segment) => segment === "." || segment === "..") ? pathOnly : null
   const match = url?.match(/^\/brands\/([a-z0-9-]+)\/([a-z0-9-]+)\/?$/i)
   if (!match || !isValidBrand(match[1])) {
     return { name: input.productName || null, url, brand: null, slug: null, priceMissing: false, priceEditorUrl: null }
