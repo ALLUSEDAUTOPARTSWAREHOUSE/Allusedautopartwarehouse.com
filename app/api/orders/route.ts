@@ -96,7 +96,7 @@ export async function POST(request: Request) {
         ok: true,
         orderNumber: order.orderNumber,
         totalAmount: order.totalAmount,
-        emailStatus: { teamNotified: teamNotice.ok, customerConfirmationSent: customerNotice.ok },
+        emailStatus: { teamNotificationAccepted: teamNotice.ok, customerConfirmationAccepted: customerNotice.ok },
       })
     } catch (err) {
       console.error("[orders] Failed to save reservation order:", err instanceof Error ? err.message : err)
@@ -140,7 +140,7 @@ export async function POST(request: Request) {
       ok: true,
       orderNumber: order.orderNumber,
       totalAmount: order.totalAmount,
-      emailStatus: { teamNotified: teamNotice.ok, customerConfirmationSent: customerNotice.ok },
+      emailStatus: { teamNotificationAccepted: teamNotice.ok, customerConfirmationAccepted: customerNotice.ok },
     })
   } catch (err) {
     console.error("[orders] Failed to save order:", err instanceof Error ? err.message : err)
