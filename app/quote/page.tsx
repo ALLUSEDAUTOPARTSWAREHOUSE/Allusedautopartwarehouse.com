@@ -40,8 +40,11 @@ export default function QuotePage() {
     const name = (params.get("productName") ?? "").trim().slice(0, 150)
     if (name) setProductOfInterest(name)
     const url = params.get("productUrl") ?? ""
+    const productPath = url.split(/[?#]/, 1)[0]
+    const pathParts = productPath.split("/").filter(Boolean)
+    const safePath = productPath.startsWith("/") && !productPath.startsWith("//") && !productPath.includes(String.fromCharCode(92)) && !productPath.includes("://") && !pathParts.some((part) => part === "." || part === "..")
     const pathParts = url.split("/").filter(Boolean)
-    if (pathParts.length === 3 && pathParts[0] === "brands" && /^[a-z0-9-]+$/i.test(pathParts[1]) && /^[a-z0-9-]+$/i.test(pathParts[2]) && !url.startsWith("//")) setProductUrl(url)
+    if (safePath) setProductUrl(productPath)
   }, [])
 
   const models = make ? CAR_MODELS[make] || [] : []
