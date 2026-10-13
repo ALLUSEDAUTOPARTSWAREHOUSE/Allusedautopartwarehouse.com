@@ -4,6 +4,7 @@ import { Search } from "lucide-react"
 import { getAdminSession } from "@/lib/admin-auth"
 import { BRAND_DIRECTORY, getBrandLabel, getBrandProductBySlug, getBrandProductUrl } from "@/lib/brand-catalog"
 import {
+  getFeedStats,
   ISSUE_LABELS,
   auditProduct,
   getEffectiveProduct,
@@ -42,6 +43,9 @@ export default async function AdminMerchantPage({
     searching ? searchProductsForAdmin({ brand, q, issues, limit: 30 }) : null,
     listManualProducts(),
   ])
+
+  const brandStats = await getFeedStats()
+  const selectedStats = brandStats.find(item => item.slug === brand)
 
   const cards: ProductFixCardProps[] = search
     ? search.hits.map((h) => ({
@@ -91,19 +95,52 @@ export default async function AdminMerchantPage({
         <h2 id="brand-heading" className="text-xl font-semibold">Choose a brand</h2>
         <p className="text-sm text-muted-foreground">Tap a brand to open its product workspace. These controls affect admin navigation only.</p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {BRAND_DIRECTORY.map(b => <Link key={b.slug} href={`/admin/products?brand=${b.slug}#fix-pages`}
-            aria-current={brand === b.slug ? "page" : undefined}
-            className={`rounded-xl border p-4 text-center font-semibold transition-colors focus-visible:outline focus-visible:outline-2 ${brand === b.slug ? "border-primary bg-primary/15 text-primary" : "bg-card hover:bg-muted"}`}>
-            {b.label}<span className="mt-1 block text-xs font-normal">Open products →</span>
-          </Link>)}
+          {BRAND_DIRECTORY.map(b => {
+            const stats = brandStats.find(item => item.slug === b.slug)
+            return <article key={b.slug} className={`rounded-xl border bg-card p-4 ${brand === b.slug ? "border-primary" : ""}`}>
+              <Link href={`/admin/products?brand=${b.slug}#fix-pages`} className="font-bold text-primary">{b.label} →</Link>
+              <dl className="my-3 space-y-2 text-xs">
+                <div className="flex justify-between"><dt>All catalog records</dt><dd>{stats?.total.toLocaleString() ?? 'Unavailable'}</dd></div>
+                <div className="flex justify-between"><dt>Visible website products</dt><dd>{stats ? (stats.total - stats.issues.hidden).toLocaleString() : 'Unavailable'}</dd></div>
+                <div className="flex justify-between"><dt>Hidden products</dt><dd>{stats?.issues.hidden.toLocaleString() ?? 'Unavailable'}</dd></div>
+                <div className="flex justify-between"><dt>Google feed eligible</dt><dd>{stats?.eligible.toLocaleString() ?? 'Unavailable'}</dd></div>
+                <div className="flex justify-between"><dt>Missing prices</dt><dd>{stats?.issues.no_price.toLocaleString() ?? 'Unavailable'}</dd></div>
+                <div><dt>Google published status</dt><dd className="text-muted-foreground">Account not connected</dd></div>
+                <div><dt>Social / other platforms</dt><dd className="text-muted-foreground">Not connected</dd></div>
+              </dl>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Link href={`/admin/products?brand=${b.slug}#catalog-upload`} className="rounded border px-2 py-1">Upload / update</Link>
+                <Link href={`/admin/products?brand=${b.slug}#fix-pages`} className="rounded border px-2 py-1">Edit / visibility</Link>
+              </div>
+            </article>
+          })}
         </div>
       </section>
       {brand && <section className="rounded-xl border-2 border-primary/30 bg-card p-5" aria-label="Selected brand workspace">
         <h2 className="text-2xl font-bold">{getBrandLabel(brand)} workspace</h2>
         <p className="mt-1 text-sm text-muted-foreground">{search?.total.toLocaleString() ?? 0} matching products. Use the editor below for prices, images, visibility and Google feed inclusion.</p>
+        {selectedStats && <div className="my-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: 'Visible website products', value: selectedStats.total - selectedStats.issues.hidden },
+            { label: 'Google feed eligible', value: selectedStats.eligible },
+            { label: 'Missing prices', value: selectedStats.issues.no_price },
+            { label: 'Hidden products', value: selectedStats.issues.hidden },
+          ].map(metric => <div key={metric.label} className="rounded-xl border bg-background p-4"><p className="text-xs text-muted-foreground">{metric.label}</p><p className="mt-2 text-2xl font-bold">{metric.value.toLocaleString()}</p></div>)}
+        </div>}
+        <nav aria-label="Brand operations" className="my-4 flex flex-wrap gap-2">
+          <Link href={`/admin/products?brand=${brand}#catalog-upload`} className="rounded-lg border px-3 py-2 text-sm">Upload / preview / save</Link>
+          <Link href={`/admin/products?brand=${brand}&issue=no_price#fix-pages`} className="rounded-lg border px-3 py-2 text-sm">Review missing prices</Link>
+          <Link href={`/admin/products?brand=${brand}&issue=hidden#fix-pages`} className="rounded-lg border px-3 py-2 text-sm">Review hidden products</Link>
+          <Link href="/admin/merchant" className="rounded-lg border px-3 py-2 text-sm">Feed health</Link>
+        </nav>
+        <details className="my-4 rounded-lg border p-3"><summary className="cursor-pointer font-semibold">Import workflow and automation boundaries</summary>
+          <ol className="mt-2 list-inside list-decimal space-y-1 text-sm"><li>Choose this brand and upload its spreadsheet.</li><li>Preview usable, skipped and missing-price rows.</li><li>Confirm saving the selected fields.</li><li>Saved changes refresh website/feed data; Google fetches separately.</li></ol>
+          <p className="mt-2 text-xs text-muted-foreground">Full brand replacement, import history, undo and external channel publishing are not implemented. Current bulk controls cover uploaded/manual products only.</p>
+        </details>
         <Link href="/admin/products" className="mt-2 inline-block text-sm text-primary underline">Back to all brands</Link>
       </section>}
 
+      <div id="catalog-upload" className="scroll-mt-24">
       <CatalogSyncPanel
         brands={(brand ? BRAND_DIRECTORY.filter(b => b.slug === brand) : BRAND_DIRECTORY).map((b) => ({ slug: b.slug, label: b.label }))}
         manualProducts={manualProducts.filter(p => !brand || p.brand === brand).map((p) => ({
@@ -119,6 +156,7 @@ export default async function AdminMerchantPage({
           createdAt: p.createdAt,
         }))}
       />
+      </div>
 
       <section id="fix-pages" aria-labelledby="fix-heading" className="flex scroll-mt-24 flex-col gap-4">
         <div>

@@ -189,6 +189,17 @@ export function TeamDirectoryClient() {
         </Button>
       </div>
 
+      <section className="mb-5 rounded-lg border border-border bg-card p-4">
+        <h2 className="font-semibold text-foreground">Sales, support &amp; email routing</h2>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+          Active Sales Agent and Support Team members are included in new quote, order and reservation email alerts. When an order or quote is assigned from Sales &amp; Support, the selected owner also receives an assignment email. Developer Team members are kept out of customer-work alerts.
+          Adding someone here creates a directory contact, not a separate login account or invitation.
+        </p>
+        <a href="/admin/settings" className="mt-2 inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline">
+          Check email sender and system health settings →
+        </a>
+      </section>
+
       {error && (
         <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}

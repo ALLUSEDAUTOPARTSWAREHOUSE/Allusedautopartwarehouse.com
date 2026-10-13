@@ -12,6 +12,7 @@ import {
 import { notifyNewOrder, sendCustomerOrderInvoice } from "@/lib/followup-notify"
 
 export interface StripeCheckoutCustomer {
+  userId?: string
   firstName: string
   lastName: string
   email: string
@@ -37,6 +38,7 @@ export async function createStripeCheckoutSession(customer: StripeCheckoutCustom
   if (!pricing.ok) return { ok: false as const, error: pricing.error }
 
   const order = await createOrder({
+    userId: customer.userId,
     customerName: `${customer.firstName} ${customer.lastName}`,
     customerEmail: customer.email,
     customerPhone: customer.phone,
@@ -112,29 +114,46 @@ export async function createStripeCheckoutSession(customer: StripeCheckoutCustom
 export async function confirmStripeCheckoutSession(
   sessionId: string,
   siteUrl: string,
-): Promise<{ ok: true; order: CustomerOrder; paid: boolean } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; order: CustomerOrder; paid: boolean; emailStatus?: { teamNotificationAccepted: boolean; customerConfirmationAccepted: boolean } | null }
+  | { ok: false; error: string }
+> {
   if (!stripe) return { ok: false, error: "Card payments are not configured." }
 
   const order = await getOrderByStripeSession(sessionId)
   if (!order) return { ok: false, error: "Order not found for this payment session." }
 
   if (order.status === "paid") {
-    return { ok: true, order, paid: true }
+    return { ok: true, order, paid: true, emailStatus: null }
   }
 
   const session = await stripe.checkout.sessions.retrieve(sessionId)
   if (session.payment_status !== "paid") {
-    return { ok: true, order, paid: false }
+    return { ok: true, order, paid: false, emailStatus: null }
   }
 
   const paidOrder = await markOrderPaid(order.id)
   // Another confirmation (webhook, browser, daily reconcile) got there first and sent the emails.
-  if (!paidOrder) return { ok: true, order: { ...order, status: "paid" }, paid: true }
-  await notifyNewOrder(paidOrder, siteUrl).catch((err) => console.error("[v0] Order paid notification failed:", err))
-  await sendCustomerOrderInvoice(paidOrder, siteUrl).catch((err) =>
-    console.error("[v0] Customer paid invoice email failed:", err),
-  )
-  return { ok: true, order: paidOrder, paid: true }
+  if (!paidOrder) return { ok: true, order: { ...order, status: "paid" }, paid: true, emailStatus: null }
+  const [teamNotice, customerNotice] = await Promise.all([
+    notifyNewOrder(paidOrder, siteUrl).catch((err) => {
+      console.error("[v0] Order paid notification failed:", err)
+      return { ok: false }
+    }),
+    sendCustomerOrderInvoice(paidOrder, siteUrl).catch((err) => {
+      console.error("[v0] Customer paid invoice email failed:", err)
+      return { ok: false }
+    }),
+  ])
+  return {
+    ok: true,
+    order: paidOrder,
+    paid: true,
+    emailStatus: {
+      teamNotificationAccepted: teamNotice.ok,
+      customerConfirmationAccepted: customerNotice.ok,
+    },
+  }
 }
 
 /**

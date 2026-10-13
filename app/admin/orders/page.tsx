@@ -1,9 +1,11 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getAdminSession } from "@/lib/admin-auth"
 import { ORDER_STATUSES, countByStatus, listOrders } from "@/lib/followup"
 import { FollowupFilters } from "@/components/admin/followup-filters"
 import { ExportLink } from "@/components/admin/export-link"
 import { OrderCard } from "@/components/admin/order-card"
+import { getActiveSalesSupportStaff, getFollowupAssignments } from "@/lib/followup-assignments"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Orders | AUAPW Admin", robots: { index: false } }
@@ -18,7 +20,8 @@ export default async function AdminOrdersPage({
   const { status: rawStatus, q } = await searchParams
   const status = ORDER_STATUSES.find((s) => s === rawStatus)
   const query = q?.trim().slice(0, 100) || undefined
-  const [orders, counts] = await Promise.all([listOrders(status, query), countByStatus("orders")])
+  const [orders, counts, staff] = await Promise.all([listOrders(status, query), countByStatus("orders"), getActiveSalesSupportStaff().catch(() => [])])
+  const assignments = await getFollowupAssignments("order", orders.map((order) => order.id)).catch(() => new Map())
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
@@ -30,7 +33,12 @@ export default async function AdminOrdersPage({
             status as you go and tick “Email the customer” to send them the update.
           </p>
         </div>
-        <ExportLink kind="orders" status={status} query={query} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/admin/sales" className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10">
+            Orders + quote leads workspace →
+          </Link>
+          <ExportLink kind="orders" status={status} query={query} />
+        </div>
       </header>
 
       <FollowupFilters
@@ -49,7 +57,7 @@ export default async function AdminOrdersPage({
       ) : (
         <div className="flex flex-col gap-4">
           {orders.map((order) => (
-            <OrderCard key={order.id} order={order} statuses={ORDER_STATUSES} />
+            <OrderCard key={order.id} order={order} statuses={ORDER_STATUSES} staffOptions={staff} assignment={assignments.get(order.id) ?? null} />
           ))}
         </div>
       )}

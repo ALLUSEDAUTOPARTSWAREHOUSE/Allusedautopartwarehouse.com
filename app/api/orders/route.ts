@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { auth } from "@/lib/auth"
 import { createOrder } from "@/lib/followup"
 import { notifyNewOrder, sendCustomerOrderInvoice } from "@/lib/followup-notify"
 import { priceCart, priceReservationCart } from "@/lib/order-pricing"
@@ -63,6 +64,13 @@ export async function POST(request: Request) {
   }
 
   const isReserve = (json as { mode?: string } | null)?.mode === "reserve"
+  // Link only an authenticated Better Auth session; otherwise preserve guest checkout semantics.
+  let userId: string | undefined
+  try {
+    userId = (await auth.api.getSession({ headers: request.headers }))?.user?.id
+  } catch {
+    // Keep guest checkout available if auth-session lookup is temporarily unavailable.
+  }
 
   if (isReserve) {
     const parsed = ReservationOrderSchema.safeParse(json)
@@ -75,6 +83,7 @@ export async function POST(request: Request) {
 
     try {
       const order = await createOrder({
+        userId,
         customerName: `${customer.firstName} ${customer.lastName}`,
         customerEmail: customer.email,
         customerPhone: customer.phone,
@@ -88,11 +97,16 @@ export async function POST(request: Request) {
         status: "reserved_pending_fitment",
       })
       const origin = new URL(request.url).origin
-      await notifyNewOrder(order, origin)
-      await sendCustomerOrderInvoice(order, origin).catch((err) =>
-        console.error("[orders] Customer invoice email failed:", err instanceof Error ? err.message : err),
-      )
-      return NextResponse.json({ ok: true, orderNumber: order.orderNumber, totalAmount: order.totalAmount })
+      const [teamNotice, customerNotice] = await Promise.all([
+        notifyNewOrder(order, origin).catch(() => ({ ok: false })),
+        sendCustomerOrderInvoice(order, origin).catch(() => ({ ok: false })),
+      ])
+      return NextResponse.json({
+        ok: true,
+        orderNumber: order.orderNumber,
+        totalAmount: order.totalAmount,
+        emailStatus: { teamNotificationAccepted: teamNotice.ok, customerConfirmationAccepted: customerNotice.ok },
+      })
     } catch (err) {
       console.error("[orders] Failed to save reservation order:", err instanceof Error ? err.message : err)
       return NextResponse.json(
@@ -113,6 +127,7 @@ export async function POST(request: Request) {
 
   try {
     const order = await createOrder({
+      userId,
       customerName: `${customer.firstName} ${customer.lastName}`,
       customerEmail: customer.email,
       customerPhone: customer.phone,
@@ -127,11 +142,16 @@ export async function POST(request: Request) {
       paymentGateway: paymentGateway && paymentGateway !== "stripe" ? paymentGateway : undefined,
     })
     const origin = new URL(request.url).origin
-    await notifyNewOrder(order, origin)
-    await sendCustomerOrderInvoice(order, origin).catch((err) =>
-      console.error("[orders] Customer invoice email failed:", err instanceof Error ? err.message : err),
-    )
-    return NextResponse.json({ ok: true, orderNumber: order.orderNumber, totalAmount: order.totalAmount })
+    const [teamNotice, customerNotice] = await Promise.all([
+      notifyNewOrder(order, origin).catch(() => ({ ok: false })),
+      sendCustomerOrderInvoice(order, origin).catch(() => ({ ok: false })),
+    ])
+    return NextResponse.json({
+      ok: true,
+      orderNumber: order.orderNumber,
+      totalAmount: order.totalAmount,
+      emailStatus: { teamNotificationAccepted: teamNotice.ok, customerConfirmationAccepted: customerNotice.ok },
+    })
   } catch (err) {
     console.error("[orders] Failed to save order:", err instanceof Error ? err.message : err)
     return NextResponse.json(

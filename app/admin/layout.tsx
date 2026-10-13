@@ -4,6 +4,7 @@ import { LogOut } from 'lucide-react'
 import { getAdminSession } from '@/lib/admin-auth'
 import { AssistantPopup } from '@/components/admin/assistant-popup'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { AdminNav } from '@/components/admin/admin-nav'
 
 export const metadata = {
@@ -16,7 +17,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const session = await getAdminSession()
 
   return (
-    <div className="admin-shell min-h-screen bg-background">
+    <div className={`admin-shell min-h-screen bg-background ${session ? "lg:pl-60" : ""}`}>
+      {session ? <AdminSidebar email={session.email} /> : null}
       <header className="sticky top-0 z-50 border-b border-border/30 bg-card/95 backdrop-blur-sm">
         <div className="flex flex-col gap-2 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="flex items-center justify-between gap-3">
@@ -33,7 +35,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
           {session ? (
             <div className="flex min-w-0 items-center gap-4">
-              <AdminNav />
+              <div className="min-w-0 lg:hidden"><AdminNav /></div>
               <div className="hidden items-center gap-3 lg:flex">
                 <span className="max-w-48 truncate text-xs text-muted-foreground" title={session.email}>
                   {session.email}

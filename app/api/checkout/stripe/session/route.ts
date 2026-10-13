@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { auth } from "@/lib/auth"
 import { createStripeCheckoutSession } from "@/lib/stripe-checkout"
 
 const CustomerSchema = z.object({
@@ -41,7 +42,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 })
   }
 
-  const result = await createStripeCheckoutSession(parsed.data.customer, parsed.data.items)
+  let userId: string | undefined
+  try {
+    userId = (await auth.api.getSession({ headers: request.headers }))?.user?.id
+  } catch {
+    // A valid guest checkout can still proceed without a customer-account association.
+  }
+  const customer = { ...parsed.data.customer, userId }
+  const result = await createStripeCheckoutSession(customer, parsed.data.items)
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 422 })
   }

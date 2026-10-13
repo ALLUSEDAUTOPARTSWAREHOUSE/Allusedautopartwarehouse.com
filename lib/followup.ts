@@ -31,6 +31,8 @@ export interface QuoteLead {
   notes: string | null
   source: string | null
   pageUrl: string | null
+  productName: string | null
+  productUrl: string | null
   status: string
   quoteAmount: number | null
   internalNotes: string | null
@@ -88,6 +90,8 @@ function mapLead(r: Record<string, unknown>): QuoteLead {
     notes: (r.notes as string) ?? null,
     source: (r.source as string) ?? null,
     pageUrl: (r.page_url as string) ?? null,
+    productName: (r.product_name as string) ?? null,
+    productUrl: (r.product_url as string) ?? null,
     status: String(r.status),
     quoteAmount: r.quote_amount === null || r.quote_amount === undefined ? null : Number(r.quote_amount),
     internalNotes: (r.internal_notes as string) ?? null,
@@ -133,15 +137,36 @@ export interface NewQuoteInput {
   notes?: string
   source: string
   pageUrl?: string
+  productName?: string
+  productUrl?: string
+  userId?: string
+}
+
+let leadProductColumnsReady: Promise<void> | null = null
+
+export async function ensureLeadProductColumns(): Promise<void> {
+  leadProductColumnsReady ??= pool.query(
+    `ALTER TABLE public.leads
+       ADD COLUMN IF NOT EXISTS product_name text,
+       ADD COLUMN IF NOT EXISTS product_url text,
+       ADD COLUMN IF NOT EXISTS user_id text`,
+  ).then(() => undefined).catch((error) => {
+    leadProductColumnsReady = null
+    throw error
+  })
+  return leadProductColumnsReady
 }
 
 export async function createQuoteLead(input: NewQuoteInput): Promise<QuoteLead> {
+  // Additive compatibility migration: never rewrites existing quote data.
+  await ensureLeadProductColumns()
   const { rows } = await pool.query(
     `INSERT INTO public.leads
-       (full_name, phone, email, part_type, make, model, year, part_option, state, zip, notes, source, page_url)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+       (user_id, full_name, phone, email, part_type, make, model, year, part_option, state, zip, notes, source, page_url, product_name, product_url)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
      RETURNING *`,
     [
+      input.userId || null,
       input.fullName,
       input.phone,
       input.email,
@@ -155,12 +180,15 @@ export async function createQuoteLead(input: NewQuoteInput): Promise<QuoteLead> 
       input.notes || null,
       input.source,
       input.pageUrl || null,
+      input.productName || null,
+      input.productUrl || null,
     ],
   )
   return mapLead(rows[0])
 }
 
 export interface NewOrderInput {
+  userId?: string
   customerName: string
   customerEmail: string
   customerPhone: string
@@ -190,10 +218,11 @@ export async function createOrder(input: NewOrderInput): Promise<CustomerOrder> 
       `INSERT INTO public.orders
          (id, userid, ordernumber, status, totalamount, subtotal, tax, shippingcost,
           shippingaddress, items, customer_name, customer_email, customer_phone, customer_notes, payment_gateway)
-       VALUES ($1,'guest',$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,$13,$14)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11,$12,$13,$14,$15)
        RETURNING *`,
       [
         id,
+        input.userId || "guest",
         makeOrderNumber(),
         input.status ?? "pending",
         input.totalAmount,
@@ -272,7 +301,10 @@ export async function listQuoteLeads(status?: string, search?: string, limit = 3
   const { rows } = await pool.query(
     `SELECT * FROM public.leads
      WHERE ($1::text IS NULL OR status = $1)
-       AND ($2::text IS NULL OR full_name ILIKE $2 OR phone ILIKE $2 OR email ILIKE $2 OR make ILIKE $2 OR model ILIKE $2)
+       AND ($2::text IS NULL OR full_name ILIKE $2 OR phone ILIKE $2 OR email ILIKE $2
+            OR make ILIKE $2 OR model ILIKE $2 OR year ILIKE $2 OR part_type ILIKE $2
+            OR part_option ILIKE $2 OR source ILIKE $2 OR product_name ILIKE $2
+            OR product_url ILIKE $2 OR page_url ILIKE $2)
      ORDER BY created_at DESC
      LIMIT $3`,
     [status || null, search ? `%${search}%` : null, limit],
@@ -284,7 +316,8 @@ export async function listOrders(status?: string, search?: string, limit = 300):
   const { rows } = await pool.query(
     `SELECT * FROM public.orders
      WHERE ($1::text IS NULL OR status = $1)
-       AND ($2::text IS NULL OR ordernumber ILIKE $2 OR customer_name ILIKE $2 OR customer_phone ILIKE $2 OR customer_email ILIKE $2)
+       AND ($2::text IS NULL OR ordernumber ILIKE $2 OR customer_name ILIKE $2
+            OR customer_phone ILIKE $2 OR customer_email ILIKE $2 OR items::text ILIKE $2)
      ORDER BY createdat DESC
      LIMIT $3`,
     [status || null, search ? `%${search}%` : null, limit],

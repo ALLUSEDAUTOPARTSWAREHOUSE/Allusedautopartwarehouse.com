@@ -4,6 +4,7 @@ import type { CustomerOrder, QuoteLead } from "@/lib/followup"
 import type { DashboardMetrics } from "@/lib/admin-metrics"
 import type { FeedAlert, FeedSnapshot } from "@/lib/merchant-health"
 import { PHONE_DISPLAY, SHIPPING, WARRANTY_SUMMARY } from "@/lib/site-policy"
+import { pool } from "@/lib/db"
 
 const STAFF_EMAIL = process.env.FOLLOWUP_EMAIL || "auapworld@gmail.com"
 const FROM =
@@ -47,6 +48,47 @@ export interface SendResult {
   ok: boolean
   /** Why the email wasn't sent, in words the admin can act on. */
   error?: string
+  sentCount?: number
+  recipientCount?: number
+}
+
+/**
+ * New product enquiries should reach the active sales and support roster.
+ * The configured FOLLOWUP_EMAIL remains the safe fallback if no eligible
+ * staff are registered or the staff directory cannot be queried.
+ */
+async function operationsRecipients(): Promise<string[]> {
+  try {
+    const { rows } = await pool.query(
+      `SELECT email FROM public.staff_members
+        WHERE status = 'active' AND role IN ('sales_agent', 'support_team')
+        ORDER BY name ASC LIMIT 30`,
+    )
+    const activeStaffEmails = rows
+      .map((row: { email: string }) => String(row.email).trim().toLowerCase())
+      .filter((email: string) => email.includes("@") && !email.startsWith("@") && !email.endsWith("@") && !email.includes(" "))
+    // Keep the configured operations inbox copied in while also notifying the roster.
+    return [...new Set([STAFF_EMAIL.toLowerCase(), ...activeStaffEmails])].slice(0, 31)
+  } catch {
+    console.error("[followup] Could not read team notification recipients; using FOLLOWUP_EMAIL fallback.")
+    return [STAFF_EMAIL]
+  }
+}
+
+async function sendToOperations(subject: string, html: string, replyTo?: string): Promise<SendResult> {
+  const recipients = await operationsRecipients()
+  // Send individual messages so team addresses are not exposed to one another.
+  const results = await Promise.all(recipients.map((recipient) => sendWithResult(subject, html, [recipient], replyTo)))
+  const sentCount = results.filter((result) => result.ok).length
+  const ok = sentCount === recipients.length
+  return {
+    ok,
+    sentCount,
+    recipientCount: recipients.length,
+    ...(ok ? {} : { error: sentCount === 0
+      ? "No team notification emails were accepted. Check RESEND_API_KEY and the verified EMAIL_FROM/RESEND_EMAIL_DOMAIN sender."
+      : `Only ${sentCount} of ${recipients.length} team notification emails were accepted. Check Resend delivery for the failures.` }),
+  }
 }
 
 async function sendWithResult(
@@ -118,10 +160,9 @@ export async function notifyNewChat(
     ["Page", chat.pageUrl],
     ["Message", chat.body],
   ])}</table>`
-  await send(
+  return sendToOperations(
     `New live chat${chat.name ? ` from ${chat.name}` : ""}`,
     shell("New Live Chat", body, `/admin/chats?c=${encodeURIComponent(chat.conversationId)}`, siteUrl),
-    [STAFF_EMAIL],
     chat.email || undefined,
   )
 }
@@ -130,6 +171,8 @@ export async function notifyNewQuote(lead: QuoteLead, siteUrl: string) {
   const vehicle = [lead.year, lead.make, lead.model].filter(Boolean).join(" ")
   const body = `<table style="width:100%;border-collapse:collapse">${rows([
     ["Quote #", lead.id],
+    ["Product", lead.productName],
+    ["Product page", lead.productUrl],
     ["Part", lead.partType],
     ["Vehicle", vehicle],
     ["Option", lead.partOption],
@@ -140,10 +183,9 @@ export async function notifyNewQuote(lead: QuoteLead, siteUrl: string) {
     ["Notes", lead.notes],
     ["Source", lead.source],
   ])}</table>`
-  await send(
+  return sendToOperations(
     `New quote #${lead.id}: ${vehicle || lead.make} ${lead.partType}`.trim(),
     shell("New Quote Request", body, "/admin/quotes", siteUrl),
-    [STAFF_EMAIL],
     lead.email || undefined,
   )
 }
@@ -163,10 +205,9 @@ export async function notifyNewOrder(order: CustomerOrder, siteUrl: string) {
     ["Status", order.status],
     ["Total", money(order.totalAmount)],
   ])}</table><h3>Items</h3><ul>${items}</ul>`
-  await send(
+  return sendToOperations(
     `New order ${order.orderNumber} — ${money(order.totalAmount)}`,
     shell("New Order — call to confirm & take payment", body, "/admin/orders", siteUrl),
-    [STAFF_EMAIL],
     order.customerEmail || undefined,
   )
 }
@@ -177,7 +218,7 @@ export async function notifyNewOrder(order: CustomerOrder, siteUrl: string) {
  * so the customer always has a record of exactly what they entered.
  */
 export async function sendCustomerOrderInvoice(order: CustomerOrder, siteUrl: string) {
-  if (!order.customerEmail) return
+  if (!order.customerEmail) return { ok: false, error: "No customer email address was provided." }
 
   const items = order.items
     .map(
@@ -214,7 +255,7 @@ export async function sendCustomerOrderInvoice(order: CustomerOrder, siteUrl: st
       }
     </p>`
 
-  await send(
+  return sendWithResult(
     `Your AUAPW ${reserved ? "reservation" : "order"} ${order.orderNumber}${paid ? " — paid" : reserved ? " — reserved" : " — received"}`,
     `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
       <div style="background:#0f1117;color:#fff;padding:20px;border-radius:8px 8px 0 0">
@@ -226,6 +267,54 @@ export async function sendCustomerOrderInvoice(order: CustomerOrder, siteUrl: st
     </div>`,
     [order.customerEmail],
   )
+}
+
+/** Send a receipt-style acknowledgement after a quote request is saved. */
+export async function sendCustomerQuoteAcknowledgement(lead: QuoteLead, siteUrl: string): Promise<SendResult> {
+  if (!lead.email) return { ok: false, error: "The customer did not provide an email address." }
+  const vehicle = [lead.year, lead.make, lead.model].filter(Boolean).join(" ")
+  const body = `
+    <p>Hello ${escapeHtml(lead.fullName)},</p>
+    <p>We've received your quote request and saved it as reference <strong>#${lead.id}</strong>.</p>
+    <table style="width:100%;border-collapse:collapse">${rows([
+      ["Requested part", lead.partType],
+      ["Vehicle", vehicle],
+      ["Option", lead.partOption],
+      ["Submitted", new Date(lead.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })],
+    ])}</table>
+    ${lead.productName ? `<p>Product of interest: <strong>${escapeHtml(lead.productName)}</strong></p>` : ""}
+    ${lead.productUrl && lead.productUrl.startsWith("/") && !lead.productUrl.startsWith("//")
+      ? `<p><a href="${escapeHtml(siteUrl + lead.productUrl)}">View the exact product page</a></p>`
+      : ""}
+    <p>A parts specialist will review the request and contact you. This acknowledgement is not a price quote or fitment confirmation.</p>`
+  return sendWithResult(
+    `We received your AUAPW quote request #${lead.id}`,
+    customerShell("Quote Request Received", body),
+    [lead.email],
+  )
+}
+
+/** Notify a staff member when a saved order or quote is assigned to them. */
+export async function notifyFollowupAssignment(input: {
+  email: string
+  name: string
+  recordType: "order" | "quote"
+  reference: string
+  summary: string
+  siteUrl: string
+}): Promise<SendResult> {
+  const noun = input.recordType === "order" ? "order" : "quote request"
+  const path = input.recordType === "order" ? "/admin/orders" : "/admin/quotes"
+  const html = shell(
+    `Follow-up assigned: ${noun} ${input.reference}`,
+    `<p>Hello ${escapeHtml(input.name)},</p><p>A customer ${noun} has been assigned to you.</p><table style="width:100%;border-collapse:collapse">${rows([
+      ["Reference", input.reference],
+      ["Details", input.summary],
+    ])}</table><p>Please review the record and update its status/notes in the admin.</p>`,
+    path,
+    input.siteUrl,
+  )
+  return sendWithResult(`AUAPW follow-up assigned — ${noun} ${input.reference}`, html, [input.email])
 }
 
 /**

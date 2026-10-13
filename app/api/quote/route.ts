@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { auth } from "@/lib/auth"
 import { createQuoteLead } from "@/lib/followup"
-import { notifyNewQuote } from "@/lib/followup-notify"
+import { notifyNewQuote, sendCustomerQuoteAcknowledgement } from "@/lib/followup-notify"
 
 const text = (max: number) => z.string().trim().max(max).optional().default("")
+const isSafeInternalPath = (value: string) => {
+  if (!value) return true
+  if (!value.startsWith("/") || value.startsWith("//") || value.includes(String.fromCharCode(92)) || value.includes("://")) return false
+  return !value.split(/[?#]/, 1)[0].split("/").some((part) => part === "." || part === "..")
+}
 
 const QuoteSchema = z.object({
   part: text(60),
@@ -23,6 +29,8 @@ const QuoteSchema = z.object({
   message: text(2000),
   source: text(60),
   pageUrl: text(500),
+  productName: text(150),
+  productUrl: text(500).refine(isSafeInternalPath, "Invalid product reference."),
   website: text(200),
 })
 
@@ -44,7 +52,15 @@ export async function POST(request: Request) {
   if (d.website) return NextResponse.json({ ok: true, id: 0 })
 
   try {
+    // Associate with the actual Better Auth session when signed in; never trust a user ID from the form.
+    let userId: string | undefined
+    try {
+      userId = (await auth.api.getSession({ headers: request.headers }))?.user?.id
+    } catch {
+      // Preserve guest quote submission if session lookup is temporarily unavailable.
+    }
     const lead = await createQuoteLead({
+      userId,
       fullName: d.name,
       phone: d.phone,
       email: d.email,
@@ -58,9 +74,22 @@ export async function POST(request: Request) {
       notes: d.message,
       source: d.source || "website",
       pageUrl: d.pageUrl,
+      productName: d.productName,
+      productUrl: d.productUrl,
     })
-    await notifyNewQuote(lead, new URL(request.url).origin)
-    return NextResponse.json({ ok: true, id: lead.id })
+    const origin = new URL(request.url).origin
+    const [teamNotice, customerNotice] = await Promise.all([
+      notifyNewQuote(lead, origin).catch(() => ({ ok: false })),
+      sendCustomerQuoteAcknowledgement(lead, origin).catch(() => ({ ok: false })),
+    ])
+    return NextResponse.json({
+      ok: true,
+      id: lead.id,
+      emailStatus: {
+        teamNotificationAccepted: teamNotice.ok,
+        customerConfirmationAccepted: customerNotice.ok,
+      },
+    })
   } catch (err) {
     console.error("[quote] Failed to save quote:", err instanceof Error ? err.message : err)
     return NextResponse.json(

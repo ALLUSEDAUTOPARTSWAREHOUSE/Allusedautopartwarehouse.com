@@ -1,4 +1,5 @@
 import { CheckCircle2, CircleAlert } from "lucide-react"
+import { MerchantAccountSettings } from "@/components/admin/merchant/account-settings"
 import { CopyField } from "@/components/admin/merchant/copy-field"
 import {
   COMPARISON_SHOPPING_SERVICE,
@@ -42,6 +43,8 @@ export function MerchantOverview({
             Merchant Center ID <span className="font-mono text-foreground">{MERCHANT_CENTER_ID}</span> · {COMPARISON_SHOPPING_SERVICE}
           </p>
         </div>
+
+        <MerchantAccountSettings defaultId={String(MERCHANT_CENTER_ID)} defaultName={MERCHANT_STORE_NAME} />
 
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <CopyField label="Product feed URL (scheduled fetch)" value={`${SITE_URL}${FEED_PATH}`} />

@@ -38,12 +38,19 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { name, email, phone, role, department, title, notes } = body
+    const cleanName = typeof name === "string" ? name.trim() : ""
+    const cleanEmail = typeof email === "string" ? email.trim().toLowerCase() : ""
 
-    if (!name || !email || !role) {
+    if (!cleanName || !cleanEmail || !role) {
       return NextResponse.json(
         { error: 'Missing required fields: name, email, role' },
         { status: 400 }
       )
+    }
+
+    const at = cleanEmail.indexOf("@")
+    if (cleanName.length > 120 || cleanEmail.length > 200 || at <= 0 || at !== cleanEmail.lastIndexOf("@") || cleanEmail.lastIndexOf(".") <= at + 1 || cleanEmail.endsWith(".") || cleanEmail.includes(" ")) {
+      return NextResponse.json({ error: "Enter a valid name and email address." }, { status: 400 })
     }
 
     if (!VALID_ROLES.includes(role)) {
@@ -55,8 +62,8 @@ export async function POST(req: NextRequest) {
 
     const newStaff = {
       id: `staff_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      name,
-      email,
+      name: cleanName,
+      email: cleanEmail,
       phone: phone || null,
       role,
       department: department || null,

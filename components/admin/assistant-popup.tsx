@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { Bot, X } from 'lucide-react'
+import { AssistantSummary } from '@/components/admin/assistant-summary'
 import { AssistantPanel } from '@/components/admin/assistant-panel'
 
 export function AssistantPopup() {
@@ -24,6 +25,7 @@ export function AssistantPopup() {
           <h2 className="font-semibold">Store assistant</h2>
           <button type="button" autoFocus={open} onClick={close} aria-label="Close assistant" className="rounded-md p-2 focus-visible:outline"><X className="size-4" /></button>
         </div>
+        <AssistantSummary active={open} />
         <AssistantPanel />
       </section>
       <button

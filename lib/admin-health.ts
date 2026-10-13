@@ -66,7 +66,7 @@ const TABLES: { table: string; columns: string; purpose: string }[] = [
   {
     table: "leads",
     columns:
-      "id, full_name, phone, email, part_type, make, model, year, part_option, state, zip, notes, source, page_url, status, quote_amount, internal_notes, created_at, updated_at",
+      "id, full_name, phone, email, part_type, make, model, year, part_option, state, zip, notes, source, page_url, product_name, product_url, user_id, status, quote_amount, internal_notes, created_at, updated_at",
     purpose: "Quote requests, win rate, customers",
   },
   { table: "chat_conversations", columns: "id, guest_id, status, unread_for_admin, last_message_at", purpose: "Live chat inbox" },
@@ -77,6 +77,7 @@ const TABLES: { table: string; columns: string; purpose: string }[] = [
   { table: "merchant_feed_snapshots", columns: "day, taken_at, total, eligible, brands, alerts", purpose: "Daily feed health history" },
   { table: "payment_gateways", columns: `id, name, slug, type, "isEnabled", "isDefault", "sortOrder"`, purpose: "Payment methods at checkout" },
   { table: "staff_members", columns: `id, name, email, role, status`, purpose: "Team directory" },
+  { table: "followup_assignments", columns: "record_type, record_id, staff_id, assigned_by_email, created_at, updated_at", purpose: "Sales/support assignment ownership" },
 ]
 
 export async function checkDatabase(): Promise<TableCheck[]> {
@@ -103,7 +104,10 @@ const REPAIR_SQL = `
   ALTER TABLE IF EXISTS public.leads
     ADD COLUMN IF NOT EXISTS zip text,
     ADD COLUMN IF NOT EXISTS state text,
-    ADD COLUMN IF NOT EXISTS part_option text;
+    ADD COLUMN IF NOT EXISTS part_option text,
+    ADD COLUMN IF NOT EXISTS product_name text,
+    ADD COLUMN IF NOT EXISTS product_url text,
+    ADD COLUMN IF NOT EXISTS user_id text;
 
   ALTER TABLE IF EXISTS public.orders
     ADD COLUMN IF NOT EXISTS customer_name text,
@@ -192,6 +196,16 @@ const REPAIR_SQL = `
     "createdAt" timestamptz NOT NULL DEFAULT now(),
     "updatedAt" timestamptz NOT NULL DEFAULT now()
   );
+  CREATE TABLE IF NOT EXISTS public.followup_assignments (
+    record_type text NOT NULL CHECK (record_type IN ('order', 'quote')),
+    record_id text NOT NULL,
+    staff_id text NOT NULL,
+    assigned_by_email text,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (record_type, record_id)
+  );
+
   CREATE TABLE IF NOT EXISTS public.payment_gateways (
     "id" text PRIMARY KEY,
     "name" text NOT NULL,

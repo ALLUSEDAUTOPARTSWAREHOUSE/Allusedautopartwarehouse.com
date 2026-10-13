@@ -7,6 +7,7 @@ import { BRAND_DIRECTORY, getBrandProductUrl, isValidBrand } from "@/lib/brand-c
 import {
   createManualProduct,
   deleteManualProduct,
+  removeManualProducts,
   importProductSheet,
   toBrandProduct,
 } from "@/lib/manual-products"
@@ -80,7 +81,7 @@ export async function removeManualProduct(_prev: CatalogActionState, formData: F
   if (!isValidBrand(brand) || !slug) return { ok: false, message: "Product not found." }
   await deleteManualProduct(brand, slug)
   revalidateCatalog(brand)
-  return { ok: true, message: "Removed." }
+  return { ok: true, message: "Removed. Any matching source product is hidden from the website and Google feed; restore it in product fixes." }
 }
 
 export async function uploadProductSheet(_prev: CatalogActionState, formData: FormData): Promise<CatalogActionState> {
@@ -98,7 +99,10 @@ export async function uploadProductSheet(_prev: CatalogActionState, formData: Fo
     const buffer = Buffer.from(await file.arrayBuffer())
     const mode = String(formData.get("mode") ?? "all")
     if (!["all", "prices", "images"].includes(mode)) return { ok: false, message: "Choose a valid import mode." }
-    const { inserted, skipped, missingPrices } = await importProductSheet(brand, buffer, mode as "all" | "prices" | "images")
+    const preview = formData.get("intent") !== "save"
+    if (!preview && formData.get("confirmImport") !== "yes") return { ok: false, message: "Confirm the import before saving. Preview first to review missing prices." }
+    const { inserted, skipped, missingPrices } = await importProductSheet(brand, buffer, mode as "all" | "prices" | "images", preview)
+    if (preview) return { ok: false, message: `Preview only: ${inserted} usable rows, ${skipped} skipped rows, ${missingPrices} missing prices. Nothing saved. Missing prices in price/all-field imports become quote-only. Review the result, then confirm and save. Existing unmatched products will not be deleted.` }
     if (inserted === 0) {
       return { ok: false, message: "No matching usable rows found. Check product names, URLs, and the selected import mode." }
     }
@@ -126,13 +130,18 @@ export async function bulkEditManualProducts(_prev: CatalogActionState, formData
   const brand = String(formData.get("brand") ?? "")
   const slugs = [...new Set(formData.getAll("slug").map(String))]
   const action = String(formData.get("operation") ?? "")
-  if (!isValidBrand(brand) || !slugs.length || slugs.length > 200) return { ok: false, message: "Select a brand and 1–200 products." }
+  const all = formData.get("scope") === "all"
+  if (all && String(formData.get("confirmBrand") ?? "") !== brand) return { ok: false, message: "Type the selected brand slug to confirm applying to all uploaded/manual products." }
+  if (!isValidBrand(brand) || (!all && (!slugs.length || slugs.length > 200))) return { ok: false, message: "Select a brand and 1–200 products." }
   if (!["prices", "images", "delete"].includes(action)) return { ok: false, message: "Choose an action." }
   try {
-    const sql = action === "delete"
-      ? "DELETE FROM manual_products WHERE brand = $1 AND slug = ANY($2::text[])"
-      : `UPDATE manual_products SET ${action === "prices" ? "price" : "image_url"} = NULL, updated_at = now() WHERE brand = $1 AND slug = ANY($2::text[])`
-    const result = await pool.query(sql, [brand, slugs])
+    if (action === "delete") {
+      const count = await removeManualProducts(brand, all ? null : slugs)
+      revalidateCatalog(brand)
+      return { ok: true, message: `Removed ${count} uploaded products; matching source products are hidden from the website and feed. Restore visibility in product fixes.` }
+    }
+    const sql = `UPDATE manual_products SET ${action === "prices" ? "price" : "image_url"} = NULL, updated_at = now() WHERE brand = $1 AND ($2::text[] IS NULL OR slug = ANY($2::text[]))`
+    const result = await pool.query(sql, [brand, all ? null : slugs])
     revalidateCatalog(brand)
     return { ok: true, message: `Updated ${result.rowCount ?? 0} selected products. Website and feed refreshed.` }
   } catch { return { ok: false, message: "Database update failed. Please retry." } }

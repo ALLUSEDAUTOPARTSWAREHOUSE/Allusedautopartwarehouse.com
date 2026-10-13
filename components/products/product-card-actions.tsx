@@ -77,11 +77,18 @@ export function ProductCardActions({
   }
 
   const handleGetQuote = () => {
+    const normalizedPart = productType?.toLowerCase().includes('transmission')
+      ? 'Transmission'
+      : productType?.toLowerCase().includes('engine')
+        ? 'Engine'
+        : ''
     const quoteParams = new URLSearchParams({
-      part: productName,
-      make: make || 'Not specified',
-      partType: productType || 'Not specified',
-      referrer: 'parts-page',
+      part: normalizedPart,
+      make: make || '',
+      productName,
+      productUrl: detailsHref || '',
+      productId,
+      referrer: 'product-page',
     })
     window.location.href = `/quote?${quoteParams.toString()}`
   }

@@ -7,7 +7,7 @@ import { BrandLogosSection } from "@/components/brand-logos"
 import { Zap, Shield, Truck, Phone, DollarSign, Mail, CheckCircle2, AlertCircle } from "lucide-react"
 import { CAR_MAKES, CAR_MODELS, PART_CATEGORIES, YEARS, US_STATES, PHONE_DISPLAY, PHONE_SALES } from "@/lib/data"
 import { getPartOptions } from "@/lib/parts-content"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 const CONTACT_EMAIL = "auapworld@gmail.com"
 
@@ -27,6 +27,24 @@ export default function QuotePage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [quoteId, setQuoteId] = useState<number | null>(null)
+  const [productOfInterest, setProductOfInterest] = useState("")
+  const [productUrl, setProductUrl] = useState("")
+  const [customerEmailNotice, setCustomerEmailNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const requestedPart = params.get("part") ?? ""
+    if (requestedPart === "Engine" || requestedPart === "Transmission") setPart(requestedPart)
+    const requestedMake = params.get("make") ?? ""
+    if (CAR_MAKES.includes(requestedMake)) setMake(requestedMake)
+    const name = (params.get("productName") ?? "").trim().slice(0, 150)
+    if (name) setProductOfInterest(name)
+    const url = params.get("productUrl") ?? ""
+    const productPath = url.split(/[?#]/, 1)[0]
+    const pathParts = productPath.split("/").filter(Boolean)
+    const safePath = productPath.startsWith("/") && !productPath.startsWith("//") && !productPath.includes(String.fromCharCode(92)) && !productPath.includes("://") && !pathParts.some((part) => part === "." || part === "..")
+    if (safePath) setProductUrl(productPath)
+  }, [])
 
   const models = make ? CAR_MODELS[make] || [] : []
   const partOptions = part ? getPartOptions(part) : []
@@ -48,7 +66,9 @@ export default function QuotePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           part, make, model, year, option, name, phone, email, state, zip, message,
-          source: "quote-page",
+          productName: productOfInterest,
+          productUrl,
+          source: productOfInterest && productUrl ? "product-page" : "quote-page",
           pageUrl: window.location.pathname + window.location.search,
           website: honeypot ?? "",
         }),
@@ -59,6 +79,13 @@ export default function QuotePage() {
         return
       }
       setQuoteId(data.id ?? null)
+      setCustomerEmailNotice(
+        data.emailStatus?.customerConfirmationAccepted
+          ? `The email service accepted a confirmation for ${email.trim()}.`
+          : email.trim()
+            ? "Your request is saved, but the email service did not accept the confirmation email. A parts specialist will still call you."
+            : "No email address was provided, so a confirmation email could not be sent. A parts specialist will still call you.",
+      )
       setSuccess(true)
     } catch {
       setError(`Network error. Please call us at ${PHONE_DISPLAY}.`)
@@ -119,6 +146,15 @@ export default function QuotePage() {
 
             {/* Form - shown first on mobile */}
             <div className="lg:col-span-2 order-1 lg:order-2">
+              {productOfInterest ? (
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
+                  <div>
+                    <p className="text-[0.62rem] font-bold uppercase tracking-[0.2em] text-muted-foreground">Product of interest</p>
+                    <p className="mt-1 font-semibold text-foreground">{productOfInterest}</p>
+                  </div>
+                  {productUrl ? <a href={productUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-primary hover:underline">View product ↗</a> : null}
+                </div>
+              ) : null}
               {success ? (
                 <div className="glass-card rounded-sm p-8 text-center">
                   <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
@@ -127,6 +163,7 @@ export default function QuotePage() {
                     {quoteId ? <>Your reference is <strong>#{quoteId}</strong>. </> : null}
                     A parts specialist will call you within <strong>one business day</strong> with pricing and availability.
                   </p>
+                  {customerEmailNotice ? <p role="status" className="mb-4 text-xs text-muted-foreground">{customerEmailNotice}</p> : null}
                   <p className="text-muted-foreground text-sm leading-relaxed mb-6">
                     Need it faster? Call us at{" "}
                     <a href={`tel:${PHONE_SALES.replace(/-/g, "")}`} className="text-primary font-bold hover:underline">{PHONE_DISPLAY}</a>

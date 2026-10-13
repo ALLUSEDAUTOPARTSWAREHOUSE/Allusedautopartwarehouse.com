@@ -48,6 +48,10 @@ export default function CheckoutPage() {
   // wait until mounted before rendering anything that depends on it.
   const [hydrated, setHydrated] = useState(false)
   useEffect(() => setHydrated(true), [])
+  useEffect(() => {
+    // After secure sign-in, resume at shipping details instead of showing the account chooser again.
+    if (new URLSearchParams(window.location.search).get('resume') === '1') setStep('shipping')
+  }, [])
 
   useEffect(() => {
     fetch('/api/payment-gateways')
@@ -101,6 +105,7 @@ export default function CheckoutPage() {
     orderNumber: string
     totalAmount: number
     reserved?: boolean
+    emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null
   } | null>(null)
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
 
@@ -161,7 +166,7 @@ export default function CheckoutPage() {
         setError(data.error ?? 'We could not place your order. Please call (708) 896-2383.')
         return
       }
-      setPlacedOrder({ orderNumber: data.orderNumber, totalAmount: data.totalAmount, reserved: isReservationCart })
+      setPlacedOrder({ orderNumber: data.orderNumber, totalAmount: data.totalAmount, reserved: isReservationCart, emailStatus: data.emailStatus })
       clearCart()
       setStep('confirmation')
     } catch {
@@ -171,7 +176,7 @@ export default function CheckoutPage() {
     }
   }
 
-  const handleStripePaid = (result: { orderNumber: string; totalAmount: number }) => {
+  const handleStripePaid = (result: { orderNumber: string; totalAmount: number; emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null }) => {
     setPaymentConfirmed(true)
     setPlacedOrder(result)
     clearCart()
@@ -253,12 +258,11 @@ export default function CheckoutPage() {
             <div className="mb-8 p-6 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/50 rounded-lg">
               <h2 className="text-xl font-bold mb-4">Checkout as:</h2>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  onClick={() => setStep('shipping')}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 py-6 text-base font-semibold"
-                >
-                  Sign In to Account
-                </Button>
+                <Link href="/sign-in?redirectTo=%2Fcheckout%3Fresume%3D1" className="flex-1">
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 py-6 text-base font-semibold">
+                    Sign In to Account
+                  </Button>
+                </Link>
                 <Button
                   onClick={() => {
                     setIsGuest(true)
@@ -271,7 +275,7 @@ export default function CheckoutPage() {
                 </Button>
               </div>
               <div className="mt-4 flex flex-col gap-2">
-                <Link href="/sign-up">
+                <Link href="/sign-up?redirectTo=%2Fcheckout%3Fresume%3D1">
                   <Button variant="ghost" className="w-full justify-start text-blue-400 hover:text-blue-300">
                     New to AUAPW? Create Account
                   </Button>
@@ -301,6 +305,13 @@ export default function CheckoutPage() {
                     ? 'This part is reserved for you — no payment has been taken. A parts specialist will call you within one business day to confirm fitment, give you the final price and warranty terms in writing, and take payment only once you approve it.'
                     : 'A parts specialist will call you within one business day to confirm fitment and take payment securely by phone. Nothing has been charged yet.'}
               </p>
+              {placedOrder?.emailStatus ? (
+                <p role="status" className="mx-auto mb-5 max-w-xl text-sm text-foreground/70">
+                  {placedOrder.emailStatus.customerConfirmationAccepted
+                    ? `The email service accepted a confirmation for ${formData.email}.`
+                    : "Your order is saved, but the email service did not accept the confirmation email. A parts specialist will still follow up; please check that your email address is correct."}
+                </p>
+              ) : null}
               <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-8 text-left">
                 <p className="text-sm text-foreground/60 mb-2">{placedOrder?.reserved ? 'Reservation Number' : 'Order Number'}</p>
                 <p className="text-2xl font-bold mb-6 font-mono">{placedOrder?.orderNumber}</p>

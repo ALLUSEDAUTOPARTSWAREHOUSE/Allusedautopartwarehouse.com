@@ -124,11 +124,35 @@ export async function createManualProduct(brand: string, input: ManualProductInp
 }
 
 export async function deleteManualProduct(brand: string, slug: string): Promise<void> {
-  await pool.query("DELETE FROM manual_products WHERE brand = $1 AND slug = $2", [brand, slug])
+  await removeManualProducts(brand, [slug])
+}
+
+/** Preserve a recoverable hide marker when an uploaded replacement is removed. */
+export async function removeManualProducts(brand: string, slugs: string[] | null): Promise<number> {
+  const client = await pool.connect()
+  try {
+    await client.query("BEGIN")
+    const removed = await client.query<{ slug: string }>(
+      "DELETE FROM manual_products WHERE brand = $1 AND ($2::text[] IS NULL OR slug = ANY($2::text[])) RETURNING slug", [brand, slugs],
+    )
+    for (const row of removed.rows) {
+      await client.query(
+        `INSERT INTO product_overrides (brand, slug, hidden, exclude_from_feed, updated_at)
+         VALUES ($1, $2, true, true, now())
+         ON CONFLICT (brand, slug) DO UPDATE SET hidden = true, exclude_from_feed = true, updated_at = now()`,
+        [brand, row.slug],
+      )
+    }
+    await client.query("COMMIT")
+    return removed.rows.length
+  } catch (error) {
+    await client.query("ROLLBACK")
+    throw error
+  } finally { client.release() }
 }
 
 /** Reads the admin-provided workbook and upserts every row as a manual product for `brand`. */
-export async function importProductSheet(brand: string, buffer: Buffer, mode: "all" | "prices" | "images" = "all"): Promise<{ inserted: number; skipped: number; missingPrices: number }> {
+export async function importProductSheet(brand: string, buffer: Buffer, mode: "all" | "prices" | "images" = "all", dryRun = false): Promise<{ inserted: number; skipped: number; missingPrices: number }> {
   let wb
   try { wb = read(buffer, { type: "buffer" }) } catch {
     throw new Error("INVALID_WORKBOOK")
@@ -174,7 +198,7 @@ export async function importProductSheet(brand: string, buffer: Buffer, mode: "a
         const exists = await client.query("SELECT 1 FROM manual_products WHERE brand = $1 AND slug = $2", [brand, slug])
         if (!exists.rows.length) { skipped++; continue }
       }
-      await client.query(
+      if (!dryRun) await client.query(
         `INSERT INTO manual_products (brand, slug, name, description, price, image_url, category, model, year, source)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'upload')
          ON CONFLICT (brand, slug) DO UPDATE SET

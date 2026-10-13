@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useState } from "react"
+import { useActionState, useState, useRef } from "react"
 import { RefreshCw, Upload, PlusCircle, Trash2, ExternalLink } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -42,7 +42,7 @@ function SyncButton() {
         className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
       >
         <RefreshCw className={`h-4 w-4 ${pending ? "animate-spin" : ""}`} aria-hidden="true" />
-        {pending ? "Syncing…" : "Sync products"}
+        {pending ? "Syncing…" : "1 · Sync Website & Store"}
       </button>
       <p role="status" className={`text-xs ${state.ok ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
         {pending ? "" : state.message || "Republishes the catalog so the website and Google feed reflect the latest data."}
@@ -160,17 +160,20 @@ function UploadSheetForm({ brands }: { brands: { slug: string; label: string }[]
           <input name="file" type="file" accept=".xlsx,.xls" required className={`${inputClass} py-1.5`} />
         </label>
       </div>
+      <label className="flex items-center gap-2 text-xs"><input name="confirmImport" type="checkbox" value="yes" />Confirm saving these updates; missing prices become quote-only. Unmatched old products stay unchanged.</label>
+      <button type="submit" name="intent" value="preview" disabled={pending} className={inputClass}>Preview import — no changes</button>
       <div className="flex items-center justify-between gap-3">
         <p role="status" className={`text-xs ${state.ok ? "text-green-600 dark:text-green-400" : "text-destructive"}`}>
           {pending ? "" : state.message}
         </p>
         <button
           type="submit"
+          name="intent" value="save"
           disabled={pending}
           className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
         >
           <Upload className="h-4 w-4" aria-hidden="true" />
-          {pending ? "Uploading…" : "Upload sheet"}
+          {pending ? "Processing…" : "Save confirmed import"}
         </button>
       </div>
     </form>
@@ -217,6 +220,8 @@ function ManualProductRow({ product }: { product: CatalogSyncPanelProps["manualP
 }
 
 function BulkProductForm({ brands, manualProducts }: CatalogSyncPanelProps) {
+  const form = useRef<HTMLFormElement>(null)
+  const [selectionCount, setSelectionCount] = useState(0)
   const [brand, setBrand] = useState(brands[0]?.slug ?? "")
   const [query, setQuery] = useState("")
   const [missingImage, setMissingImage] = useState(false)
@@ -224,7 +229,7 @@ function BulkProductForm({ brands, manualProducts }: CatalogSyncPanelProps) {
   const [missingPrice, setMissingPrice] = useState(false)
   const [state, action, pending] = useActionState(bulkEditManualProducts, initial)
   const products = manualProducts.filter(p => p.brand === brand && p.name.toLowerCase().includes(query.toLowerCase()) && (!missingPrice || !p.price) && (!missingImage || !p.imageUrl) && (!category || p.category === category))
-  return <form action={action} className="space-y-3 rounded-md border p-3">
+  return <form ref={form} action={action} onChange={() => setSelectionCount(form.current?.querySelectorAll('input[name="slug"]:checked').length ?? 0)} className="space-y-3 rounded-md border p-3">
     <h3 className="font-semibold">Single / bulk edits — uploaded and manual products</h3>
     <select aria-label="Brand filter" name="brand" value={brand} onChange={e => setBrand(e.target.value)} className={inputClass}>
       {brands.map(b => <option key={b.slug} value={b.slug}>{b.label}</option>)}
@@ -233,16 +238,38 @@ function BulkProductForm({ brands, manualProducts }: CatalogSyncPanelProps) {
     <label className="flex gap-2"><input type="checkbox" checked={missingPrice} onChange={e => setMissingPrice(e.target.checked)} />Missing prices only</label>
     <label className="flex gap-2"><input type="checkbox" checked={missingImage} onChange={e => setMissingImage(e.target.checked)} />Missing image URLs only</label>
     <select aria-label="Category filter" value={category} onChange={e => setCategory(e.target.value)} className={inputClass}><option value="">All categories</option><option value="engine">Engine</option><option value="transmission">Transmission</option></select>
+    <div className="flex flex-wrap gap-2">
+      <button type="button" className={inputClass} onClick={() => {
+        const boxes = form.current?.querySelectorAll<HTMLInputElement>('input[name="slug"]')
+        boxes?.forEach((box, index) => { box.checked = index < 200 })
+        setSelectionCount(Math.min(boxes?.length ?? 0, 200))
+      }}>Select filtered products (up to 200)</button>
+      <button type="button" className={inputClass} onClick={() => {
+        form.current?.querySelectorAll<HTMLInputElement>('input[name="slug"]').forEach(box => { box.checked = false })
+        setSelectionCount(0)
+      }}>Clear selection</button>
+      <span className="text-sm">{selectionCount} selected · {products.length} matching uploaded/manual products</span>
+    </div>
+    {!products.length && <p role="status" className="text-sm">No uploaded/manual products match these filters. Upload this brand's sheet first, or clear the filters. Bundled catalog products are edited in the product cards below; this bulk panel does not remove them.</p>}
     <div key={`${brand}-${query}-${missingPrice}-${missingImage}-${category}-${state.message}`} className="max-h-64 overflow-auto">
       {products.map(p => <label key={p.slug} className="flex gap-2 py-1"><input name="slug" type="checkbox" value={p.slug} />{p.name}</label>)}
     </div>
+    <label className="block text-sm">Apply to
+      <select name="scope" className={inputClass} defaultValue="selected">
+        <option value="selected">Selected products (up to 200)</option>
+        <option value="all">ALL uploaded/manual products for this brand — ignores filters</option>
+      </select>
+    </label>
+    <label className="block text-sm">For ALL: type brand slug ({brand}) to confirm
+      <input name="confirmBrand" autoComplete="off" className={inputClass} placeholder={brand} />
+    </label>
     <select aria-label="Bulk action" name="operation" className={inputClass}>
       <option value="prices">Remove prices only (quote-only)</option>
       <option value="images">Remove image URLs only</option>
       <option value="delete">Delete uploaded/manual products</option>
     </select>
-    <label className="flex gap-2"><input name="confirm" value="yes" type="checkbox" required />I confirm these removals for the selected products.</label>
-    <button type="submit" disabled={pending} className={inputClass}>{pending ? "Saving…" : "Apply to selected products"}</button>
+    <label className="flex gap-2"><input name="confirm" value="yes" type="checkbox" required />I confirm these removals for the chosen scope.</label>
+    <button type="submit" disabled={pending} className={inputClass}>{pending ? "Saving…" : "Apply confirmed action"}</button>
     <p role="status">{state.message}</p>
   </form>
 }
@@ -255,7 +282,14 @@ export function CatalogSyncPanel({ brands, manualProducts }: CatalogSyncPanelPro
           <h2 className="text-lg font-semibold text-foreground">Sync products</h2>
           <p className="text-sm text-muted-foreground">Republish the catalog, or add products by hand or spreadsheet.</p>
         </div>
-        <SyncButton />
+        <div className="flex flex-col gap-3">
+          <SyncButton />
+          <div>
+            <button type="button" disabled aria-describedby="external-sync-help" className="rounded-md border px-4 py-2.5 text-sm font-semibold opacity-50">2 · Sync Google Merchant & Social — Not connected</button>
+            <p id="external-sync-help" className="mt-1 text-xs text-muted-foreground">Google/social publishing is not implemented. Website sync refreshes the feed; Google must fetch it separately.</p>
+            <a href="/admin/marketing" className="text-xs text-primary underline">Channel setup and status</a>
+          </div>
+        </div>
       </div>
 
       <Tabs defaultValue="manual">
