@@ -97,7 +97,9 @@ export function loadBrandCatalog(brand: string): BrandCatalog | null {
   }
   const manual = manualOverlay.get(brand)
   if (!manual || manual.length === 0) return catalog
-  return { ...catalog, products: [...manual, ...catalog.products], count: catalog.products.length + manual.length }
+  const replaced = new Set(manual.map(p => p.canonicalSlug))
+  const products = [...manual, ...catalog.products.filter(p => !replaced.has(p.canonicalSlug))]
+  return { ...catalog, products, count: products.length }
 }
 
 export function getBrandProductBySlug(brand: string, slug: string): BrandProduct | undefined {

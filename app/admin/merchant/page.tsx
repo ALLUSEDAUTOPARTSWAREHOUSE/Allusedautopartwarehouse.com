@@ -108,6 +108,8 @@ export default async function AdminMerchantPage({
           slug: p.slug,
           name: p.name,
           price: p.price,
+          imageUrl: p.imageUrl,
+          category: p.category,
           source: p.source,
           pagePath: `/brands/${p.brand}/${p.slug}`,
           createdAt: p.createdAt,
