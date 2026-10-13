@@ -254,12 +254,11 @@ export default function CheckoutPage() {
             <div className="mb-8 p-6 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/50 rounded-lg">
               <h2 className="text-xl font-bold mb-4">Checkout as:</h2>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  onClick={() => setStep('shipping')}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 py-6 text-base font-semibold"
-                >
-                  Sign In to Account
-                </Button>
+                <Link href="/sign-in?redirectTo=%2Fcheckout" className="flex-1">
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 py-6 text-base font-semibold">
+                    Sign In to Account
+                  </Button>
+                </Link>
                 <Button
                   onClick={() => {
                     setIsGuest(true)
@@ -272,7 +271,7 @@ export default function CheckoutPage() {
                 </Button>
               </div>
               <div className="mt-4 flex flex-col gap-2">
-                <Link href="/sign-up">
+                <Link href="/sign-up?redirectTo=%2Fcheckout">
                   <Button variant="ghost" className="w-full justify-start text-blue-400 hover:text-blue-300">
                     New to AUAPW? Create Account
                   </Button>
