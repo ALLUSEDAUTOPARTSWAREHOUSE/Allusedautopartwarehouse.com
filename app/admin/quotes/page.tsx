@@ -5,6 +5,7 @@ import { FollowupFilters } from "@/components/admin/followup-filters"
 import { ExportLink } from "@/components/admin/export-link"
 import { QuoteLeadCard } from "@/components/admin/quote-lead-card"
 import { getActiveSalesSupportStaff, getFollowupAssignments } from "@/lib/followup-assignments"
+import { getQuoteProductInfo } from "@/lib/quote-product-info"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Quote Requests | AUAPW Admin", robots: { index: false } }
@@ -20,7 +21,11 @@ export default async function AdminQuotesPage({
   const status = QUOTE_STATUSES.find((s) => s === rawStatus)
   const query = q?.trim().slice(0, 100) || undefined
   const [leads, counts, staff] = await Promise.all([listQuoteLeads(status, query), countByStatus("leads"), getActiveSalesSupportStaff()])
-  const assignments = await getFollowupAssignments("quote", leads.map((lead) => String(lead.id)))
+  const [assignments, productInfoEntries] = await Promise.all([
+    getFollowupAssignments("quote", leads.map((lead) => String(lead.id))),
+    Promise.all(leads.map(async (lead) => [String(lead.id), await getQuoteProductInfo(lead)] as const)),
+  ])
+  const productInfos = new Map(productInfoEntries)
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
@@ -50,7 +55,7 @@ export default async function AdminQuotesPage({
       ) : (
         <div className="flex flex-col gap-4">
           {leads.map((lead) => (
-            <QuoteLeadCard key={lead.id} lead={lead} statuses={QUOTE_STATUSES} staffOptions={staff} assignment={assignments.get(String(lead.id)) ?? null} />
+            <QuoteLeadCard key={lead.id} lead={lead} statuses={QUOTE_STATUSES} staffOptions={staff} assignment={assignments.get(String(lead.id)) ?? null} productInfo={productInfos.get(String(lead.id)) ?? null} />
           ))}
         </div>
       )}
