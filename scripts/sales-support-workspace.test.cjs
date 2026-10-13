@@ -104,7 +104,7 @@ test("customer dashboard uses real sessions and scopes order and quote records t
   assert.ok(route.includes("auth.api.getSession"))
   assert.ok(route.includes("WHERE userid = $1 AND userid <> $2"))
   assert.ok(route.includes("WHERE user_id = $1"))
-  assert.ok(route.includes('Cache-Control: "private, no-store"'))
+  assert.ok(route.includes('"Cache-Control": "private, no-store"'))
   assert.ok(route.includes("await ensureLeadProductColumns()"))
   assert.ok(page.includes("Order history"))
   assert.ok(page.includes("My quotes"))
