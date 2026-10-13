@@ -23,7 +23,7 @@ function isAuthorized(request: Request): boolean {
     const header = request.headers.get("authorization") ?? ""
     return timingSafeEqual(digest(header), digest(`Bearer ${secret}`))
   }
-  return /^vercel-cron\//.test(request.headers.get("user-agent") ?? "")
+  return false
 }
 
 /**
