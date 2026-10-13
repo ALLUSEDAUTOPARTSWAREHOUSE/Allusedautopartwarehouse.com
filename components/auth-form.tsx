@@ -1,5 +1,6 @@
 'use client'
 
+import { Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -14,6 +15,7 @@ export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-u
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -26,24 +28,32 @@ export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-u
     setError(null)
     setLoading(true)
 
-    const { error } = isSignUp
-      ? await authClient.signUp.email({ email, password, name })
-      : await authClient.signIn.email({ email, password })
+    try {
+      const result = isSignUp
+        ? await authClient.signUp.email({ email, password, name })
+        : await authClient.signIn.email({ email, password })
+      if (result.error) {
+        setError(result.error.message ?? 'Unable to authenticate. Please try again.')
+        return
+      }
+      router.push(target)
+      router.refresh()
+    } catch {
+      setError('Unable to reach the sign-in service. Please try again.')
+    } finally { setLoading(false) }
 
-    setLoading(false)
-
-    if (error) {
-      setError(error.message ?? 'Something went wrong')
-      return
-    }
-
-    router.push(target)
-    router.refresh()
   }
 
   return (
-    <main className="min-h-svh bg-background flex items-center justify-center px-4">
-      <Card className="w-full max-w-sm p-6">
+    <main className="min-h-svh bg-background flex items-center justify-center px-4 py-8">
+      <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border bg-card shadow-xl lg:grid-cols-2">
+        <section className="flex flex-col justify-center bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 p-8 text-white sm:p-12" aria-label="Customer welcome">
+          <Link href="/" className="text-sm font-semibold text-purple-200">ALL USED AUTO PARTS WAREHOUSE</Link>
+          <h2 className="mt-8 text-4xl font-bold">Your next repair starts here.</h2>
+          <p className="mt-5 text-purple-100">Create your customer account or sign in to continue shopping for automotive parts.</p>
+          <p className="mt-8 text-xs text-purple-200">Customer accounts do not grant administrator access. Guest orders require separate ownership verification.</p>
+        </section>
+      <Card className="w-full rounded-none border-0 p-6 sm:p-10">
         <div className="mb-6">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             {isSignUp ? 'Create an account' : 'Welcome back'}
@@ -83,13 +93,14 @@ export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-u
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
               autoComplete={isSignUp ? 'new-password' : 'current-password'}
             />
+            <button type="button" aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)} className="flex items-center gap-2 self-start text-xs text-muted-foreground">{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}{showPassword ? 'Hide password' : 'Show password'}</button>
           </div>
 
           {error && (
@@ -117,6 +128,7 @@ export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-u
           </Link>
         </p>
       </Card>
+      </div>
     </main>
   )
 }
