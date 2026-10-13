@@ -53,9 +53,14 @@ export async function POST(request: Request) {
 
   try {
     // Associate with the actual Better Auth session when signed in; never trust a user ID from the form.
-    const authSession = await auth.api.getSession({ headers: request.headers })
+    let userId: string | undefined
+    try {
+      userId = (await auth.api.getSession({ headers: request.headers }))?.user?.id
+    } catch {
+      // Preserve guest quote submission if session lookup is temporarily unavailable.
+    }
     const lead = await createQuoteLead({
-      userId: authSession?.user?.id,
+      userId,
       fullName: d.name,
       phone: d.phone,
       email: d.email,
