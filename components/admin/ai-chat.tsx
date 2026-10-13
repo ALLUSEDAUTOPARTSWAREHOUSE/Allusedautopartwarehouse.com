@@ -18,7 +18,7 @@ export function AdminAiChat() {
     pending.current = true
     setBusy(true)
     setError('')
-    const history: Message[] = [...messages, { role: 'user', content }].slice(-19)
+    const history: Message[] = [...messages, { role: 'user' as const, content }].slice(-19)
     try {
       const response = await fetch('/api/admin/ai-chat', {
         method: 'POST',
