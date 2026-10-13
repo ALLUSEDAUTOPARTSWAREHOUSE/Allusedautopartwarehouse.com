@@ -293,36 +293,59 @@ export default async function BrandProductPage({ params }: PageProps) {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <h2 className="text-2xl font-black text-foreground mb-6">Related {label} Parts</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {related.map((rp) => (
-                  <Link key={rp.canonicalSlug} href={getBrandProductUrl(brand, rp)}>
-                    <Card className="hover:shadow-lg hover:border-primary/50 transition-all overflow-hidden h-full">
-                      <div className="relative w-full h-40 bg-muted">
-                      <BrandProductImage
-                        src={getProductDisplayImage(brand, rp).src}
-                        generatedSrc={getProductDisplayImage(brand, rp).generatedSrc}
-                        illustrative={getProductDisplayImage(brand, rp).illustrative}
-                        fallbackSrc={resolveBrandPartImage(rp)}
-                        alt={rp.name}
-                          sku={rp.mpn || rp.id}
-                          brand={label}
-                          year={rp.year}
-                          model={rp.model}
-                          category={rp.category}
-                          compact
-                        />
-                      </div>
-                      <CardHeader className="pb-2">
-                        <Badge className="w-fit mb-1 capitalize">{rp.category || 'Part'}</Badge>
-                        <CardTitle className="text-sm line-clamp-2">{rp.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <span className="text-lg font-bold text-primary">
-                          {rp.price > 0 ? `$${rp.price.toLocaleString()}` : 'Call for price'}
-                        </span>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
+                {related.map((rp) => {
+                  const relatedUrl = getBrandProductUrl(brand, rp)
+                  const relatedPart = rp.category?.toLowerCase().includes("transmission")
+                    ? "Transmission"
+                    : rp.category?.toLowerCase().includes("engine")
+                      ? "Engine"
+                      : ""
+                  const quoteParams = new URLSearchParams({
+                    part: relatedPart,
+                    make: label,
+                    productName: rp.name,
+                    productUrl: relatedUrl,
+                    referrer: "related-product",
+                  })
+                  return (
+                    <div key={rp.canonicalSlug} className="space-y-2">
+                      <Link href={relatedUrl} className="block h-full">
+                        <Card className="hover:shadow-lg hover:border-primary/50 transition-all overflow-hidden h-full">
+                          <div className="relative w-full h-40 bg-muted">
+                            <BrandProductImage
+                              src={getProductDisplayImage(brand, rp).src}
+                              generatedSrc={getProductDisplayImage(brand, rp).generatedSrc}
+                              illustrative={getProductDisplayImage(brand, rp).illustrative}
+                              fallbackSrc={resolveBrandPartImage(rp)}
+                              alt={rp.name}
+                              sku={rp.mpn || rp.id}
+                              brand={label}
+                              year={rp.year}
+                              model={rp.model}
+                              category={rp.category}
+                              compact
+                            />
+                          </div>
+                          <CardHeader className="pb-2">
+                            <Badge className="w-fit mb-1 capitalize">{rp.category || "Part"}</Badge>
+                            <CardTitle className="text-sm line-clamp-2">{rp.name}</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <span className="text-lg font-bold text-primary">
+                              {rp.price > 0 ? `$${rp.price.toLocaleString()}` : "Call for price"}
+                            </span>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                      <Link
+                        href={`/quote?${quoteParams.toString()}`}
+                        className="flex items-center justify-center rounded-md border border-primary/40 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+                      >
+                        Get a quote for this part →
+                      </Link>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </section>
