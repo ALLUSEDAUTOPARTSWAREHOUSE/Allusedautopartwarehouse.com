@@ -42,7 +42,7 @@ function SyncButton() {
         className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
       >
         <RefreshCw className={`h-4 w-4 ${pending ? "animate-spin" : ""}`} aria-hidden="true" />
-        {pending ? "Syncing…" : "Sync products"}
+        {pending ? "Syncing…" : "1 · Sync Website & Store"}
       </button>
       <p role="status" className={`text-xs ${state.ok ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
         {pending ? "" : state.message || "Republishes the catalog so the website and Google feed reflect the latest data."}
@@ -282,7 +282,14 @@ export function CatalogSyncPanel({ brands, manualProducts }: CatalogSyncPanelPro
           <h2 className="text-lg font-semibold text-foreground">Sync products</h2>
           <p className="text-sm text-muted-foreground">Republish the catalog, or add products by hand or spreadsheet.</p>
         </div>
-        <SyncButton />
+        <div className="flex flex-col gap-3">
+          <SyncButton />
+          <div>
+            <button type="button" disabled aria-describedby="external-sync-help" className="rounded-md border px-4 py-2.5 text-sm font-semibold opacity-50">2 · Sync Google Merchant & Social — Not connected</button>
+            <p id="external-sync-help" className="mt-1 text-xs text-muted-foreground">Google/social publishing is not implemented. Website sync refreshes the feed; Google must fetch it separately.</p>
+            <a href="/admin/marketing" className="text-xs text-primary underline">Channel setup and status</a>
+          </div>
+        </div>
       </div>
 
       <Tabs defaultValue="manual">
