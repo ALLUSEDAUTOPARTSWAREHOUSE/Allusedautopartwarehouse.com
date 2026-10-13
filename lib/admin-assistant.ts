@@ -90,17 +90,23 @@ const tools = {
     description: "Find operational follow-ups using the latest 100 orders, latest 100 quote requests, and latest 50 open chats. Prioritizes pending/fitment/confirmed orders not updated for 24+ hours, new quote requests waiting 24+ hours, and recent unread chats. Read-only; report the sample limits.",
     inputSchema: z.object({ minimumAgeHours: z.number().int().min(1).max(720).default(24) }),
     execute: async ({ minimumAgeHours }) => {
-      const [orders, leads, chats, unreadTotal] = await Promise.all([
-        listOrders(undefined, undefined, 100),
-        listQuoteLeads(undefined, undefined, 100),
-        listConversations("open", 50),
+      const [ordersResult, leadsResult, chatsResult, unreadTotal] = await Promise.all([
+        listOrders(undefined, undefined, 100).catch(() => null),
+        listQuoteLeads(undefined, undefined, 100).catch(() => null),
+        listConversations("open", 50).catch(() => null),
         countUnreadForAdmin().catch(() => null),
       ])
+      const orders = ordersResult ?? []
+      const leads = leadsResult ?? []
+      const chats = chatsResult ?? []
       const now = Date.now()
-      const ageHours = (value: string) => Math.max(0, Math.floor((now - Date.parse(value)) / 3_600_000))
+      const ageHours = (value: string) => {
+        const timestamp = Date.parse(value)
+        return Number.isFinite(timestamp) ? Math.max(0, Math.floor((now - timestamp) / 3_600_000)) : null
+      }
       const staleOrders = orders.filter((order) =>
         ["pending", "reserved_pending_fitment", "confirmed"].includes(order.status) &&
-        ageHours(order.updatedAt || order.createdAt) >= minimumAgeHours,
+        (ageHours(order.updatedAt || order.createdAt) ?? 0) >= minimumAgeHours,
       ).slice(0, 15).map((order) => ({
         orderNumber: order.orderNumber,
         status: order.status,
@@ -109,7 +115,7 @@ const tools = {
         total: order.totalAmount,
       }))
       const waitingQuotes = leads.filter((lead) =>
-        lead.status === "new" && ageHours(lead.createdAt) >= minimumAgeHours,
+        lead.status === "new" && (ageHours(lead.createdAt) ?? 0) >= minimumAgeHours,
       ).slice(0, 15).map((lead) => ({
         id: lead.id,
         requestedPart: [lead.year, lead.make, lead.model, lead.partType].filter(Boolean).join(" "),
@@ -125,12 +131,13 @@ const tools = {
       return {
         generatedAt: new Date(now).toISOString(),
         minimumAgeHours,
-        scanned: { orders: orders.length, quoteRequests: leads.length, openChats: chats.length },
+        sourceAvailability: { orders: ordersResult !== null, quoteRequests: leadsResult !== null, openChats: chatsResult !== null, unreadChatCount: unreadTotal !== null },
+        scanned: { orders: ordersResult === null ? null : orders.length, quoteRequests: leadsResult === null ? null : leads.length, openChats: chatsResult === null ? null : chats.length },
         pendingOrdersNeedingReview: staleOrders,
         newQuotesNeedingFollowUp: waitingQuotes,
         unreadChatsNeedingReview: unread,
         unreadChatTotal: unreadTotal,
-        limitations: "This is an age-based triage aid over recent records, not a promise that an item is overdue under company policy. Confirm the actual record before contacting a customer or changing status.",
+        limitations: "This is an age-based triage aid over recent records, not a promise that an item is overdue under company policy. A source marked unavailable could not be read; an empty list from that source is not proof there is no work. Confirm the actual record before contacting a customer or changing status.",
       }
     },
   }),
