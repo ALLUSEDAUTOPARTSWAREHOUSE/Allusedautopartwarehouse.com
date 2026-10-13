@@ -13,5 +13,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ sess
     paid: result.paid,
     orderNumber: result.order.orderNumber,
     totalAmount: result.order.totalAmount,
+    emailStatus: result.emailStatus ?? null,
   })
 }
