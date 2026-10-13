@@ -9,6 +9,7 @@ export const ADMIN_NAV = [
   { href: '/admin/quotes', label: 'Quotes' },
   { href: '/admin/customers', label: 'Customers' },
   { href: '/admin/chats', label: 'Chats' },
+  { href: '/admin/ai-chat', label: 'AI Chat' },
   { href: '/admin/merchant', label: 'Google Shopping' },
   { href: '/admin/payments', label: 'Payments' },
   { href: '/admin/team', label: 'Team' },
