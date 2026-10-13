@@ -117,6 +117,8 @@ export async function uploadProductSheet(_prev: CatalogActionState, formData: Fo
     const reason = (error as Error).message
     return { ok: false, message: reason === "INVALID_WORKBOOK"
       ? "Could not read the workbook. Upload a valid .xlsx or .xls file."
+      : reason === "BRAND_MISMATCH" ? "The workbook contains a different brand. Choose the matching brand; nothing was saved."
+      : reason === "DUPLICATE_PRODUCTS" ? "Duplicate product identities found. Give each product a unique Product URL before importing; nothing was saved."
       : reason === "NO_PRODUCT_SHEET" ? "No product sheet found. Include a Name, name, or Product Name column."
       : code === "42P01" ? "The catalog database table is missing. An administrator must run the manual-products database migration, then retry. No products were saved."
       : "The workbook could not be saved to the catalog database. Check database connectivity and retry. No partial import was saved." }
