@@ -65,7 +65,7 @@ export default function ForgotAdminPasswordPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[70vh] w-full max-w-md items-center px-4 py-10">
+    <div className="mx-auto flex min-h-[70vh] w-full max-w-md items-center px-4 py-10">
       <section className="w-full rounded-xl border border-border bg-card p-6 shadow-lg">
         <p className="mb-2 text-sm font-semibold text-muted-foreground">AUAPW Admin</p>
         <h1 className="text-2xl font-bold text-foreground">Forgot password?</h1>
@@ -119,6 +119,6 @@ export default function ForgotAdminPasswordPage() {
 
         <p className="mt-6 text-center text-sm"><Link href="/admin/login" className="font-medium text-primary underline">Back to admin login</Link></p>
       </section>
-    </main>
+    </div>
   )
 }
