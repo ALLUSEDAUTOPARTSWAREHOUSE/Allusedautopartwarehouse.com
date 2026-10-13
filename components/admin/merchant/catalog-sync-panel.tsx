@@ -160,17 +160,20 @@ function UploadSheetForm({ brands }: { brands: { slug: string; label: string }[]
           <input name="file" type="file" accept=".xlsx,.xls" required className={`${inputClass} py-1.5`} />
         </label>
       </div>
+      <label className="flex items-center gap-2 text-xs"><input name="confirmImport" type="checkbox" value="yes" />Confirm saving these updates; missing prices become quote-only. Unmatched old products stay unchanged.</label>
+      <button type="submit" name="intent" value="preview" disabled={pending} className={inputClass}>Preview import — no changes</button>
       <div className="flex items-center justify-between gap-3">
         <p role="status" className={`text-xs ${state.ok ? "text-green-600 dark:text-green-400" : "text-destructive"}`}>
           {pending ? "" : state.message}
         </p>
         <button
           type="submit"
+          name="intent" value="save"
           disabled={pending}
           className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
         >
           <Upload className="h-4 w-4" aria-hidden="true" />
-          {pending ? "Uploading…" : "Upload sheet"}
+          {pending ? "Processing…" : "Save confirmed import"}
         </button>
       </div>
     </form>

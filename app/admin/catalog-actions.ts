@@ -98,7 +98,10 @@ export async function uploadProductSheet(_prev: CatalogActionState, formData: Fo
     const buffer = Buffer.from(await file.arrayBuffer())
     const mode = String(formData.get("mode") ?? "all")
     if (!["all", "prices", "images"].includes(mode)) return { ok: false, message: "Choose a valid import mode." }
-    const { inserted, skipped, missingPrices } = await importProductSheet(brand, buffer, mode as "all" | "prices" | "images")
+    const preview = formData.get("intent") !== "save"
+    if (!preview && formData.get("confirmImport") !== "yes") return { ok: false, message: "Confirm the import before saving. Preview first to review missing prices." }
+    const { inserted, skipped, missingPrices } = await importProductSheet(brand, buffer, mode as "all" | "prices" | "images", preview)
+    if (preview) return { ok: false, message: `Preview only: ${inserted} usable rows, ${skipped} skipped rows, ${missingPrices} missing prices. Nothing saved. Missing prices in price/all-field imports become quote-only. Review the result, then confirm and save. Existing unmatched products will not be deleted.` }
     if (inserted === 0) {
       return { ok: false, message: "No matching usable rows found. Check product names, URLs, and the selected import mode." }
     }
