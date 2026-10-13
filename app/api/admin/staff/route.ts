@@ -52,8 +52,6 @@ export async function POST(req: NextRequest) {
     if (cleanName.length > 120 || cleanEmail.length > 200 || at <= 0 || at !== cleanEmail.lastIndexOf("@") || cleanEmail.lastIndexOf(".") <= at + 1 || cleanEmail.endsWith(".") || cleanEmail.includes(" ")) {
       return NextResponse.json({ error: "Enter a valid name and email address." }, { status: 400 })
     }
-      return NextResponse.json({ error: "Enter a valid name and email address." }, { status: 400 })
-    }
 
     if (!VALID_ROLES.includes(role)) {
       return NextResponse.json(
