@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
 import { Search } from "lucide-react"
 import { getAdminSession } from "@/lib/admin-auth"
@@ -78,7 +79,7 @@ export default async function AdminMerchantPage({
       })
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-8">
+    <div className="mx-auto flex max-w-7xl flex-col gap-8">
       <header>
         <h1 className="text-2xl font-bold text-foreground">Products</h1>
         <p className="text-sm text-muted-foreground">
@@ -86,9 +87,26 @@ export default async function AdminMerchantPage({
         </p>
       </header>
 
+      <section aria-labelledby="brand-heading" className="space-y-3">
+        <h2 id="brand-heading" className="text-xl font-semibold">Choose a brand</h2>
+        <p className="text-sm text-muted-foreground">Tap a brand to open its product workspace. These controls affect admin navigation only.</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {BRAND_DIRECTORY.map(b => <Link key={b.slug} href={`/admin/products?brand=${b.slug}#fix-pages`}
+            aria-current={brand === b.slug ? "page" : undefined}
+            className={`rounded-xl border p-4 text-center font-semibold transition-colors focus-visible:outline focus-visible:outline-2 ${brand === b.slug ? "border-primary bg-primary/15 text-primary" : "bg-card hover:bg-muted"}`}>
+            {b.label}<span className="mt-1 block text-xs font-normal">Open products →</span>
+          </Link>)}
+        </div>
+      </section>
+      {brand && <section className="rounded-xl border-2 border-primary/30 bg-card p-5" aria-label="Selected brand workspace">
+        <h2 className="text-2xl font-bold">{getBrandLabel(brand)} workspace</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{search?.total.toLocaleString() ?? 0} matching products. Use the editor below for prices, images, visibility and Google feed inclusion.</p>
+        <Link href="/admin/products" className="mt-2 inline-block text-sm text-primary underline">Back to all brands</Link>
+      </section>}
+
       <CatalogSyncPanel
-        brands={BRAND_DIRECTORY.map((b) => ({ slug: b.slug, label: b.label }))}
-        manualProducts={manualProducts.map((p) => ({
+        brands={(brand ? BRAND_DIRECTORY.filter(b => b.slug === brand) : BRAND_DIRECTORY).map((b) => ({ slug: b.slug, label: b.label }))}
+        manualProducts={manualProducts.filter(p => !brand || p.brand === brand).map((p) => ({
           brand: p.brand,
           brandLabel: getBrandLabel(p.brand),
           slug: p.slug,
@@ -105,7 +123,7 @@ export default async function AdminMerchantPage({
       <section id="fix-pages" aria-labelledby="fix-heading" className="flex scroll-mt-24 flex-col gap-4">
         <div>
           <h2 id="fix-heading" className="text-xl font-semibold text-foreground">
-            Change or fix pages
+            {brand ? `${getBrandLabel(brand)} products — edit and filter` : "Change or fix pages"}
           </h2>
           <p className="text-sm text-muted-foreground">
             Search any product page, then override its title, description, price, image or availability. Leave a field
