@@ -83,17 +83,19 @@ export default async function SalesSupportWorkspace({
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-sm">
+          <Link href="/admin/products" className="rounded-md border border-border px-3 py-2 hover:bg-muted">Products & prices</Link>
           <Link href="/admin/team" className="rounded-md border border-border px-3 py-2 hover:bg-muted">Manage team</Link>
           <Link href="/admin/settings" className="rounded-md border border-border px-3 py-2 hover:bg-muted">Email / system health</Link>
         </div>
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Customer work summary">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="Customer work summary">
         {[
           { label: 'Orders & reservations', count: orderCountsResult.status === 'fulfilled' ? sumCounts(orderCounts) : 'Unavailable', href: '/admin/orders' },
           { label: 'Quote leads', count: quoteCountsResult.status === 'fulfilled' ? sumCounts(quoteCounts) : 'Unavailable', href: '/admin/quotes' },
           { label: 'Active sales / support staff', count: staffResult.status === 'fulfilled' ? staff.length : 'Unavailable', href: '/admin/team' },
           { label: 'Currently shown in queue', count: queue.length, href: '/admin/sales' },
+          { label: 'Product pages, prices & visibility', count: 'Manage catalog', href: '/admin/products' },
         ].map((card) => (
           <Link key={card.label} href={card.href} className="rounded-xl border border-border bg-card p-4 hover:bg-muted/40">
             <p className="text-xs text-muted-foreground">{card.label}</p>
@@ -103,9 +105,9 @@ export default async function SalesSupportWorkspace({
       </section>
 
       <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
-        <h2 className="text-lg font-semibold">Every customer request in one place</h2>
+        <h2 className="text-lg font-semibold">Sales, support & product pages in one place</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Purchased items link to the exact product pages and retain quantity and unit pricing. Quote leads show their related product page and a quick link to fix a missing catalog price. Use each card to update the record's status, save notes, email a customer quote/update, and assign an active Sales Agent or Support Team member. Developer Team members are not included in customer-work alerts.
+          Purchased items link to the exact product pages and retain quantity and unit pricing. Quote leads show their related product page and a quick link to fix a missing catalog price. Use Products & Prices to search the catalog, update prices, images and visibility, or review missing-price products. Use each customer card to update status, save notes, email a quote/update, and assign an active Sales Agent or Support Team member. Developer Team members are not included in customer-work alerts.
         </p>
       </section>
 
@@ -120,6 +122,7 @@ export default async function SalesSupportWorkspace({
           <div className="flex flex-wrap gap-2 text-sm">
             <Link href="/admin/orders" className="text-primary underline">Detailed orders →</Link>
             <Link href="/admin/quotes" className="text-primary underline">Detailed quote leads →</Link>
+          <Link href="/admin/products" className="text-primary underline">Open product pages & pricing →</Link>
           </div>
         </div>
 
