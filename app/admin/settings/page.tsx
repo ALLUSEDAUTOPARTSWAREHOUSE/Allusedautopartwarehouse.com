@@ -7,6 +7,8 @@ import { FEED_PATH, SITE_URL, listFeedFetches } from "@/lib/merchant"
 import { listFeedSnapshots } from "@/lib/merchant-health"
 import { PHONE_DISPLAY, RETURNS, SHIPPING, WARRANTY_SUMMARY } from "@/lib/site-policy"
 import { RepairDatabaseButton } from "@/components/admin/repair-database-button"
+import { SettingsControlLinks, StorePolicyEditor } from "@/components/admin/settings-editors"
+import { getEditableStorePolicy } from "@/lib/admin-store-settings"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Settings & Health | AUAPW Admin", robots: { index: false } }
@@ -18,11 +20,12 @@ export default async function AdminSettingsPage() {
   const session = await getAdminSession()
   if (!session) redirect("/admin/login")
 
-  const [env, tables, snapshots, fetches] = await Promise.all([
+  const [env, tables, snapshots, fetches, editablePolicy] = await Promise.all([
     Promise.resolve(checkEnvironment()),
     checkDatabase(),
     listFeedSnapshots(1),
     listFeedFetches(1).catch(() => ({ recent: [], lastGoogle: null })),
+    getEditableStorePolicy(),
   ])
   const email = customerEmailReady()
   const missingRequired = env.filter((e) => e.required && !e.set)
@@ -33,8 +36,7 @@ export default async function AdminSettingsPage() {
       <header>
         <h1 className="text-2xl font-bold text-foreground">Settings &amp; system health</h1>
         <p className="text-sm text-muted-foreground">
-          Everything the admin depends on, checked live. Settings are changed in Vercel → Project → Settings → Environment
-          Variables (then Redeploy); values are never shown here.
+          Live health checks plus safe editing links. Secret values stay in provider dashboards and are never displayed here.
         </p>
       </header>
 
@@ -130,6 +132,8 @@ export default async function AdminSettingsPage() {
         )}
       </section>
 
+      <SettingsControlLinks />
+
       <section aria-labelledby="auto-heading" className="rounded-lg border border-border bg-card p-5">
         <h2 id="auto-heading" className="mb-3 text-lg font-semibold text-foreground">
           Automation
@@ -161,29 +165,30 @@ export default async function AdminSettingsPage() {
 
       <section aria-labelledby="store-heading" className="rounded-lg border border-border bg-card p-5">
         <h2 id="store-heading" className="mb-1 text-lg font-semibold text-foreground">
-          Store policy shown on the site
+          Store policy values
         </h2>
-        <p className="mb-3 text-xs text-muted-foreground">
-          One source for every page, the cart and the Google feed. Changing these is a code change — ask your developer.
+        <p className="mb-4 text-xs text-muted-foreground">
+          Edit and save the admin policy values. These are stored separately; storefront, checkout, and Merchant-feed policy constants are not changed by this editor yet.
         </p>
-        <dl className="grid gap-3 text-sm sm:grid-cols-2">
+        <dl className="mb-5 grid gap-3 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-muted-foreground">Phone</dt>
+            <dt className="text-muted-foreground">Current code default · phone</dt>
             <dd className="text-foreground">{PHONE_DISPLAY}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Shipping</dt>
+            <dt className="text-muted-foreground">Current code default · shipping</dt>
             <dd className="text-foreground">{SHIPPING.label}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Warranty</dt>
+            <dt className="text-muted-foreground">Current code default · warranty</dt>
             <dd className="text-foreground">{WARRANTY_SUMMARY}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Returns</dt>
+            <dt className="text-muted-foreground">Current code default · returns</dt>
             <dd className="text-foreground">{RETURNS.window}</dd>
           </div>
         </dl>
+        <StorePolicyEditor policy={editablePolicy} />
       </section>
     </div>
   )
