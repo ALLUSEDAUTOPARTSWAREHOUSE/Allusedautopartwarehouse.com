@@ -1,3 +1,4 @@
+import { getBrandLogoUrl } from "@/lib/data"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { Search } from "lucide-react"
@@ -94,11 +95,18 @@ export default async function AdminMerchantPage({
       <section aria-labelledby="brand-heading" className="space-y-3">
         <h2 id="brand-heading" className="text-xl font-semibold">Choose a brand</h2>
         <p className="text-sm text-muted-foreground">Tap a brand to open its product workspace. These controls affect admin navigation only.</p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {BRAND_DIRECTORY.map(b => {
             const stats = brandStats.find(item => item.slug === b.slug)
             return <article key={b.slug} className={`rounded-xl border bg-card p-4 ${brand === b.slug ? "border-primary" : ""}`}>
-              <Link href={`/admin/products?brand=${b.slug}#fix-pages`} className="font-bold text-primary">{b.label} →</Link>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Link href={`/admin/products?brand=${b.slug}#fix-pages`} className="font-bold text-primary">{b.label}</Link>
+                  <p className="mt-2 inline-block rounded-full bg-emerald-500/15 px-2 py-1 text-xs font-semibold text-emerald-800 dark:text-emerald-300">{stats ? `${(stats.total - stats.issues.hidden).toLocaleString()} visible parts` : 'Count unavailable'}</p>
+                </div>
+                {getBrandLogoUrl(b.label) && <img src={getBrandLogoUrl(b.label)!} alt={`${b.label} logo`} width={64} height={48} className="h-12 w-16 rounded-lg border bg-background object-contain p-2" loading="lazy" />}
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">Used engines · Transmissions</p>
               <dl className="my-3 space-y-2 text-xs">
                 <div className="flex justify-between"><dt>All catalog records</dt><dd>{stats?.total.toLocaleString() ?? 'Unavailable'}</dd></div>
                 <div className="flex justify-between"><dt>Visible website products</dt><dd>{stats ? (stats.total - stats.issues.hidden).toLocaleString() : 'Unavailable'}</dd></div>
