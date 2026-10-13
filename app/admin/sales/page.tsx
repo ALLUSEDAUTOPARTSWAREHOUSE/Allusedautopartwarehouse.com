@@ -132,6 +132,86 @@ export default async function SalesSupportWorkspace({
           searchPlaceholder="Search order #, customer, phone, email, make, model…"
         />
 
+        <section className="overflow-hidden rounded-xl border border-border bg-card" aria-label="Sales and support activity table">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
+            <div>
+              <h3 className="font-semibold">Activity table</h3>
+              <p className="mt-1 text-xs text-muted-foreground">A compact view of customer, product, owner, value, and next-step status.</p>
+            </div>
+            <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">{queue.length} records</span>
+          </div>
+          {queue.length === 0 ? (
+            <p className="p-5 text-sm text-muted-foreground">No matching activity to display.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1050px] text-left text-sm">
+                <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Type / Reference</th>
+                    <th className="px-4 py-3 font-semibold">Customer</th>
+                    <th className="px-4 py-3 font-semibold">Product / Request</th>
+                    <th className="px-4 py-3 font-semibold">Assigned owner</th>
+                    <th className="px-4 py-3 text-right font-semibold">Value</th>
+                    <th className="px-4 py-3 font-semibold">Status</th>
+                    <th className="px-4 py-3 font-semibold">Created</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {queue.map((item) => {
+                    const isOrder = item.kind === 'order'
+                    const customer = isOrder ? item.order.customerName : item.quote.fullName
+                    const contact = isOrder ? (item.order.customerEmail || item.order.customerPhone || 'No contact') : (item.quote.email || item.quote.phone || 'No contact')
+                    const product = isOrder
+                      ? item.order.items.map((line) => line.name).join(', ') || 'Items not listed'
+                      : [item.quote.year, item.quote.make, item.quote.model, item.quote.partType, item.quote.partOption].filter(Boolean).join(' · ') || 'Part request'
+                    const assignment = isOrder ? staffOrderAssignments.get(item.id) : staffQuoteAssignments.get(item.id)
+                    const amount = isOrder ? item.order.totalAmount : item.quote.quoteAmount
+                    const status = isOrder ? item.order.status : item.quote.status
+                    const reference = isOrder ? item.order.orderNumber : `Quote #${item.id}`
+                    return (
+                      <tr key={`activity-${item.kind}-${item.id}`} className="align-top hover:bg-muted/20">
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <span className="block font-mono text-xs font-semibold">{reference}</span>
+                          <span className="mt-1 inline-flex rounded-full border border-border px-2 py-0.5 text-[11px] capitalize text-muted-foreground">{isOrder ? 'Order' : 'Quote lead'}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="block max-w-[190px] truncate font-medium" title={customer}>{customer}</span>
+                          <span className="mt-1 block max-w-[190px] truncate text-xs text-muted-foreground" title={contact}>{contact}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="block max-w-[300px] truncate" title={product}>{product}</span>
+                          {isOrder ? (
+                            <span className="mt-1 block text-xs text-muted-foreground">{item.order.items.length} line item(s)</span>
+                          ) : quoteProductEntries.get(item.id)?.url ? (
+                            <Link href={quoteProductEntries.get(item.id)!.url!} target="_blank" className="mt-1 inline-block text-xs text-primary underline">Open related product ↗</Link>
+                          ) : (
+                            <span className="mt-1 block text-xs text-muted-foreground">{item.quote.source || 'Customer request'}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {assignment?.staffName ? (
+                            <>
+                              <span className="block font-medium">{assignment.staffName}</span>
+                              <span className="mt-1 block text-xs capitalize text-muted-foreground">{assignment.staffRole?.replace('_', ' ') || 'Team member'}</span>
+                            </>
+                          ) : <span className="text-xs text-amber-600">Unassigned</span>}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums">
+                          {amount == null ? <span className="font-normal text-amber-600">Not quoted</span> : `${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex max-w-[150px] rounded-full border border-border px-2.5 py-1 text-xs capitalize">{status.replaceAll('_', ' ')}</span>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
         {ordersResult.status === 'rejected' ? (
           <p role="alert" className="rounded-lg border border-destructive/30 p-4 text-sm">
             Orders and reservations could not be loaded. Check Settings → System Health.
