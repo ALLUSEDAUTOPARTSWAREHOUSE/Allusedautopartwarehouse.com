@@ -10,7 +10,15 @@ import { FollowupAssignmentSelect } from "@/components/admin/followup-assignment
 import type { FollowupStaffOption, FollowupAssignment } from "@/lib/followup-assignments"
 
 const initial: FollowupActionState = { ok: false, message: "" }
-const money = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const money = (n: number) => `${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+function productEditorPath(value: string): string | null {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("://") || value.includes(String.fromCharCode(92))) return null
+  const path = value.split(/[?#]/, 1)[0]
+  const match = path.match(/^\\/brands\\/([a-z0-9-]+)\\/([a-z0-9-]+)\\/?$/i)
+  if (!match || match[1] === "." || match[2] === "." || match[1] === ".." || match[2] === "..") return null
+  return `/admin/products?brand=${encodeURIComponent(match[1].toLowerCase())}&q=${encodeURIComponent(match[2])}#fix-pages`
+}
 
 export function OrderCard({ order, statuses, staffOptions, assignment }: { order: CustomerOrder; statuses: readonly string[]; staffOptions: FollowupStaffOption[]; assignment: FollowupAssignment | null }) {
   const [state, action, pending] = useActionState(saveOrderFollowup, initial)
@@ -64,22 +72,34 @@ export function OrderCard({ order, statuses, staffOptions, assignment }: { order
             </p>
           )}
 
-          <ul className="mt-3 divide-y divide-border rounded-md border border-border">
-            {order.items.map((line) => (
-              <li key={line.productId} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-                <Link href={line.url} target="_blank" className="min-w-0 truncate text-foreground hover:text-primary">
-                  {line.name}
-                </Link>
-                <span className="shrink-0 text-right text-muted-foreground">
-                  <span className="block">{line.quantity} × {money(line.unitPrice)}</span>
-                  <span className="block text-xs">Line total: {money(line.lineTotal)}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Subtotal {money(order.subtotal)} · Tax {money(order.tax)} · Shipping {money(order.shippingCost)}
-          </p>
+          <div className="mt-3 overflow-hidden rounded-md border border-border">
+            <div className="hidden grid-cols-[minmax(0,1fr)_5rem_7rem_7rem_8rem] gap-3 bg-muted/60 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground md:grid">
+              <span>Purchased product</span><span className="text-right">Qty</span><span className="text-right">Unit price</span><span className="text-right">Line total</span><span>Product actions</span>
+            </div>
+            {order.items.map((line) => {
+              const editorPath = productEditorPath(line.url)
+              return (
+                <div key={line.productId} className="grid grid-cols-2 gap-x-3 gap-y-1 border-t border-border px-3 py-3 text-sm first:border-t-0 md:grid-cols-[minmax(0,1fr)_5rem_7rem_7rem_8rem] md:items-center">
+                  <div className="col-span-2 min-w-0 md:col-span-1">
+                    <Link href={line.url} target="_blank" className="font-medium text-foreground hover:text-primary hover:underline">{line.name}</Link>
+                    <p className="mt-0.5 break-all text-[11px] text-muted-foreground">{line.url}</p>
+                  </div>
+                  <span className="text-muted-foreground md:text-right"><span className="md:hidden">Qty: </span>{line.quantity}</span>
+                  <span className="text-muted-foreground md:text-right"><span className="md:hidden">Unit: </span>{money(line.unitPrice)}</span>
+                  <span className="font-semibold text-foreground md:text-right"><span className="md:hidden">Line total: </span>{money(line.lineTotal)}</span>
+                  <div className="col-span-2 md:col-span-1">
+                    {editorPath ? <Link href={editorPath} className="text-xs font-semibold text-primary underline">Edit product / price →</Link> : <span className="text-xs text-muted-foreground">Product editor unavailable</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 rounded-md border border-border bg-muted/20 p-3 text-xs sm:grid-cols-4">
+            <div><p className="text-muted-foreground">Subtotal</p><p className="mt-1 font-semibold text-foreground">{money(order.subtotal)}</p></div>
+            <div><p className="text-muted-foreground">Tax</p><p className="mt-1 font-semibold text-foreground">{money(order.tax)}</p></div>
+            <div><p className="text-muted-foreground">Shipping</p><p className="mt-1 font-semibold text-foreground">{money(order.shippingCost)}</p></div>
+            <div><p className="text-muted-foreground">Order total</p><p className="mt-1 font-semibold text-foreground">{money(order.totalAmount)}</p></div>
+          </div>
           {order.customerNotes && (
             <p className="mt-3 whitespace-pre-wrap rounded-md bg-muted/50 p-3 text-sm text-foreground">
               <span className="font-medium">Customer note: </span>
