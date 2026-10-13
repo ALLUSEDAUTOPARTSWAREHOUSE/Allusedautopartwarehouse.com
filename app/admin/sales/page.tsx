@@ -5,6 +5,7 @@ import { listOrders, listQuoteLeads } from '@/lib/followup'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { FollowupAssignmentSelect } from '@/components/admin/followup-assignment-select'
 import { getActiveSalesSupportStaff, getFollowupAssignments } from '@/lib/followup-assignments'
+import { getQuoteProductInfo } from '@/lib/quote-product-info'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Sales & Support Workspace | AUAPW Admin', robots: { index: false } }
@@ -21,10 +22,12 @@ export default async function SalesSupportWorkspace() {
   ])
   const orders = ordersResult.status === 'fulfilled' ? ordersResult.value : null
   const quotes = quotesResult.status === 'fulfilled' ? quotesResult.value : null
-  const [staff, orderAssignments, quoteAssignments] = await Promise.all([
+  const [staff, orderAssignments, quoteAssignments, quoteProducts] = await Promise.all([
     getActiveSalesSupportStaff().catch(() => []),
     getFollowupAssignments('order', (orders ?? []).map((order) => order.id)).catch(() => new Map()),
     getFollowupAssignments('quote', (quotes ?? []).map((quote) => String(quote.id))).catch(() => new Map()),
+    Promise.all((quotes ?? []).map(async (quote) => [String(quote.id), await getQuoteProductInfo(quote)] as const))
+      .then((entries) => new Map(entries)),
   ])
 
   return (
@@ -113,7 +116,7 @@ export default async function SalesSupportWorkspace() {
         : <div className="overflow-x-auto rounded-xl border border-border bg-card">
           <table className="min-w-[1280px] w-full text-left text-sm">
             <thead className="bg-muted/50 text-xs text-muted-foreground"><tr>
-              {['Quote #', 'Customer / contact', 'Vehicle / requested part', 'Submitted product page', 'Status', 'Quoted price', 'Created', 'Updated', 'Assigned sales/support', 'Actions'].map((heading) => <th key={heading} scope="col" className="p-3 font-medium">{heading}</th>)}
+              {['Quote #', 'Customer / contact', 'Vehicle / requested part', 'Related product / catalog price', 'Status', 'Quoted price', 'Created', 'Updated', 'Assigned sales/support', 'Actions'].map((heading) => <th key={heading} scope="col" className="p-3 font-medium">{heading}</th>)}
             </tr></thead>
             <tbody>{quotes.map((quote) => (
               <tr key={quote.id} className="border-t border-border align-top">
@@ -123,9 +126,14 @@ export default async function SalesSupportWorkspace() {
                   {quote.phone ? <a href={`tel:${quote.phone.replace(/[^\d+]/g, '')}`} className="block text-xs text-primary hover:underline">{quote.phone}</a> : null}
                 </td>
                 <td className="p-3">{[quote.year, quote.make, quote.model].filter(Boolean).join(' ')}<div className="text-xs text-muted-foreground">{quote.partType}{quote.partOption ? ` · ${quote.partOption}` : ''}</div></td>
-                <td className="p-3">{quote.pageUrl && quote.pageUrl.startsWith('/') && !quote.pageUrl.startsWith('//')
-                  ? <Link href={quote.pageUrl} target="_blank" className="text-primary underline">{quote.source || quote.pageUrl}</Link>
-                  : <span className="text-xs text-muted-foreground">{quote.source || 'Website form'} (source URL not recorded)</span>}</td>
+                <td className="p-3">
+                  {quoteProducts.get(String(quote.id))?.url
+                    ? <Link href={quoteProducts.get(String(quote.id))!.url!} target="_blank" className="font-medium text-primary underline">{quoteProducts.get(String(quote.id))?.name || "View related product"} ↗</Link>
+                    : <span className="text-xs text-muted-foreground">{quote.source || "Website form"} (no catalog product linked)</span>}
+                  {quoteProducts.get(String(quote.id))?.priceMissing && quoteProducts.get(String(quote.id))?.priceEditorUrl
+                    ? <Link href={quoteProducts.get(String(quote.id))!.priceEditorUrl!} className="mt-2 block text-xs font-semibold text-amber-600 underline">Missing price — set it now →</Link>
+                    : null}
+                </td>
                 <td className="p-3"><StatusBadge status={quote.status} /></td>
                 <td className="p-3 whitespace-nowrap">{quote.quoteAmount === null ? 'Not quoted' : money(quote.quoteAmount)}</td>
                 <td className="p-3 whitespace-nowrap text-xs">{when(quote.createdAt)}</td>
