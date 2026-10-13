@@ -2,13 +2,14 @@
 
 import { Truck, Clock, DollarSign, Package, MapPin, Shield } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { RETURNS, SHIPPING } from '@/lib/site-policy'
 
 export function ShippingInfo() {
   const shippingOptions = [
     {
       icon: Truck,
       title: 'Flat-Rate Shipping',
-      description: '7-14 Business Days',
+      description: SHIPPING.transit,
       price: '$240',
       details: 'A fixed $240 shipping charge applies to every part'
     },
@@ -142,7 +143,7 @@ export function ShippingInfo() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Not satisfied? Return eligible unused parts within 14 days under the terms of our return policy.
+                {RETURNS.detail}
               </p>
             </CardContent>
           </Card>

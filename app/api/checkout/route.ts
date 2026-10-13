@@ -1,49 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { headers } from 'next/headers'
+import { and, eq, inArray } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 import { stripe } from '@/lib/stripe'
 import { db } from '@/lib/db'
-import { orders, orderItems, listings } from '@/lib/db/schema'
+import { listings } from '@/lib/db/schema'
+import { z } from 'zod'
 
-interface CheckoutItem {
-  listingId: string
-  quantity: number
-}
+const CheckoutSchema = z.object({
+  items: z.array(z.object({
+    listingId: z.string().min(1),
+    quantity: z.number().int().positive(),
+  })).min(1),
+  shippingAddress: z.string().optional(),
+  billingAddress: z.string().optional(),
+})
 
 export async function POST(request: NextRequest) {
-  const session = await auth.api.getSession()
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
-    const { items, shippingAddress, billingAddress } = body as {
-      items: CheckoutItem[]
-      shippingAddress?: string
-      billingAddress?: string
+    const parsed = CheckoutSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid checkout request' }, { status: 400 })
+    }
+    const { items } = parsed.data
+
+    const quantities = new Map<string, number>()
+    for (const item of items) {
+      quantities.set(item.listingId, (quantities.get(item.listingId) ?? 0) + item.quantity)
     }
 
-    if (!items || items.length === 0) {
-      return NextResponse.json({ error: 'No items in cart' }, { status: 400 })
-    }
+    const listingsData = await db
+      .select()
+      .from(listings)
+      .where(and(inArray(listings.id, [...quantities.keys()]), eq(listings.status, 'active')))
+    const listingsById = new Map<string, (typeof listingsData)[number]>()
+    for (const listing of listingsData) listingsById.set(listing.id, listing)
 
-    // Fetch listing details
-    const listingIds = items.map((item) => item.listingId)
-    const listingsData = await db.select().from(listings).where((col) => {
-      // In a real app, use proper filtering
-      return null as any
-    })
+    for (const [listingId, quantity] of quantities) {
+      const listing = listingsById.get(listingId)
+      if (!listing || listing.quantity < quantity) {
+        return NextResponse.json({ error: 'One or more items are unavailable' }, { status: 422 })
+      }
+    }
 
     // Calculate total
     let subtotal = 0
     let lineItems: any[] = []
 
     for (const item of items) {
-      // Find listing (simulated - in real app fetch from DB)
-      const listing = { id: item.listingId, title: 'Part', price: '99.99', sellerId: 'seller_123' }
-
-      const unitPrice = parseFloat(listing.price)
+      const listing = listingsById.get(item.listingId)!
+      const unitPrice = Number(listing.price)
+      if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+        return NextResponse.json({ error: 'Invalid listing price' }, { status: 422 })
+      }
       const itemTotal = unitPrice * item.quantity
 
       subtotal += itemTotal

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { headers } from 'next/headers'
 import { Roboto } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
@@ -9,6 +10,7 @@ import { MobileThemeFab } from '@/components/mobile-theme-fab'
 import { IntercomProvider } from '@/components/intercom-provider'
 import { GoogleCustomerReviewsBadge } from '@/components/google-customer-reviews'
 import { LiveChatWidget } from '@/components/chat/live-chat-widget'
+import { auth } from '@/lib/auth'
 import './globals.css'
 
 const roboto = Roboto({
@@ -78,11 +80,25 @@ export const viewport: Viewport = {
   themeColor: '#0d0f16',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  let intercomUser
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (session?.user) {
+      intercomUser = {
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+      }
+    }
+  } catch (error) {
+    console.error('[Intercom] Could not load the current session:', error)
+  }
+
   return (
     <html lang="en" className="dark bg-background" suppressHydrationWarning>
       <body className={`${roboto.variable} font-sans antialiased bg-background text-foreground`}>
@@ -100,7 +116,7 @@ export default function RootLayout({
           <ThemeProvider>
             {children}
             <MobileThemeFab />
-            <IntercomProvider />
+            <IntercomProvider user={intercomUser} />
             <LiveChatWidget />
           </ThemeProvider>
         </AuthProvider>

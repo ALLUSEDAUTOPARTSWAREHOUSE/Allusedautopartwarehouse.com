@@ -19,25 +19,24 @@ export default function CustomerLoginPage() {
     setIsLoading(true)
 
     try {
-      const endpoint = isSignup ? '/api/customer/auth/signup' : '/api/customer/auth/login'
+      const endpoint = isSignup ? '/api/auth/sign-up/email' : '/api/auth/sign-in/email'
       
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          ...(isSignup ? { name: email.split('@')[0] } : {}),
+          email,
+          password,
+        }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.message || 'Authentication failed')
+        setError(data.message || data.error || 'Authentication failed')
         return
       }
-
-      // Store customer token
-      localStorage.setItem('customerToken', data.token)
-      localStorage.setItem('customerId', data.customerId)
-      localStorage.setItem('customerEmail', email)
 
       router.push('/customer/dashboard')
     } catch (err) {
@@ -100,6 +99,7 @@ export default function CustomerLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  minLength={8}
                   className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   required
                 />

@@ -130,15 +130,18 @@ export function buildFeedAlerts(
   return alerts
 }
 
-/**
- * Stores today's snapshot. Returns null when today's snapshot already exists,
- * so a repeated cron call (retries, manual hits) never sends a second report.
- */
-export async function recordDailySnapshot(
+/** Builds today's snapshot without marking the daily job complete. */
+export async function prepareDailySnapshot(
   stats: BrandFeedStats[],
   fetches: { lastGoogle: string | null },
 ): Promise<{ snapshot: FeedSnapshot; previous: FeedSnapshot | null } | null> {
   await ensureSnapshotTable()
+  const { rows: todayRows } = await pool.query(
+    `SELECT 1 FROM public.merchant_feed_snapshots
+      WHERE day = (now() AT TIME ZONE '${BUSINESS_TIME_ZONE}')::date`,
+  )
+  if (todayRows.length) return null
+
   const { rows: prevRows } = await pool.query(
     `SELECT to_char(day, 'YYYY-MM-DD') AS day, taken_at, total, eligible, brands, alerts
        FROM public.merchant_feed_snapshots
@@ -148,20 +151,40 @@ export async function recordDailySnapshot(
   const previous = prevRows[0] ? mapSnapshot(prevRows[0]) : null
   const alerts = buildFeedAlerts(stats, fetches.lastGoogle, previous)
   const brands = stats.map((b) => ({ slug: b.slug, label: b.label, total: b.total, eligible: b.eligible }))
+  const { rows: dayRows } = await pool.query(
+    `SELECT to_char((now() AT TIME ZONE '${BUSINESS_TIME_ZONE}')::date, 'YYYY-MM-DD') AS day`,
+  )
 
+  return {
+    snapshot: {
+      day: dayRows[0].day,
+      takenAt: new Date().toISOString(),
+      total: brands.reduce((sum, b) => sum + b.total, 0),
+      eligible: brands.reduce((sum, b) => sum + b.eligible, 0),
+      brands,
+      alerts,
+    },
+    previous,
+  }
+}
+
+/** Persists the snapshot only after the rest of the daily job succeeds. */
+export async function recordDailySnapshot(snapshot: FeedSnapshot): Promise<boolean> {
+  await ensureSnapshotTable()
   const { rows } = await pool.query(
     `INSERT INTO public.merchant_feed_snapshots (day, total, eligible, brands, alerts)
-     VALUES ((now() AT TIME ZONE '${BUSINESS_TIME_ZONE}')::date, $1, $2, $3::jsonb, $4::jsonb)
+     VALUES ($1::date, $2, $3, $4::jsonb, $5::jsonb)
      ON CONFLICT (day) DO NOTHING
-     RETURNING to_char(day, 'YYYY-MM-DD') AS day, taken_at, total, eligible, brands, alerts`,
+     RETURNING day`,
     [
-      brands.reduce((sum, b) => sum + b.total, 0),
-      brands.reduce((sum, b) => sum + b.eligible, 0),
-      JSON.stringify(brands),
-      JSON.stringify(alerts),
+      snapshot.day,
+      snapshot.total,
+      snapshot.eligible,
+      JSON.stringify(snapshot.brands),
+      JSON.stringify(snapshot.alerts),
     ],
   )
-  return rows[0] ? { snapshot: mapSnapshot(rows[0]), previous } : null
+  return rows.length > 0
 }
 
 /** The fetch log gains a row per feed request; keep it to a useful window. */

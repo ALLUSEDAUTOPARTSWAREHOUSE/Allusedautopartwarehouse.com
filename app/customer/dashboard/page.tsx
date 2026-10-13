@@ -81,24 +81,40 @@ export default function CustomerDashboard() {
   ])
 
   useEffect(() => {
-    const token = localStorage.getItem('customerToken')
-    const email = localStorage.getItem('customerEmail')
+    let active = true
 
-    if (!token || !email) {
-      router.push('/customer/login')
-      return
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/get-session')
+        const session = response.ok ? await response.json() : null
+        if (!active) return
+        if (!session?.user?.email) {
+          router.push('/customer/login')
+          return
+        }
+        setCustomerEmail(session.user.email)
+        setIsAuthenticated(true)
+      } catch {
+        if (active) router.push('/customer/login')
+      } finally {
+        if (active) setIsLoading(false)
+      }
     }
 
-    setCustomerEmail(email)
-    setIsAuthenticated(true)
-    setIsLoading(false)
+    void checkSession()
+    return () => {
+      active = false
+    }
   }, [router])
 
-  const handleLogout = () => {
-    localStorage.removeItem('customerToken')
-    localStorage.removeItem('customerId')
-    localStorage.removeItem('customerEmail')
-    router.push('/customer/login')
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/sign-out', { method: 'POST' })
+    } catch (error) {
+      console.error('[customer-dashboard] Sign out failed:', error)
+    } finally {
+      router.push('/customer/login')
+    }
   }
 
   if (isLoading) {

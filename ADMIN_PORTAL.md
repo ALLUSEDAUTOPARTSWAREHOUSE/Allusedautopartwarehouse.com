@@ -186,7 +186,7 @@ ADMIN_PASSWORD=your-secure-password
 # Database (REQUIRED)
 DATABASE_URL=postgresql://user:pass@host/db
 
-# Better Auth (for future customer auth)
+# Better Auth (customer authentication)
 BETTER_AUTH_SECRET=generated-secret-key
 
 # Email (for notifications)
@@ -458,53 +458,17 @@ Response (success):
 
 ### Customer Authentication
 
-**POST** `/api/customer/auth/login`
+Customer registration and sign-in use Better Auth. Successful requests set a
+session cookie; the client should not store or trust a customer token in
+`localStorage`.
 
-Request body:
-```json
-{
-  "email": "customer@example.com",
-  "password": "password123"
-}
-```
+**POST** `/api/auth/sign-in/email` — body: `{ "email": "...", "password": "..." }`
 
-Response (success):
-```json
-{
-  "success": true,
-  "message": "Login successful",
-  "token": "base64_encoded_token",
-  "customerId": "cust_xxxxx",
-  "user": {
-    "email": "customer@example.com",
-    "role": "customer"
-  }
-}
-```
+**POST** `/api/auth/sign-up/email` — body: `{ "name": "...", "email": "...", "password": "..." }`
 
-**POST** `/api/customer/auth/signup`
-
-Request body:
-```json
-{
-  "email": "newcustomer@example.com",
-  "password": "password123"
-}
-```
-
-Response (success):
-```json
-{
-  "success": true,
-  "message": "Account created successfully",
-  "token": "base64_encoded_token",
-  "customerId": "cust_xxxxx",
-  "user": {
-    "email": "newcustomer@example.com",
-    "role": "customer"
-  }
-}
-```
+Use **GET** `/api/auth/get-session` to check the current session and
+**POST** `/api/auth/sign-out` to end it. The retired `/api/customer/auth/login`
+and `/api/customer/auth/signup` endpoints return `410 Gone`.
 
 ---
 
@@ -517,8 +481,8 @@ Response (success):
 | `/customer/login` | Customer login/signup | Public |
 | `/customer/dashboard` | Customer account dashboard | Authenticated Customer |
 | `/api/admin/auth/login` | Admin authentication API | Public |
-| `/api/customer/auth/login` | Customer login API | Public |
-| `/api/customer/auth/signup` | Customer signup API | Public |
+| `/api/auth/sign-in/email` | Customer login API | Public |
+| `/api/auth/sign-up/email` | Customer signup API | Public |
 
 ---
 

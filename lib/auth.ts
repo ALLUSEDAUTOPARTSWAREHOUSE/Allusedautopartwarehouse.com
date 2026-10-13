@@ -15,6 +15,9 @@ export const auth = betterAuth({
     autoSignIn: true,
   },
   trustedOrigins: [
+    "https://allusedautopartswarehouse.com",
+    "https://www.allusedautopartswarehouse.com",
+    ...(process.env.BETTER_AUTH_URL ? [new URL(process.env.BETTER_AUTH_URL).origin] : []),
     ...(process.env.V0_RUNTIME_URL ? [process.env.V0_RUNTIME_URL] : []),
     ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
     ...(process.env.VERCEL_PROJECT_PRODUCTION_URL
