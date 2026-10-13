@@ -12,10 +12,9 @@ import {
   type OrderStatus,
   type QuoteStatus,
 } from "@/lib/followup"
-import { sendOrderStatusEmail, sendQuoteEmail } from "@/lib/followup-notify"
+import { sendOrderStatusEmail, sendQuoteEmail, notifyFollowupAssignment } from "@/lib/followup-notify"
 import { SITE_URL } from "@/lib/merchant"
 import { getFollowupAssignments, setFollowupAssignment, type FollowupRecordType } from "@/lib/followup-assignments"
-import { notifyFollowupAssignment } from "@/lib/followup-notify"
 
 export interface FollowupActionState {
   ok: boolean
