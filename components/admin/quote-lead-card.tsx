@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useActionState } from "react"
 import { Mail, Phone } from "lucide-react"
 import { saveQuoteFollowup, type FollowupActionState } from "@/app/admin/followup-actions"
@@ -10,7 +11,7 @@ import type { FollowupStaffOption, FollowupAssignment } from "@/lib/followup-ass
 
 const initial: FollowupActionState = { ok: false, message: "" }
 
-export function QuoteLeadCard({ lead, statuses, staffOptions, assignment }: { lead: QuoteLead; statuses: readonly string[]; staffOptions: FollowupStaffOption[]; assignment: FollowupAssignment | null }) {
+export function QuoteLeadCard({ lead, statuses, staffOptions, assignment, productInfo }: { lead: QuoteLead; statuses: readonly string[]; staffOptions: FollowupStaffOption[]; assignment: FollowupAssignment | null; productInfo: { name: string | null; url: string | null; priceMissing: boolean; priceEditorUrl: string | null } | null }) {
   const [state, action, pending] = useActionState(saveQuoteFollowup, initial)
   const vehicle = [lead.year, lead.make, lead.model].filter(Boolean).join(" ") || "Vehicle not specified"
   const location = [lead.state, lead.zip].filter(Boolean).join(" ")
@@ -31,8 +32,16 @@ export function QuoteLeadCard({ lead, statuses, staffOptions, assignment }: { le
             {vehicle} <span className="text-muted-foreground">— {lead.partType}</span>
           </h2>
           {lead.partOption && <p className="text-sm text-muted-foreground">Option: {lead.partOption}</p>}
-          {lead.pageUrl && lead.pageUrl.startsWith("/") && !lead.pageUrl.startsWith("//") ? (
-            <a href={lead.pageUrl} className="mt-2 inline-flex text-xs font-medium text-primary underline-offset-4 hover:underline" target="_blank" rel="noreferrer">View customer&apos;s submitted product/page ↗</a>
+          {productInfo?.name ? (
+            <div className="mt-3 rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Product of interest</p>
+              {productInfo.url
+                ? <Link href={productInfo.url} target="_blank" className="mt-1 inline-flex font-semibold text-primary underline">{productInfo.name} ↗</Link>
+                : <p className="mt-1 font-semibold text-foreground">{productInfo.name}</p>}
+              {productInfo.priceMissing && productInfo.priceEditorUrl
+                ? <Link href={productInfo.priceEditorUrl} className="mt-2 block text-xs font-semibold text-amber-600 underline">Missing catalog price — set it now →</Link>
+                : null}
+            </div>
           ) : null}
 
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
