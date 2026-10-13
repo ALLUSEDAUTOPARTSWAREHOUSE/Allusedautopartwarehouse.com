@@ -575,3 +575,9 @@ The server uses the existing AI SDK and `google/gemini-2.5-flash-lite` through
 Vercel AI Gateway. Vercel deployments can authenticate with their OIDC token;
 local development needs AI Gateway authentication. Available Gateway credits
 are required. No credentials are sent to the browser.
+
+The AI Agent offers **Customer support** and **Development planning** modes,
+with starter prompts for reply drafts, FAQs, troubleshooting, and feature plans.
+Switching modes clears the conversation. A dashboard card links to the agent.
+All generated output is a draft: administrators review it and manually apply or
+send it outside this tool. There is no automatic sending, code execution, or deployment.
