@@ -4,6 +4,11 @@ import { createQuoteLead } from "@/lib/followup"
 import { notifyNewQuote, sendCustomerQuoteAcknowledgement } from "@/lib/followup-notify"
 
 const text = (max: number) => z.string().trim().max(max).optional().default("")
+const isSafeInternalPath = (value: string) => {
+  if (!value) return true
+  if (!value.startsWith("/") || value.startsWith("//") || value.includes(String.fromCharCode(92)) || value.includes("://")) return false
+  return !value.split(/[?#]/, 1)[0].split("/").some((part) => part === "." || part === "..")
+}
 
 const QuoteSchema = z.object({
   part: text(60),
@@ -24,7 +29,7 @@ const QuoteSchema = z.object({
   source: text(60),
   pageUrl: text(500),
   productName: text(150),
-  productUrl: text(500).refine((value) => !value || (/^\x2fbrands\/[a-z0-9-]+\/[a-z0-9-]+\/?$/i.test(value) && !value.startsWith("//")), "Invalid product reference."),
+  productUrl: text(500).refine(isSafeInternalPath, "Invalid product reference."),
   website: text(200),
 })
 
