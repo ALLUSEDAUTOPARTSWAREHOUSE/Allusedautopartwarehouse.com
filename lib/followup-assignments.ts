@@ -74,7 +74,7 @@ export async function getFollowupAssignments(
       WHERE a.record_type = $1 AND a.record_id = ANY($2::text[])`,
     [recordType, recordIds],
   )
-  return new Map(rows.map((row: {
+  const entries: [string, FollowupAssignment][] = rows.map((row: {
     record_id: string
     staff_id: string
     staff_name: string | null
@@ -90,7 +90,8 @@ export async function getFollowupAssignments(
     staffRole: row.staff_role,
     staffStatus: row.staff_status,
     updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : String(row.updated_at),
-  }]))
+  }])
+  return new Map(entries)
 }
 
 /** Assign or clear one order/quote. Only an active sales/support member may be assigned. */
