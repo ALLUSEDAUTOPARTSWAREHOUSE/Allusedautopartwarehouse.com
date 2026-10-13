@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 
-export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
+export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-up'; redirectTo?: string }) {
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -18,6 +18,8 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const [loading, setLoading] = useState(false)
 
   const isSignUp = mode === 'sign-up'
+  const target = redirectTo.startsWith('/') && !redirectTo.startsWith('//') && !redirectTo.includes('\\\\') && !redirectTo.split(/[?#]/, 1)[0].split('/').some((part) => part === '.' || part === '..') ? redirectTo : '/'
+  const switchHref = `${isSignUp ? '/sign-in' : '/sign-up'}?redirectTo=${encodeURIComponent(target)}`
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,7 +37,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
       return
     }
 
-    router.push('/')
+    router.push(target)
     router.refresh()
   }
 
@@ -108,7 +110,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
         <p className="text-sm text-muted-foreground text-center mt-6">
           {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
           <Link
-            href={isSignUp ? '/sign-in' : '/sign-up'}
+            href={switchHref}
             className="text-foreground font-medium underline-offset-4 hover:underline"
           >
             {isSignUp ? 'Sign in' : 'Sign up'}
