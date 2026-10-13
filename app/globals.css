@@ -5101,3 +5101,44 @@ html:not(.hydrating) .cinematic-frame {
     box-shadow: none;
   }
 }
+
+/* Custom futuristic workspace theme; scoped to admin, not the storefront. */
+.admin-shell {
+  --primary: #365bea;
+  --primary-foreground: #ffffff;
+  --ring: #365bea;
+  background-image:
+    radial-gradient(ellipse at 85% 0%, rgb(139 92 246 / 10%), transparent 45%),
+    radial-gradient(ellipse at 5% 35%, rgb(59 130 246 / 8%), transparent 50%);
+}
+.dark .admin-shell {
+  --background: #0b1020;
+  --foreground: #e8edf8;
+  --card: #121a2e;
+  --card-foreground: #e8edf8;
+  --muted: #1d2942;
+  --muted-foreground: #afbdd7;
+  --border: #33415c;
+  --primary: #9bbcff;
+  --primary-foreground: #101c36;
+  --ring: #9bbcff;
+}
+.admin-shell :is(section.bg-card, article.bg-card, details.bg-card, a.bg-card) {
+  border-radius: 1rem;
+  border-color: color-mix(in srgb, var(--primary) 22%, var(--border));
+}
+.admin-shell header {
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--primary) 18%, transparent);
+}
+.admin-shell nav a[aria-current="page"] {
+  box-shadow: inset 3px 0 0 var(--primary), 0 0 16px rgb(59 130 246 / 8%);
+}
+.admin-shell button.bg-primary {
+  background-image: linear-gradient(115deg, transparent, rgb(139 92 246 / 16%));
+  border-radius: .75rem;
+}
+@media (forced-colors: active) {
+  .admin-shell { background-image: none; }
+  .admin-shell button.bg-primary { background-image: none; }
+  .admin-shell nav a[aria-current="page"] { box-shadow: none; outline: 2px solid Highlight; }
+}
