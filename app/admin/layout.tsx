@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { LogOut } from 'lucide-react'
 import { getAdminSession } from '@/lib/admin-auth'
 import { AssistantPopup } from '@/components/admin/assistant-popup'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { AdminNav } from '@/components/admin/admin-nav'
 
 export const metadata = {
@@ -22,6 +23,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             <Link href={session ? '/admin/dashboard' : '/admin'} className="text-xl font-bold text-primary">
               AUAPW Admin
             </Link>
+            <ThemeToggle />
             {session ? (
               <div className="flex items-center gap-3 lg:hidden">
                 <LogoutButton />
