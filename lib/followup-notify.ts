@@ -270,7 +270,7 @@ export async function sendCustomerOrderInvoice(order: CustomerOrder, siteUrl: st
 }
 
 /** Send a receipt-style acknowledgement after a quote request is saved. */
-export async function sendCustomerQuoteAcknowledgement(lead: QuoteLead): Promise<SendResult> {
+export async function sendCustomerQuoteAcknowledgement(lead: QuoteLead, siteUrl: string): Promise<SendResult> {
   if (!lead.email) return { ok: false, error: "The customer did not provide an email address." }
   const vehicle = [lead.year, lead.make, lead.model].filter(Boolean).join(" ")
   const body = `
@@ -283,6 +283,9 @@ export async function sendCustomerQuoteAcknowledgement(lead: QuoteLead): Promise
       ["Submitted", new Date(lead.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })],
     ])}</table>
     ${lead.productName ? `<p>Product of interest: <strong>${escapeHtml(lead.productName)}</strong></p>` : ""}
+    ${lead.productUrl && lead.productUrl.startsWith("/") && !lead.productUrl.startsWith("//")
+      ? `<p><a href="${escapeHtml(siteUrl + lead.productUrl)}">View the exact product page</a></p>`
+      : ""}
     <p>A parts specialist will review the request and contact you. This acknowledgement is not a price quote or fitment confirmation.</p>`
   return sendWithResult(
     `We received your AUAPW quote request #${lead.id}`,
