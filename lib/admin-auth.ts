@@ -35,7 +35,7 @@ function deploymentLabel(): string {
 
 function getAdminCredentials() {
   return {
-    email: process.env.ADMIN_EMAIL || 'auapworld@gmail.com',
+    email: process.env.ADMIN_EMAIL || 'Info@Allusedautopartswarehouse.com',
     password: process.env.ADMIN_PASSWORD || '',
   }
 }
