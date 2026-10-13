@@ -19,10 +19,10 @@ function route(session, generateText) {
   new Function('require', 'module', 'exports', outputText)((name) => dependencies[name], module, module.exports)
   return module.exports.POST
 }
-const request = (messages, origin = 'https://example.com') => ({
+const request = (messages, origin = 'https://example.com', mode = 'support') => ({
   nextUrl: { origin: 'https://example.com' },
   headers: new Headers({ origin }),
-  json: async () => ({ messages }),
+  json: async () => ({ messages, mode }),
 })
 
 test('requires an admin session before invoking AI', async () => {
@@ -49,4 +49,15 @@ test('provider failures never expose sensitive error details', async () => {
   const result = await route({}, async () => { throw new Error('secret') })(request([{ role: 'user', content: 'hi' }]))
   assert.equal(result.status, 503)
   assert.doesNotMatch(result.data.error, /secret/)
+})
+
+test('development mode provides planning instructions and rejects unknown modes', async () => {
+  const messages = [{ role: 'user', content: 'Plan a feature' }]
+  const post = route({}, async (options) => {
+    assert.match(options.instructions, /development planning agent/)
+    assert.match(options.instructions, /never send messages, execute code, or make changes/)
+    return { text: 'Draft plan' }
+  })
+  assert.equal((await post(request(messages, 'https://example.com', 'development'))).status, 200)
+  assert.equal((await post(request(messages, 'https://example.com', 'execute'))).status, 400)
 })
