@@ -581,3 +581,18 @@ with starter prompts for reply drafts, FAQs, troubleshooting, and feature plans.
 Switching modes clears the conversation. A dashboard card links to the agent.
 All generated output is a draft: administrators review it and manually apply or
 send it outside this tool. There is no automatic sending, code execution, or deployment.
+### Change the admin password
+
+After signing in, open **Settings → Change admin password**. Enter the current
+password and a new password of at least 12 characters twice. Each successful
+change signs out every admin session; sign in again with the new password.
+Changes can be repeated without redeploying.
+
+Requires `DATABASE_URL` and database permission to create the `admin_password`
+table. Only a salted scrypt hash is stored. The database password overrides the
+bootstrap `ADMIN_PASSWORD` after the first change. Keep a stable session secret
+(`BETTER_AUTH_SECRET` or `ADMIN_SESSION_SECRET`); the existing environment-based
+fallback remains supported. Database failures fail authentication closed.
+Preview and Production should use separate databases to avoid sharing credentials.
+Recovery requires trusted database administration to reset the credential row;
+editing `ADMIN_PASSWORD` alone does not override an existing stored password.

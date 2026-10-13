@@ -1,3 +1,4 @@
+import { ChangePassword } from '@/components/admin/change-password'
 import { redirect } from "next/navigation"
 import { CheckCircle2, CircleAlert, CircleDashed, XCircle } from "lucide-react"
 import { getAdminSession } from "@/lib/admin-auth"
@@ -37,6 +38,8 @@ export default async function AdminSettingsPage() {
           Variables (then Redeploy); values are never shown here.
         </p>
       </header>
+
+      <ChangePassword />
 
       <section
         aria-label="Summary"

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: validation.message }, { status: 401 })
     }
 
-    const token = generateAdminToken(email.trim().toLowerCase())
+    const token = await generateAdminToken(email.trim().toLowerCase(), validation.passwordVersion)
 
     console.log(`[v0] Admin login successful for: ${email}`)
 

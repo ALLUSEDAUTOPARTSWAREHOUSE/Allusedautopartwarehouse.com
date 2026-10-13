@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.slice(7)
-    const tokenVerification = verifyAdminToken(token)
+    const tokenVerification = await verifyAdminToken(token)
     
     if (!tokenVerification.valid) {
       return NextResponse.json(

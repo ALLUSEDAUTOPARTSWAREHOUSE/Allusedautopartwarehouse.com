@@ -1,3 +1,4 @@
+import { readAdminPassword, matchesPassword } from '@/lib/admin-password'
 import { createHash, createHmac, timingSafeEqual } from 'crypto'
 import { cookies } from 'next/headers'
 
@@ -58,13 +59,14 @@ function safeEqual(a: string, b: string): boolean {
 export async function validateAdminCredentials(
   email: string,
   password: string
-): Promise<{ valid: boolean; message: string }> {
+): Promise<{ valid: boolean; message: string; passwordVersion?: string | null }> {
   if (!email || !password) {
     return { valid: false, message: 'Email and password required' }
   }
 
   const creds = getAdminCredentials()
-  if (!creds.password || !getSecret()) {
+  const stored = await readAdminPassword()
+  if ((!creds.password && !stored) || !getSecret()) {
     // Names only, never values: say exactly what to add and where, because
     // Vercel keeps separate settings for Production and Preview deployments.
     const where = deploymentLabel()
@@ -79,25 +81,27 @@ export async function validateAdminCredentials(
   }
 
   const emailOk = safeEqual(email.trim().toLowerCase(), creds.email.toLowerCase())
-  const passwordOk = safeEqual(password, creds.password)
+  const passwordOk = stored ? await matchesPassword(password, stored.hash) : safeEqual(password, creds.password)
 
   if (!emailOk || !passwordOk) {
     return { valid: false, message: 'Invalid email or password' }
   }
 
-  return { valid: true, message: 'Login successful' }
+  return { valid: true, message: 'Login successful', passwordVersion: stored?.version ?? null }
 }
 
 /**
  * Generate a stateless, signed admin session token.
  * Format: base64url(payload).signature
  */
-export function generateAdminToken(adminEmail: string): string {
+export async function generateAdminToken(adminEmail: string, validatedVersion?: string | null): Promise<string> {
+  const version = validatedVersion === undefined ? (await readAdminPassword())?.version ?? null : validatedVersion
   const secret = getSecret()
   if (!secret) throw new Error('Admin session secret is not configured')
   const payload = {
     email: adminEmail,
     role: 'admin',
+    passwordVersion: version,
     exp: Date.now() + SESSION_TTL_MS,
   }
   const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url')
@@ -108,10 +112,10 @@ export function generateAdminToken(adminEmail: string): string {
 /**
  * Verify a signed admin session token.
  */
-export function verifyAdminToken(token: string | undefined): {
+export async function verifyAdminToken(token: string | undefined): Promise<{
   valid: boolean
   email?: string
-} {
+}> {
   const secret = getSecret()
   if (!secret || !token || !token.includes('.')) return { valid: false }
 
@@ -123,6 +127,8 @@ export function verifyAdminToken(token: string | undefined): {
   try {
     const payload = JSON.parse(Buffer.from(encoded, 'base64url').toString())
     if (payload.role !== 'admin') return { valid: false }
+    const stored = await readAdminPassword()
+    if ((payload.passwordVersion ?? null) !== (stored?.version ?? null)) return { valid: false }
     if (typeof payload.exp !== 'number' || payload.exp < Date.now()) {
       return { valid: false }
     }
@@ -138,7 +144,7 @@ export function verifyAdminToken(token: string | undefined): {
 export async function getAdminSession(): Promise<{ email: string } | null> {
   const cookieStore = await cookies()
   const token = cookieStore.get(ADMIN_COOKIE)?.value
-  const result = verifyAdminToken(token)
+  const result = await verifyAdminToken(token)
   if (!result.valid || !result.email) return null
   return { email: result.email }
 }
