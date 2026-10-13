@@ -562,3 +562,16 @@ For issues or questions about the admin/customer portal:
 
 **Last Updated:** January 2024  
 **Version:** 1.0
+
+### Admin AI Chat
+
+Open **AI Chat** in the admin navigation (`/admin/ai-chat`) after logging in.
+The assistant answers general questions and helps draft replies; it cannot read
+live business records or modify the dashboard. Conversation history is kept only
+in the current page's memory and is cleared by **New chat** or a page reload.
+Messages are sent to the AI provider: do not submit secrets or sensitive customer data.
+
+The server uses the existing AI SDK and `google/gemini-2.5-flash-lite` through
+Vercel AI Gateway. Vercel deployments can authenticate with their OIDC token;
+local development needs AI Gateway authentication. Available Gateway credits
+are required. No credentials are sent to the browser.
