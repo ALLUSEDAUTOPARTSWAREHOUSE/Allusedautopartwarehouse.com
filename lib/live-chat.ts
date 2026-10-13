@@ -147,6 +147,29 @@ export async function addAdminReply(conversationId: string, body: string) {
   return true
 }
 
+export async function addBotReply(conversationId: string, body: string) {
+  await pool.query(
+    `INSERT INTO chat_messages (id, conversation_id, sender, body, is_bot) VALUES ($1, $2, 'admin', $3, true)`,
+    [randomUUID(), conversationId, body],
+  )
+  await pool.query(
+    `UPDATE chat_conversations SET last_message_at = now(), unread_for_customer = true WHERE id = $1`,
+    [conversationId],
+  )
+}
+
+/** True when a staff member has replied recently, so the AI bot stays out of the way. */
+export async function hasRecentHumanReply(conversationId: string, minutes = 30) {
+  const { rows } = await pool.query(
+    `SELECT 1 FROM chat_messages
+     WHERE conversation_id = $1 AND sender = 'admin' AND is_bot = false
+       AND created_at > now() - ($2::int * interval '1 minute')
+     LIMIT 1`,
+    [conversationId, minutes],
+  )
+  return rows.length > 0
+}
+
 export async function markReadBy(conversationId: string, who: ChatSender) {
   const column = who === "admin" ? "unread_for_admin" : "unread_for_customer"
   await pool.query(`UPDATE chat_conversations SET ${column} = false WHERE id = $1`, [conversationId])
