@@ -61,3 +61,22 @@ test('development mode provides planning instructions and rejects unknown modes'
   assert.equal((await post(request(messages, 'https://example.com', 'development'))).status, 200)
   assert.equal((await post(request(messages, 'https://example.com', 'execute'))).status, 400)
 })
+
+test('chat message history preserves the supported role types', () => {
+  const program = ts.createProgram(['components/admin/ai-chat.tsx'], {
+    noEmit: true,
+    strict: true,
+    skipLibCheck: true,
+    target: ts.ScriptTarget.ES2022,
+    module: ts.ModuleKind.ESNext,
+    moduleResolution: ts.ModuleResolutionKind.Bundler,
+    jsx: ts.JsxEmit.ReactJSX,
+    esModuleInterop: true,
+  })
+  const diagnostics = ts.getPreEmitDiagnostics(program)
+  assert.equal(diagnostics.length, 0, ts.formatDiagnosticsWithColorAndContext(diagnostics, {
+    getCanonicalFileName: (name) => name,
+    getCurrentDirectory: () => process.cwd(),
+    getNewLine: () => '\n',
+  }))
+})
