@@ -68,8 +68,8 @@ export async function POST(request: Request) {
       ok: true,
       id: lead.id,
       emailStatus: {
-        teamNotified: teamNotice.ok,
-        customerConfirmationSent: customerNotice.ok,
+        teamNotificationAccepted: teamNotice.ok,
+        customerConfirmationAccepted: customerNotice.ok,
       },
     })
   } catch (err) {
