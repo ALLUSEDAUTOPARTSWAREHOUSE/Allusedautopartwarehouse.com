@@ -2,10 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, FileText, Settings, Code, Megaphone, Star, Share2, Bot, CreditCard } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, FileText, Settings, Code, Megaphone, Star, Share2, Bot, CreditCard, PanelsTopLeft } from 'lucide-react'
 
 const GROUPS = [
-  { title: 'Overview', links: [{ href: '/admin/dashboard', label: 'Control center', icon: LayoutDashboard }] },
+  { title: 'Overview', links: [
+    { href: '/admin/workspace', label: 'Unified workspace', icon: PanelsTopLeft },
+    { href: '/admin/dashboard', label: 'Control center', icon: LayoutDashboard },
+  ] },
   { title: 'Products', links: [{ href: '/admin/products', label: 'Brands & products', icon: Package }] },
   { title: 'Sales & support', links: [
     { href: '/admin/sales', label: 'Sales dashboard', icon: ShoppingCart },
