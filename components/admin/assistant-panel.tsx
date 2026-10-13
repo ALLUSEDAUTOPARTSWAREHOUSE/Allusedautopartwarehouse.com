@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils'
 import type { AdminAssistantMessage } from '@/lib/admin-assistant'
 
 const SUGGESTIONS = [
+  'Help me check the status of an order by its order number',
+  'Summarize current business priorities and what needs follow-up',
   'Give me a full operations health report',
   'What should the team prioritize today?',
   'Compare the latest 7 Google feed health snapshots',
