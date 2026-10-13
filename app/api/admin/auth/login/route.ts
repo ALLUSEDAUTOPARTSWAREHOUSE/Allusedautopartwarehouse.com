@@ -5,6 +5,7 @@ import {
   ADMIN_COOKIE,
   ADMIN_SESSION_MAX_AGE,
 } from '@/lib/admin-auth'
+import { getAdminSessionVersion } from '@/lib/admin-passwords'
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: validation.message }, { status: 401 })
     }
 
-    const token = generateAdminToken(email.trim().toLowerCase())
+    const token = generateAdminToken(email.trim().toLowerCase(), await getAdminSessionVersion())
 
     console.log(`[v0] Admin login successful for: ${email}`)
 
