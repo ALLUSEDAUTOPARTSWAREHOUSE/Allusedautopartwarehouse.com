@@ -301,7 +301,10 @@ export async function listQuoteLeads(status?: string, search?: string, limit = 3
   const { rows } = await pool.query(
     `SELECT * FROM public.leads
      WHERE ($1::text IS NULL OR status = $1)
-       AND ($2::text IS NULL OR full_name ILIKE $2 OR phone ILIKE $2 OR email ILIKE $2 OR make ILIKE $2 OR model ILIKE $2)
+       AND ($2::text IS NULL OR full_name ILIKE $2 OR phone ILIKE $2 OR email ILIKE $2
+            OR make ILIKE $2 OR model ILIKE $2 OR year ILIKE $2 OR part_type ILIKE $2
+            OR part_option ILIKE $2 OR source ILIKE $2 OR product_name ILIKE $2
+            OR product_url ILIKE $2 OR page_url ILIKE $2)
      ORDER BY created_at DESC
      LIMIT $3`,
     [status || null, search ? `%${search}%` : null, limit],
@@ -313,7 +316,8 @@ export async function listOrders(status?: string, search?: string, limit = 300):
   const { rows } = await pool.query(
     `SELECT * FROM public.orders
      WHERE ($1::text IS NULL OR status = $1)
-       AND ($2::text IS NULL OR ordernumber ILIKE $2 OR customer_name ILIKE $2 OR customer_phone ILIKE $2 OR customer_email ILIKE $2)
+       AND ($2::text IS NULL OR ordernumber ILIKE $2 OR customer_name ILIKE $2
+            OR customer_phone ILIKE $2 OR customer_email ILIKE $2 OR items::text ILIKE $2)
      ORDER BY createdat DESC
      LIMIT $3`,
     [status || null, search ? `%${search}%` : null, limit],
