@@ -94,3 +94,21 @@ test('customer dashboard uses authenticated database-scoped orders and quotes in
   assert.match(login, /status: 410/)
   assert.match(signup, /status: 410/)
 })
+
+
+test("customer dashboard uses real sessions and scopes order and quote records to the account owner", () => {
+  const route = read("app/api/customer/dashboard/route.ts")
+  const page = read("app/customer/dashboard/page.tsx")
+  const login = read("app/api/customer/auth/login/route.ts")
+  const signup = read("app/api/customer/auth/signup/route.ts")
+  assert.ok(route.includes("auth.api.getSession"))
+  assert.ok(route.includes("WHERE userid = $1 AND userid <> $2"))
+  assert.ok(route.includes("WHERE user_id = $1"))
+  assert.ok(route.includes('Cache-Control: "private, no-store"'))
+  assert.ok(route.includes("await ensureLeadProductColumns()"))
+  assert.ok(page.includes("Order history"))
+  assert.ok(page.includes("My quotes"))
+  assert.ok(login.includes("status: 410"))
+  assert.ok(signup.includes("status: 410"))
+  assert.ok(read("lib/followup.ts").includes('input.userId || "guest"'))
+})
