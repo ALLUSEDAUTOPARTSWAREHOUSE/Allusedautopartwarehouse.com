@@ -75,7 +75,7 @@ export async function saveFollowupAssignment(
       siteUrl: SITE_URL,
     }).catch(() => ({ ok: false, error: "Could not send assignment notification." }))
     return email.ok
-      ? { ok: true, message: `Assigned to ${saved.staffName}. Email notification sent.` }
+      ? { ok: true, message: `Assigned to ${saved.staffName}. Email notification accepted by the email service.` }
       : { ok: true, message: `Assigned to ${saved.staffName}, but the email was not sent. Check Settings → System Health and Resend sender configuration.` }
   } catch (error) {
     const message = error instanceof Error && error.message.includes("Choose an active")
