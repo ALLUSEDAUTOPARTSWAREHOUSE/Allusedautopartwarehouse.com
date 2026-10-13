@@ -27,6 +27,7 @@ export function QuoteForm({ defaultPart = "", compact = false }: QuoteFormProps)
   const [error, setError]     = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [quoteId, setQuoteId] = useState<number | null>(null)
+  const [customerEmailNotice, setCustomerEmailNotice] = useState<string | null>(null)
 
   const models = make ? CAR_MODELS[make] || [] : []
 
@@ -35,6 +36,7 @@ export function QuoteForm({ defaultPart = "", compact = false }: QuoteFormProps)
     setPart(defaultPart); setMake(""); setModel(""); setYear(""); setOption("")
     setName(""); setPhone(""); setEmail(""); setZip(""); setMessage("")
     setError(null)
+    setCustomerEmailNotice(null)
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -64,6 +66,13 @@ export function QuoteForm({ defaultPart = "", compact = false }: QuoteFormProps)
         return
       }
       setQuoteId(data.id ?? null)
+      setCustomerEmailNotice(
+        data.emailStatus?.customerConfirmationSent
+          ? `A confirmation email was sent to ${email.trim()}.`
+          : email.trim()
+            ? "Your quote request is saved, but we couldn't send a confirmation email. Please check your inbox address; a parts specialist will still call you."
+            : "No email address was provided, so we couldn't send a confirmation email. A parts specialist will still call you.",
+      )
       setSuccess(true)
     } catch {
       setError(`Network error. Please call us at ${PHONE_DISPLAY}.`)
@@ -84,6 +93,7 @@ export function QuoteForm({ defaultPart = "", compact = false }: QuoteFormProps)
           {quoteId ? <>Your reference is <strong>#{quoteId}</strong>. </> : null}
           A parts specialist will call you within <strong>one business day</strong> with pricing and availability.
         </p>
+        {customerEmailNotice ? <p role="status" className="max-w-xl text-xs text-muted-foreground">{customerEmailNotice}</p> : null}
         <div className="w-full bg-card/50 border border-border/30 rounded-lg p-4 flex flex-col sm:flex-row gap-3 justify-center">
           <p className="text-xs text-muted-foreground w-full text-center mb-1 sm:hidden">Need it faster? Contact us directly:</p>
           <a href="tel:+17088962383" className="auapw-btn auapw-btn-green auapw-btn-sm">
