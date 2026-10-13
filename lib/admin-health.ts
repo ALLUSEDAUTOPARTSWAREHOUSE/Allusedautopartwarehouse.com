@@ -49,7 +49,7 @@ export function checkEnvironment(): EnvCheck[] {
       name: "AI_GATEWAY_API_KEY (or Vercel OIDC)",
       set: anySet("AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"),
       required: false,
-      purpose: "Store assistant on the dashboard",
+      purpose: "Store assistant across admin pages",
     },
   ]
 }
