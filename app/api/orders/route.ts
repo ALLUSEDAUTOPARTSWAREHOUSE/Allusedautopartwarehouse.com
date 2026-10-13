@@ -65,8 +65,12 @@ export async function POST(request: Request) {
 
   const isReserve = (json as { mode?: string } | null)?.mode === "reserve"
   // Link only an authenticated Better Auth session; otherwise preserve guest checkout semantics.
-  const authSession = await auth.api.getSession({ headers: request.headers })
-  const userId = authSession?.user?.id
+  let userId: string | undefined
+  try {
+    userId = (await auth.api.getSession({ headers: request.headers }))?.user?.id
+  } catch {
+    // Keep guest checkout available if auth-session lookup is temporarily unavailable.
+  }
 
   if (isReserve) {
     const parsed = ReservationOrderSchema.safeParse(json)
