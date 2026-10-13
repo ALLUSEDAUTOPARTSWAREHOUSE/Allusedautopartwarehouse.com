@@ -165,10 +165,10 @@ export default async function AdminSettingsPage() {
 
       <section aria-labelledby="store-heading" className="rounded-lg border border-border bg-card p-5">
         <h2 id="store-heading" className="mb-1 text-lg font-semibold text-foreground">
-          Store policy shown on the site
+          Store policy values
         </h2>
         <p className="mb-4 text-xs text-muted-foreground">
-          Edit the policy values stored in the admin settings table. Defaults match the current policy constants. Review downstream storefront/feed usage before changing live customer-facing policy values.
+          Edit and save the admin policy values. These are stored separately; storefront, checkout, and Merchant-feed policy constants are not changed by this editor yet.
         </p>
         <dl className="mb-5 grid gap-3 text-sm sm:grid-cols-2">
           <div>
