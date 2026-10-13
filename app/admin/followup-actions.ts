@@ -31,20 +31,35 @@ export async function saveFollowupAssignment(
   const session = await getAdminSession()
   if (!session) return { ok: false, message: "Session expired. Please sign in again." }
 
-  const recordType = String(formData.get("recordType") ?? "") as FollowupRecordType
+  const recordType = String(formData.get("recordType") ?? "")
   const recordId = String(formData.get("recordId") ?? "").trim()
   const staffId = String(formData.get("staffId") ?? "").trim()
 
   if (recordType !== "order" && recordType !== "quote") return { ok: false, message: "Invalid follow-up type." }
-  if (recordType === "quote" && (!/^\\d{1,12}$/.test(recordId) || Number(recordId) < 1)) return { ok: false, message: "Invalid quote reference." }
-  if (recordType === "order" && !/^[\\w-]{1,64}$/.test(recordId)) return { ok: false, message: "Invalid order reference." }
+  if (!recordId || recordId.length > 64 || (recordType === "quote" && (!Number.isSafeInteger(Number(recordId)) || Number(recordId) < 1))) {
+    return { ok: false, message: "Invalid customer record reference." }
+  }
+  if (recordType === "order" && !/^[A-Za-z0-9_-]+$/.test(recordId)) {
+    return { ok: false, message: "Invalid order reference." }
+  }
 
   try {
-    const record = recordType === "order" ? await getOrderById(recordId) : await getQuoteLeadById(Number(recordId))
-    if (!record) return { ok: false, message: "The customer record no longer exists." }
+    let reference: string
+    let summary: string
+    if (recordType === "order") {
+      const order = await getOrderById(recordId)
+      if (!order) return { ok: false, message: "The customer order no longer exists." }
+      reference = order.orderNumber
+      summary = order.items.map((item) => item.name).join(", ") || "Customer order"
+    } else {
+      const lead = await getQuoteLeadById(Number(recordId))
+      if (!lead) return { ok: false, message: "The customer quote request no longer exists." }
+      reference = `Quote #${lead.id}`
+      summary = [lead.year, lead.make, lead.model, lead.partType].filter(Boolean).join(" ")
+    }
 
-    const before = (await getFollowupAssignments(recordType, [recordId])).get(recordId) ?? null
-    const saved = await setFollowupAssignment(recordType, recordId, staffId, session.email)
+    const before = (await getFollowupAssignments(recordType as FollowupRecordType, [recordId])).get(recordId) ?? null
+    const saved = await setFollowupAssignment(recordType as FollowupRecordType, recordId, staffId, session.email)
     revalidatePath("/admin/sales")
     revalidatePath("/admin/orders")
     revalidatePath("/admin/quotes")
@@ -52,15 +67,10 @@ export async function saveFollowupAssignment(
     if (!saved) return { ok: true, message: "Assignment cleared." }
     if (before?.staffId === saved.staffId) return { ok: true, message: `Still assigned to ${saved.staffName}.` }
 
-    const reference = recordType === "order" ? (record as Awaited<ReturnType<typeof getOrderById>> & {}).orderNumber : `Quote #${(record as NonNullable<Awaited<ReturnType<typeof getQuoteLeadById>>>).id}`
-    const summary = recordType === "order"
-      ? ((record as NonNullable<Awaited<ReturnType<typeof getOrderById>>>).items.map((item) => item.name).join(", ") || "Customer order")
-      : [ (record as NonNullable<Awaited<ReturnType<typeof getQuoteLeadById>>>).year, (record as NonNullable<Awaited<ReturnType<typeof getQuoteLeadById>>>).make, (record as NonNullable<Awaited<ReturnType<typeof getQuoteLeadById>>>).model, (record as NonNullable<Awaited<ReturnType<typeof getQuoteLeadById>>>).partType ].filter(Boolean).join(" ")
-
     const email = await notifyFollowupAssignment({
       email: saved.staffEmail ?? "",
       name: saved.staffName ?? "team member",
-      recordType,
+      recordType: recordType as FollowupRecordType,
       reference,
       summary,
       siteUrl: SITE_URL,
@@ -69,7 +79,9 @@ export async function saveFollowupAssignment(
       ? { ok: true, message: `Assigned to ${saved.staffName}. Email notification sent.` }
       : { ok: true, message: `Assigned to ${saved.staffName}, but the email was not sent. Check Settings → System Health and Resend sender configuration.` }
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Assignment could not be saved."
+    const message = error instanceof Error && error.message.includes("Choose an active")
+      ? error.message
+      : "Assignment could not be saved. Check Settings → System Health and try again."
     return { ok: false, message }
   }
 }
