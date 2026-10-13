@@ -40,7 +40,8 @@ export default function QuotePage() {
     const name = (params.get("productName") ?? "").trim().slice(0, 150)
     if (name) setProductOfInterest(name)
     const url = params.get("productUrl") ?? ""
-    if (/^\\/brands\\/[a-z0-9-]+\\/[a-z0-9-]+\\/?$/i.test(url)) setProductUrl(url)
+    const pathParts = url.split("/").filter(Boolean)
+    if (pathParts.length === 3 && pathParts[0] === "brands" && /^[a-z0-9-]+$/i.test(pathParts[1]) && /^[a-z0-9-]+$/i.test(pathParts[2]) && !url.startsWith("//")) setProductUrl(url)
   }, [])
 
   const models = make ? CAR_MODELS[make] || [] : []
