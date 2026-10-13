@@ -19,8 +19,8 @@ export default async function AdminOrdersPage({
   const { status: rawStatus, q } = await searchParams
   const status = ORDER_STATUSES.find((s) => s === rawStatus)
   const query = q?.trim().slice(0, 100) || undefined
-  const [orders, counts, staff] = await Promise.all([listOrders(status, query), countByStatus("orders"), getActiveSalesSupportStaff()])
-  const assignments = await getFollowupAssignments("order", orders.map((order) => order.id))
+  const [orders, counts, staff] = await Promise.all([listOrders(status, query), countByStatus("orders"), getActiveSalesSupportStaff().catch(() => [])])
+  const assignments = await getFollowupAssignments("order", orders.map((order) => order.id)).catch(() => new Map())
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
