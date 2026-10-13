@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getAdminSession } from "@/lib/admin-auth"
 import { ORDER_STATUSES, countByStatus, listOrders } from "@/lib/followup"
@@ -32,7 +33,12 @@ export default async function AdminOrdersPage({
             status as you go and tick “Email the customer” to send them the update.
           </p>
         </div>
-        <ExportLink kind="orders" status={status} query={query} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/admin/sales" className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10">
+            Orders + quote leads workspace →
+          </Link>
+          <ExportLink kind="orders" status={status} query={query} />
+        </div>
       </header>
 
       <FollowupFilters
