@@ -18,7 +18,7 @@ export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-u
   const [loading, setLoading] = useState(false)
 
   const isSignUp = mode === 'sign-up'
-  const target = redirectTo.startsWith('/') && !redirectTo.startsWith('//') && !redirectTo.includes('\\\\') && !redirectTo.split(/[?#]/, 1)[0].split('/').some((part) => part === '.' || part === '..') ? redirectTo : '/'
+  const target = redirectTo.startsWith('/') && !redirectTo.startsWith('//') && !redirectTo.includes(String.fromCharCode(92)) && !redirectTo.split(/[?#]/, 1)[0].split('/').some((part) => part === '.' || part === '..') ? redirectTo : '/'
   const switchHref = `${isSignUp ? '/sign-in' : '/sign-up'}?redirectTo=${encodeURIComponent(target)}`
 
   const handleSubmit = async (e: React.FormEvent) => {
