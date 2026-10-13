@@ -327,3 +327,9 @@ export async function updateOrder(id: string, patch: { status: OrderStatus; inte
     [id, patch.status, patch.internalNotes || null],
   )
 }
+
+/** Admin-only callers must authenticate before invoking this lookup. */
+export async function getOrderByNumber(orderNumber: string): Promise<CustomerOrder | null> {
+  const { rows } = await pool.query("SELECT * FROM public.orders WHERE ordernumber = $1 LIMIT 1", [orderNumber])
+  return rows[0] ? mapOrder(rows[0]) : null
+}
