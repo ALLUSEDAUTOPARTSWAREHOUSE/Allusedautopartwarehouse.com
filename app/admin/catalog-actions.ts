@@ -1,5 +1,6 @@
 "use server"
 
+import { pool } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { getAdminSession } from "@/lib/admin-auth"
 import { BRAND_DIRECTORY, getBrandProductUrl, isValidBrand } from "@/lib/brand-catalog"
@@ -94,17 +95,44 @@ export async function uploadProductSheet(_prev: CatalogActionState, formData: Fo
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer())
-    const { inserted, skipped } = await importProductSheet(brand, buffer)
+    const mode = String(formData.get("mode") ?? "all")
+    if (!["all", "prices", "images"].includes(mode)) return { ok: false, message: "Choose a valid import mode." }
+    const { inserted, skipped, missingPrices } = await importProductSheet(brand, buffer, mode as "all" | "prices" | "images")
     if (inserted === 0) {
-      return { ok: false, message: "No usable rows found — the sheet needs a 'Product Name' and 'Price' column." }
+      return { ok: false, message: "No matching usable rows found. Check product names, URLs, and the selected import mode." }
     }
     revalidateCatalog(brand)
     return {
       ok: true,
-      message: `Imported ${inserted.toLocaleString()} product${inserted === 1 ? "" : "s"}${skipped ? ` (skipped ${skipped} row${skipped === 1 ? "" : "s"} with no name)` : ""} — live now.`,
+      message: `Saved ${inserted.toLocaleString()} product${inserted === 1 ? "" : "s"}${skipped ? ` (skipped ${skipped} row${skipped === 1 ? "" : "s"} with invalid names or no matching uploaded product)` : ""} — live now. ${missingPrices} rows have missing prices and are quote-only.`,
     }
   } catch (error) {
     console.error("[admin] sheet upload failed:", (error as Error).message)
-    return { ok: false, message: "Could not read that file. Make sure it's a valid Excel spreadsheet." }
+    const code = (error as { code?: string }).code
+    const reason = (error as Error).message
+    return { ok: false, message: reason === "INVALID_WORKBOOK"
+      ? "Could not read the workbook. Upload a valid .xlsx or .xls file."
+      : reason === "NO_PRODUCT_SHEET" ? "No product sheet found. Include a Name, name, or Product Name column."
+      : code === "42P01" ? "The catalog database table is missing. An administrator must run the manual-products database migration, then retry. No products were saved."
+      : "The workbook could not be saved to the catalog database. Check database connectivity and retry. No partial import was saved." }
   }
+}
+
+/** Explicitly selected uploaded/manual products only; never deletes the source catalog. */
+export async function bulkEditManualProducts(_prev: CatalogActionState, formData: FormData): Promise<CatalogActionState> {
+  if (!(await getAdminSession())) return { ok: false, message: "Session expired. Please log in again." }
+  if (formData.get("confirm") !== "yes") return { ok: false, message: "Confirm the selected removals first." }
+  const brand = String(formData.get("brand") ?? "")
+  const slugs = [...new Set(formData.getAll("slug").map(String))]
+  const action = String(formData.get("operation") ?? "")
+  if (!isValidBrand(brand) || !slugs.length || slugs.length > 200) return { ok: false, message: "Select a brand and 1–200 products." }
+  if (!["prices", "images", "delete"].includes(action)) return { ok: false, message: "Choose an action." }
+  try {
+    const sql = action === "delete"
+      ? "DELETE FROM manual_products WHERE brand = $1 AND slug = ANY($2::text[])"
+      : `UPDATE manual_products SET ${action === "prices" ? "price" : "image_url"} = NULL, updated_at = now() WHERE brand = $1 AND slug = ANY($2::text[])`
+    const result = await pool.query(sql, [brand, slugs])
+    revalidateCatalog(brand)
+    return { ok: true, message: `Updated ${result.rowCount ?? 0} selected products. Website and feed refreshed.` }
+  } catch { return { ok: false, message: "Database update failed. Please retry." } }
 }

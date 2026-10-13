@@ -8,7 +8,11 @@ export async function POST(request: Request) {
   if (!(await getAdminSession())) {
     return Response.json({ error: "Unauthorized" }, { status: 401 })
   }
-  const { messages } = await request.json()
+  if (request.headers.get("origin") !== new URL(request.url).origin) {
+    return Response.json({ error: "Invalid origin" }, { status: 403 })
+  }
+  const body = await request.json().catch(() => null)
+  const messages = body?.messages
   if (!Array.isArray(messages)) {
     return Response.json({ error: "Invalid request" }, { status: 400 })
   }

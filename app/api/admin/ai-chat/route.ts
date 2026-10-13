@@ -32,7 +32,15 @@ export async function POST(req: NextRequest) {
     })
     if (!text.trim()) throw new Error('Empty AI response')
     return NextResponse.json({ reply: text.trim().slice(0, 4000) })
-  } catch {
-    return NextResponse.json({ error: 'AI chat is temporarily unavailable. Please try again.' }, { status: 503 })
+  } catch (error) {
+    const status = (error as { statusCode?: number }).statusCode
+    // Log only diagnostic categories, never prompts, provider bodies or credentials.
+    console.error('[admin-ai-chat]', { status, name: error instanceof Error ? error.name : 'UnknownError' })
+    const message = status === 401 || status === 403
+      ? 'AI access is not configured for this deployment. Ask the administrator to check AI Gateway access.'
+      : status === 402 ? 'AI Gateway has no available credit. Ask the administrator to review AI Gateway billing.'
+      : status === 429 ? 'AI is busy or its usage limit was reached. Please wait and retry.'
+      : 'AI chat is temporarily unavailable. Please try again.'
+    return NextResponse.json({ error: message }, { status: 503 })
   }
 }
