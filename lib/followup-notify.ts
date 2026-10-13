@@ -171,6 +171,8 @@ export async function notifyNewQuote(lead: QuoteLead, siteUrl: string) {
   const vehicle = [lead.year, lead.make, lead.model].filter(Boolean).join(" ")
   const body = `<table style="width:100%;border-collapse:collapse">${rows([
     ["Quote #", lead.id],
+    ["Product", lead.productName],
+    ["Product page", lead.productUrl],
     ["Part", lead.partType],
     ["Vehicle", vehicle],
     ["Option", lead.partOption],
@@ -280,6 +282,7 @@ export async function sendCustomerQuoteAcknowledgement(lead: QuoteLead): Promise
       ["Option", lead.partOption],
       ["Submitted", new Date(lead.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })],
     ])}</table>
+    ${lead.productName ? `<p>Product of interest: <strong>${escapeHtml(lead.productName)}</strong></p>` : ""}
     <p>A parts specialist will review the request and contact you. This acknowledgement is not a price quote or fitment confirmation.</p>`
   return sendWithResult(
     `We received your AUAPW quote request #${lead.id}`,
