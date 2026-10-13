@@ -45,6 +45,7 @@ export default async function AdminMerchantPage({
   ])
 
   const brandStats = await getFeedStats()
+  const selectedStats = brandStats.find(item => item.slug === brand)
 
   const cards: ProductFixCardProps[] = search
     ? search.hits.map((h) => ({
@@ -118,6 +119,24 @@ export default async function AdminMerchantPage({
       {brand && <section className="rounded-xl border-2 border-primary/30 bg-card p-5" aria-label="Selected brand workspace">
         <h2 className="text-2xl font-bold">{getBrandLabel(brand)} workspace</h2>
         <p className="mt-1 text-sm text-muted-foreground">{search?.total.toLocaleString() ?? 0} matching products. Use the editor below for prices, images, visibility and Google feed inclusion.</p>
+        {selectedStats && <div className="my-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: 'Visible website products', value: selectedStats.total - selectedStats.issues.hidden },
+            { label: 'Google feed eligible', value: selectedStats.eligible },
+            { label: 'Missing prices', value: selectedStats.issues.no_price },
+            { label: 'Hidden products', value: selectedStats.issues.hidden },
+          ].map(metric => <div key={metric.label} className="rounded-xl border bg-background p-4"><p className="text-xs text-muted-foreground">{metric.label}</p><p className="mt-2 text-2xl font-bold">{metric.value.toLocaleString()}</p></div>)}
+        </div>}
+        <nav aria-label="Brand operations" className="my-4 flex flex-wrap gap-2">
+          <Link href={`/admin/products?brand=${brand}#catalog-upload`} className="rounded-lg border px-3 py-2 text-sm">Upload / preview / save</Link>
+          <Link href={`/admin/products?brand=${brand}&issue=no_price#fix-pages`} className="rounded-lg border px-3 py-2 text-sm">Review missing prices</Link>
+          <Link href={`/admin/products?brand=${brand}&issue=hidden#fix-pages`} className="rounded-lg border px-3 py-2 text-sm">Review hidden products</Link>
+          <Link href="/admin/merchant" className="rounded-lg border px-3 py-2 text-sm">Feed health</Link>
+        </nav>
+        <details className="my-4 rounded-lg border p-3"><summary className="cursor-pointer font-semibold">Import workflow and automation boundaries</summary>
+          <ol className="mt-2 list-inside list-decimal space-y-1 text-sm"><li>Choose this brand and upload its spreadsheet.</li><li>Preview usable, skipped and missing-price rows.</li><li>Confirm saving the selected fields.</li><li>Saved changes refresh website/feed data; Google fetches separately.</li></ol>
+          <p className="mt-2 text-xs text-muted-foreground">Full brand replacement, import history, undo and external channel publishing are not implemented. Current bulk controls cover uploaded/manual products only.</p>
+        </details>
         <Link href="/admin/products" className="mt-2 inline-block text-sm text-primary underline">Back to all brands</Link>
       </section>}
 
