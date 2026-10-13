@@ -1,6 +1,6 @@
 import "server-only"
 
-import { createHash, randomInt } from "crypto"
+import { createHash, randomInt, timingSafeEqual } from "crypto"
 import { pool } from "@/lib/db"
 import { saveAdminPassword } from "@/lib/admin-passwords"
 
@@ -105,8 +105,9 @@ export async function verifyAdminPasswordOtpAndReset(emailInput: string, otpInpu
 
   const expected = String(row.otp_hash)
   const actual = otpDigest(email, otp, secret)
-  const valid = expected.length === actual.length &&
-    createHash("sha256").update(expected).digest("hex") === createHash("sha256").update(actual).digest("hex")
+  const expectedBuffer = Buffer.from(expected, "hex")
+  const actualBuffer = Buffer.from(actual, "hex")
+  const valid = expectedBuffer.length === actualBuffer.length && timingSafeEqual(expectedBuffer, actualBuffer)
   if (!valid) {
     if (Number(row.attempts) >= MAX_ATTEMPTS) {
       await pool.query("UPDATE public.admin_password_reset_otps SET consumed_at = now() WHERE id = $1", [row.id])
