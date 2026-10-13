@@ -23,6 +23,8 @@ const QuoteSchema = z.object({
   message: text(2000),
   source: text(60),
   pageUrl: text(500),
+  productName: text(150),
+  productUrl: text(500).refine((value) => !value || (/^\x2fbrands\/[a-z0-9-]+\/[a-z0-9-]+\/?$/i.test(value) && !value.startsWith("//")), "Invalid product reference."),
   website: text(200),
 })
 
@@ -58,6 +60,8 @@ export async function POST(request: Request) {
       notes: d.message,
       source: d.source || "website",
       pageUrl: d.pageUrl,
+      productName: d.productName,
+      productUrl: d.productUrl,
     })
     const origin = new URL(request.url).origin
     const [teamNotice, customerNotice] = await Promise.all([
