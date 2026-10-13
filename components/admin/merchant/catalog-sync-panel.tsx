@@ -1,9 +1,10 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 import { RefreshCw, Upload, PlusCircle, Trash2, ExternalLink } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
+  bulkEditManualProducts,
   addManualProduct,
   removeManualProduct,
   syncProducts,
@@ -22,6 +23,8 @@ export interface CatalogSyncPanelProps {
     brandLabel: string
     slug: string
     name: string
+    imageUrl: string | null
+    category: string | null
     price: number | null
     source: "manual" | "upload"
     pagePath: string
@@ -128,8 +131,16 @@ function UploadSheetForm({ brands }: { brands: { slug: string; label: string }[]
         <code className="rounded bg-muted px-1 py-0.5">Price</code> columns (optionally{" "}
         <code className="rounded bg-muted px-1 py-0.5">Model</code>, <code className="rounded bg-muted px-1 py-0.5">Year</code>,{" "}
         <code className="rounded bg-muted px-1 py-0.5">Product Type</code>, <code className="rounded bg-muted px-1 py-0.5">Image URL</code>,{" "}
-        <code className="rounded bg-muted px-1 py-0.5">Description</code>). Every row is added as a product for the brand you pick below.
+        <code className="rounded bg-muted px-1 py-0.5">Description</code>). Acura-style migration workbooks and Price ($) columns are supported. Matching product URLs update existing uploads; missing prices become quote-only. Other products are not deleted.
       </p>
+      <label className={labelClass}>
+        Update fields
+        <select name="mode" defaultValue="all" className={inputClass}>
+          <option value="all">Add/update all fields</option>
+          <option value="prices">Prices only (existing uploaded products)</option>
+          <option value="images">Image URLs only (existing uploaded products)</option>
+        </select>
+      </label>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className={labelClass}>
           Brand
@@ -205,6 +216,37 @@ function ManualProductRow({ product }: { product: CatalogSyncPanelProps["manualP
   )
 }
 
+function BulkProductForm({ brands, manualProducts }: CatalogSyncPanelProps) {
+  const [brand, setBrand] = useState(brands[0]?.slug ?? "")
+  const [query, setQuery] = useState("")
+  const [missingImage, setMissingImage] = useState(false)
+  const [category, setCategory] = useState("")
+  const [missingPrice, setMissingPrice] = useState(false)
+  const [state, action, pending] = useActionState(bulkEditManualProducts, initial)
+  const products = manualProducts.filter(p => p.brand === brand && p.name.toLowerCase().includes(query.toLowerCase()) && (!missingPrice || !p.price) && (!missingImage || !p.imageUrl) && (!category || p.category === category))
+  return <form action={action} className="space-y-3 rounded-md border p-3">
+    <h3 className="font-semibold">Single / bulk edits — uploaded and manual products</h3>
+    <select aria-label="Brand filter" name="brand" value={brand} onChange={e => setBrand(e.target.value)} className={inputClass}>
+      {brands.map(b => <option key={b.slug} value={b.slug}>{b.label}</option>)}
+    </select>
+    <input aria-label="Filter product name" placeholder="Filter product name" value={query} onChange={e => setQuery(e.target.value)} className={inputClass} />
+    <label className="flex gap-2"><input type="checkbox" checked={missingPrice} onChange={e => setMissingPrice(e.target.checked)} />Missing prices only</label>
+    <label className="flex gap-2"><input type="checkbox" checked={missingImage} onChange={e => setMissingImage(e.target.checked)} />Missing image URLs only</label>
+    <select aria-label="Category filter" value={category} onChange={e => setCategory(e.target.value)} className={inputClass}><option value="">All categories</option><option value="engine">Engine</option><option value="transmission">Transmission</option></select>
+    <div key={`${brand}-${query}-${missingPrice}-${missingImage}-${category}-${state.message}`} className="max-h-64 overflow-auto">
+      {products.map(p => <label key={p.slug} className="flex gap-2 py-1"><input name="slug" type="checkbox" value={p.slug} />{p.name}</label>)}
+    </div>
+    <select aria-label="Bulk action" name="operation" className={inputClass}>
+      <option value="prices">Remove prices only (quote-only)</option>
+      <option value="images">Remove image URLs only</option>
+      <option value="delete">Delete uploaded/manual products</option>
+    </select>
+    <label className="flex gap-2"><input name="confirm" value="yes" type="checkbox" required />I confirm these removals for the selected products.</label>
+    <button type="submit" disabled={pending} className={inputClass}>{pending ? "Saving…" : "Apply to selected products"}</button>
+    <p role="status">{state.message}</p>
+  </form>
+}
+
 export function CatalogSyncPanel({ brands, manualProducts }: CatalogSyncPanelProps) {
   return (
     <section className="flex flex-col gap-5 rounded-lg border border-border bg-card p-5">
@@ -229,6 +271,7 @@ export function CatalogSyncPanel({ brands, manualProducts }: CatalogSyncPanelPro
         </TabsContent>
       </Tabs>
 
+      <BulkProductForm brands={brands} manualProducts={manualProducts} />
       {manualProducts.length > 0 && (
         <div className="flex flex-col gap-2">
           <h3 className="text-sm font-semibold text-foreground">

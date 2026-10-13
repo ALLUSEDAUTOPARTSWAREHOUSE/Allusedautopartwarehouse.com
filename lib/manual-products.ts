@@ -128,43 +128,66 @@ export async function deleteManualProduct(brand: string, slug: string): Promise<
 }
 
 /** Reads the admin-provided workbook and upserts every row as a manual product for `brand`. */
-export async function importProductSheet(brand: string, buffer: Buffer): Promise<{ inserted: number; skipped: number }> {
-  const wb = read(buffer)
-  const sheetName = wb.SheetNames.includes("Products") ? "Products" : wb.SheetNames[0]
+export async function importProductSheet(brand: string, buffer: Buffer, mode: "all" | "prices" | "images" = "all"): Promise<{ inserted: number; skipped: number; missingPrices: number }> {
+  let wb
+  try { wb = read(buffer, { type: "buffer" }) } catch {
+    throw new Error("INVALID_WORKBOOK")
+  }
+  const candidates = [wb.SheetNames.find((n: string) => n.toLowerCase() === brand.toLowerCase()), "Products", ...wb.SheetNames]
+  const sheetName = candidates.find((n: string | undefined) => n && wb.Sheets[n] &&
+    utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[n]).some((r: Record<string, unknown>) => "name" in r || "Name" in r || "Product Name" in r))
+  if (!sheetName) throw new Error("NO_PRODUCT_SHEET")
   const rows = utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[sheetName])
-  if (!rows.length) return { inserted: 0, skipped: 0 }
+  if (!rows.length) return { inserted: 0, skipped: 0, missingPrices: 0 }
 
   let inserted = 0
   let skipped = 0
+  let missingPrices = 0
   const client = await pool.connect()
   try {
     await client.query("BEGIN")
     for (const r of rows) {
-      const name = String(r["Product Name"] ?? r["Name"] ?? "").trim()
+      const name = String(r["name"] ?? r["Product Name"] ?? r["Name"] ?? "").trim()
       if (!name) {
         skipped++
         continue
       }
-      const rawPrice = r["Price"]
+      const rawPrice = r["price"] ?? r["Price ($)"] ?? r["Price"]
       const parsedPrice =
         typeof rawPrice === "number"
           ? rawPrice
-          : Number.parseFloat(String(rawPrice ?? "").replace(/[^0-9.]/g, ""))
+          : Number(String(rawPrice ?? "").replace(/[$,\s]/g, ""))
       const price = Number.isFinite(parsedPrice) && parsedPrice > 0 ? Math.round(parsedPrice * 100) / 100 : null
-      const category = String(r["Product Type"] ?? r["Category"] ?? "").toLowerCase().includes("transmission")
+      const category = String(r["category_id"] ?? r["Product Type"] ?? r["Category"] ?? "").toLowerCase().includes("transmission")
         ? "transmission"
         : "engine"
       const model = String(r["Model"] ?? "").trim() || null
       const year = String(r["Year"] ?? "").trim() || null
-      const imageUrl = String(r["Image URL"] ?? "").trim() || null
-      const description = String(r["Description"] ?? "").trim() || null
-      const slug = await uniqueSlug(brand, slugifyName(name))
+      const imageUrl = String(r["image_url"] ?? r["Image URL"] ?? "").trim() || null
+      const description = String(r["description"] ?? r["Description"] ?? "").trim() || null
+      const url = String(r["product_url"] ?? r["Product URL"] ?? "")
+      const urlSlug = url.match(/\/products\/([a-z0-9-]+)\/?$/i)?.[1]
+      const slug = urlSlug || slugifyName(name)
+      if (!slug) { skipped++; continue }
 
+      if (mode !== "all") {
+        const exists = await client.query("SELECT 1 FROM manual_products WHERE brand = $1 AND slug = $2", [brand, slug])
+        if (!exists.rows.length) { skipped++; continue }
+      }
       await client.query(
         `INSERT INTO manual_products (brand, slug, name, description, price, image_url, category, model, year, source)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'upload')`,
-        [brand, slug, name, description, price, imageUrl, category, model, year],
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'upload')
+         ON CONFLICT (brand, slug) DO UPDATE SET
+           name = CASE WHEN $10 = 'all' THEN EXCLUDED.name ELSE manual_products.name END,
+           description = CASE WHEN $10 = 'all' THEN EXCLUDED.description ELSE manual_products.description END,
+           price = CASE WHEN $10 IN ('all', 'prices') THEN EXCLUDED.price ELSE manual_products.price END,
+           image_url = CASE WHEN $10 IN ('all', 'images') THEN EXCLUDED.image_url ELSE manual_products.image_url END,
+           category = CASE WHEN $10 = 'all' THEN EXCLUDED.category ELSE manual_products.category END,
+           model = CASE WHEN $10 = 'all' THEN EXCLUDED.model ELSE manual_products.model END,
+           year = CASE WHEN $10 = 'all' THEN EXCLUDED.year ELSE manual_products.year END, updated_at = now()`,
+        [brand, slug, name, description, price, imageUrl, category, model, year, mode],
       )
+      if (price === null && mode !== "images") missingPrices++
       inserted++
     }
     await client.query("COMMIT")
@@ -174,7 +197,7 @@ export async function importProductSheet(brand: string, buffer: Buffer): Promise
   } finally {
     client.release()
   }
-  return { inserted, skipped }
+  return { inserted, skipped, missingPrices }
 }
 
 /** Loads this brand's manually-added products and layers them onto its sheet catalog for this request. */
