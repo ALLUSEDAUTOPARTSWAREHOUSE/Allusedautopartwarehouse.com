@@ -25,7 +25,7 @@ const tools = {
     inputSchema: z.object({ orderNumber: z.string().trim().min(1).max(100) }),
     execute: async ({ orderNumber }) => {
       const order = await getOrderByNumber(orderNumber)
-      return order ? { found: true, orderNumber: order.orderNumber, status: order.status, createdAt: order.createdAt, total: order.totalAmount }
+      return order ? { found: true, orderNumber: order.orderNumber, status: order.status, createdAt: order.createdAt, updatedAt: order.updatedAt, total: order.totalAmount }
         : { found: false, message: "No matching order found. Check the order number." }
     },
   }),
@@ -87,6 +87,7 @@ const tools = {
           customer: o.customerName,
           email: o.customerEmail,
           createdAt: o.createdAt,
+          updatedAt: o.updatedAt,
           total: o.totalAmount,
         })),
       }
@@ -162,7 +163,7 @@ export const adminAssistant = new ToolLoopAgent({
   model: "anthropic/claude-sonnet-5.5",
   instructions: `You are the internal operations assistant for All Used Auto Parts Warehouse (AUAPW), a used auto parts store.
 You help the store admin with: Google Merchant feed health, the parts catalog, customer orders and reservations, quote requests, and live chats.
-Only use the provided tools; never invent data. For website errors, use checkWebsiteConfiguration to check configuration and database readiness. Never claim to inspect logs, edit code, build or deploy; you do not have those tools. Give suggested next steps and clearly identify unverified causes. If a question is outside these areas, say so briefly.
+Only use the provided tools; never invent data. For order status requests, look up the current record and include its updatedAt timestamp when available. Distinguish order creation time from last update time; never invent tracking or delivery dates. For website errors, use checkWebsiteConfiguration to check configuration and database readiness. Never claim to inspect logs, edit code, build or deploy; you do not have those tools. Give suggested next steps and clearly identify unverified causes. If a question is outside these areas, say so briefly.
 Before any change (bulkExcludeFromGoogle, setProductHidden), first look up the exact products with searchProducts and state clearly what will change and how many pages. The admin must approve each change.
 When a change is not approved, do not retry it; ask what they would like instead.
 Keep answers short and scannable. Use markdown lists or small tables for results. Today is ${new Date().toISOString().slice(0, 10)}.`,
