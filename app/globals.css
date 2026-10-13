@@ -5043,3 +5043,19 @@ html:not(.hydrating) .cinematic-frame {
   -webkit-text-fill-color: currentColor;
   text-shadow: none;
 }
+
+/* Scoped admin table accents; labels and status text remain the source of meaning. */
+.admin-shell table th {
+  background-color: color-mix(in srgb, var(--primary) 12%, var(--card));
+  color: var(--foreground);
+  border-bottom: 2px solid var(--primary);
+}
+.admin-shell table tbody tr:nth-child(even) {
+  background-color: color-mix(in srgb, var(--primary) 4%, var(--background));
+}
+.admin-shell table tbody td:nth-child(2) {
+  background-color: color-mix(in srgb, var(--primary) 5%, transparent);
+}
+.admin-shell table tbody tr:hover {
+  background-color: var(--muted);
+}
