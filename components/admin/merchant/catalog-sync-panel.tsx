@@ -254,13 +254,22 @@ function BulkProductForm({ brands, manualProducts }: CatalogSyncPanelProps) {
     <div key={`${brand}-${query}-${missingPrice}-${missingImage}-${category}-${state.message}`} className="max-h-64 overflow-auto">
       {products.map(p => <label key={p.slug} className="flex gap-2 py-1"><input name="slug" type="checkbox" value={p.slug} />{p.name}</label>)}
     </div>
+    <label className="block text-sm">Apply to
+      <select name="scope" className={inputClass} defaultValue="selected">
+        <option value="selected">Selected products (up to 200)</option>
+        <option value="all">ALL uploaded/manual products for this brand — ignores filters</option>
+      </select>
+    </label>
+    <label className="block text-sm">For ALL: type brand slug ({brand}) to confirm
+      <input name="confirmBrand" autoComplete="off" className={inputClass} placeholder={brand} />
+    </label>
     <select aria-label="Bulk action" name="operation" className={inputClass}>
       <option value="prices">Remove prices only (quote-only)</option>
       <option value="images">Remove image URLs only</option>
       <option value="delete">Delete uploaded/manual products</option>
     </select>
-    <label className="flex gap-2"><input name="confirm" value="yes" type="checkbox" required />I confirm these removals for the selected products.</label>
-    <button type="submit" disabled={pending || !products.length} className={inputClass}>{pending ? "Saving…" : "Apply to selected products"}</button>
+    <label className="flex gap-2"><input name="confirm" value="yes" type="checkbox" required />I confirm these removals for the chosen scope.</label>
+    <button type="submit" disabled={pending} className={inputClass}>{pending ? "Saving…" : "Apply confirmed action"}</button>
     <p role="status">{state.message}</p>
   </form>
 }
