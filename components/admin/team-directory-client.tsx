@@ -71,6 +71,7 @@ export function TeamDirectoryClient() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [isSaving, setIsSaving] = useState(false)
+  const [loginPassword, setLoginPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const loadStaff = async () => {
@@ -97,6 +98,7 @@ export function TeamDirectoryClient() {
   const openCreate = (role?: StaffRole) => {
     setEditingId(null)
     setForm({ ...EMPTY_FORM, role: role ?? 'sales_agent' })
+    setLoginPassword('')
     setError(null)
     setDialogOpen(true)
   }
@@ -112,6 +114,7 @@ export function TeamDirectoryClient() {
       title: member.title ?? '',
       notes: member.notes ?? '',
     })
+    setLoginPassword('')
     setError(null)
     setDialogOpen(true)
   }
@@ -119,6 +122,10 @@ export function TeamDirectoryClient() {
   const handleSave = async () => {
     if (!form.name || !form.email) {
       setError('Name and email are required.')
+      return
+    }
+    if (loginPassword && loginPassword.length < 12) {
+      setError('Login password must be at least 12 characters.')
       return
     }
     setIsSaving(true)
@@ -132,12 +139,26 @@ export function TeamDirectoryClient() {
         credentials: 'include',
         body: JSON.stringify(form),
       })
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
         setError(data.error ?? 'Failed to save staff member.')
         return
       }
+      const staffId = editingId ?? data.staff?.id
+      if (loginPassword && staffId) {
+        const credentialRes = await fetch('/api/admin/staff/' + encodeURIComponent(staffId) + '/credentials', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+          body: JSON.stringify({ password: loginPassword }),
+        })
+        const credentialData = await credentialRes.json().catch(() => ({}))
+        if (!credentialRes.ok) {
+          setError(credentialData.error ?? 'Staff details saved, but login access could not be enabled. Try saving the password again.')
+          await loadStaff()
+          return
+        }
+      }
       setDialogOpen(false)
+      setLoginPassword('')
       await loadStaff()
     } catch {
       setError('Network error. Please try again.')
@@ -372,6 +393,11 @@ export function TeamDirectoryClient() {
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <label className="mb-1 block text-sm font-medium">Portal login password <span className="font-normal text-muted-foreground">(optional)</span></label>
+              <Input type="password" autoComplete="new-password" minLength={12} maxLength={256} placeholder="At least 12 characters to enable or reset login" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} />
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">Set this when adding a member to enable their login immediately, or enter a new password when editing to reset access. Leave blank to keep existing login credentials unchanged.</p>
+            </div>
           </div>
 
           <DialogFooter>
