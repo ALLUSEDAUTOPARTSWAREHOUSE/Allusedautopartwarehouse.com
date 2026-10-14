@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight, LockKeyhole, Mail, Eye, EyeOff, ShieldCheck, Boxes, Users, Headset, Code2, ShoppingBag, Github } from 'lucide-react'
@@ -12,6 +12,20 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get('error')
+    const messages: Record<string, string> = {
+      github_not_configured: 'GitHub sign-in is not configured for this site yet. Use your email and password or contact an administrator.',
+      github_cancelled: 'GitHub sign-in was cancelled.',
+      github_state_invalid: 'The GitHub sign-in request expired or could not be verified. Please try again.',
+      github_exchange_failed: 'GitHub could not complete sign-in. Please try again.',
+      github_identity_failed: 'We could not verify your GitHub account. Please try again.',
+      github_not_authorized: 'This GitHub account is not authorized for the AUAPW admin workspace.',
+      github_signin_failed: 'GitHub sign-in failed. Please try again or use your existing login.',
+    }
+    if (code && messages[code]) setError(messages[code])
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
