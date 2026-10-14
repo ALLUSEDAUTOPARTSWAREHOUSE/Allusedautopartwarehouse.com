@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(new URL('/admin/workspace', origin))
     response.cookies.set(ADMIN_COOKIE, token, {
       httpOnly: true,
-      secure: true,
+      secure: origin.startsWith('https://'),
       sameSite: 'lax',
       path: '/',
       maxAge: ADMIN_SESSION_MAX_AGE,
