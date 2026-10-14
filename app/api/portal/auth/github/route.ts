@@ -5,6 +5,7 @@ import { getGitHubOAuthCredentials, getPublicAppOrigin, getAllowedGitHubAdminIds
 export const runtime = 'nodejs'
 const STATE_COOKIE = 'auapw_github_oauth_state'
 const STATE_TTL_SECONDS = 10 * 60
+const FALLBACK_ORIGIN = 'https://www.allusedautopartswarehouse.com'
 
 export async function GET(request: NextRequest) {
   const origin = getPublicAppOrigin()
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
   const admins = getAllowedGitHubAdmins()
 
   if (!origin || !credentials || admins.size === 0) {
-    return NextResponse.redirect(new URL('/admin/login?error=github_not_configured', request.url))
+    return NextResponse.redirect(new URL('/admin/login?error=github_not_configured', origin || FALLBACK_ORIGIN))
   }
 
   const state = randomBytes(32).toString('base64url')
