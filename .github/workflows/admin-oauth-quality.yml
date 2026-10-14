@@ -1,0 +1,35 @@
+name: Admin OAuth quality checks
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - "feature/admin-github-oauth-netlify"
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint, test, and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm lint
+      - name: Test
+        run: pnpm test
+      - name: Production build
+        run: pnpm build
