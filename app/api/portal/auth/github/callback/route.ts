@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
   }
 
   const credentials = getGitHubOAuthCredentials()
-  const allowedAdmins = getAllowedGitHubAdmins()
-  if (!credentials || allowedAdmins.size === 0) {
+  const allowedAdminIds = getAllowedGitHubAdminIds()
+  if (!credentials || allowedAdminIds.size === 0) {
     return loginRedirect(origin, 'github_not_configured')
   }
 
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       return loginRedirect(origin, 'github_not_authorized')
     }
 
-    // GitHub OAuth only grants admin access to explicitly allowlisted usernames.
+    // GitHub OAuth only grants admin access to explicitly allowlisted immutable GitHub account IDs.
     // The existing email/password route remains unchanged.
     const adminEmail = process.env.ADMIN_EMAIL || 'Info@Allusedautopartswarehouse.com'
     const token = generateAdminToken(adminEmail, await getAdminSessionVersion())
