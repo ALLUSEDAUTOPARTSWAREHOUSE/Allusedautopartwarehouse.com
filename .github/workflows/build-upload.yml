@@ -49,8 +49,8 @@ jobs:
         run: |
           test -s .next/BUILD_ID
           tar --exclude='.next/cache' --exclude='.env*' \
-            --exclude='node_modules' --exclude='*.pem' --exclude='*.key' \
-            --exclude='*.p12' --exclude='*.pfx' \
+            --exclude='node_modules' --exclude='*.[pP][eE][mM]' --exclude='*.[kK][eE][yY]' \
+            --exclude='*.[pP]12' --exclude='*.[pP][fF][xX]' \
             -czf "$RUNNER_TEMP/nextjs-build.tar.gz" .next
 
       - name: Upload build artifact
