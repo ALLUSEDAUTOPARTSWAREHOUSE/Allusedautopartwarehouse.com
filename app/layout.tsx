@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import { Roboto } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import Script from 'next/script'
@@ -10,13 +9,6 @@ import { IntercomProvider } from '@/components/intercom-provider'
 import { GoogleCustomerReviewsBadge } from '@/components/google-customer-reviews'
 import { LiveChatWidget } from '@/components/chat/live-chat-widget'
 import './globals.css'
-
-const roboto = Roboto({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "700", "900"],
-  variable: "--font-sans",
-  display: "swap",
-})
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.allusedautopartswarehouse.com'),
@@ -85,7 +77,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark bg-background" suppressHydrationWarning>
-      <body className={`${roboto.variable} font-sans antialiased bg-background text-foreground`}>
+      <head>
+        {/* Preload Google Fonts CSS at runtime to avoid build-time failures */}
+        <link
+          rel="preconnect"
+          href="https://fonts.googleapis.com"
+        />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="font-sans antialiased bg-background text-foreground" style={{ fontFamily: "Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif" }}>
         {/* Intercom messenger — loads after page is interactive */}
         <Script 
           id="intercom-bootstrap"
