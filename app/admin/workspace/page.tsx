@@ -17,6 +17,7 @@ const workspaces = [
     icon: Boxes,
     links: [
       { label: 'Products & brands', href: '/admin/products', icon: Package },
+      { label: 'Live inventory editor', href: '/admin/operations', icon: Boxes },
       { label: 'Orders & fulfilment', href: '/admin/orders', icon: ShoppingBag },
       { label: 'Payments', href: '/admin/payments', icon: CreditCard },
     ],
@@ -46,8 +47,8 @@ const workspaces = [
     description: 'Keep sales, quote requests, customer conversations, and team workflows together.',
     icon: Headset,
     links: [
-      { label: 'Sales dashboard', href: '/admin/sales', icon: ChartNoAxesCombined },
-      { label: 'Leads & quotes', href: '/admin/quotes', icon: Workflow },
+      { label: 'Sales & operations center', href: '/admin/operations', icon: ChartNoAxesCombined },
+      { label: 'Leads & quotes', href: '/admin/operations', icon: Workflow },
       { label: 'Customer chats', href: '/admin/chats', icon: Headset },
       { label: 'Customers', href: '/admin/customers', icon: Users },
       { label: 'Team members', href: '/admin/team', icon: Users },
