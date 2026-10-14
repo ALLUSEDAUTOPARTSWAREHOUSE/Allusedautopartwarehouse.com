@@ -20,13 +20,10 @@ const GROUPS = [
   ] },
   { title: 'Store operations', links: [
     { href: '/admin/settings', label: 'Policies & system health', icon: Settings },
-    { href: '/admin/payments', label: 'Payment methods', icon: CreditCard },
     { href: '/admin/team', label: 'Team & permissions', icon: Users },
   ] },
   { title: 'Development', links: [
     { href: '/admin/development', label: 'API & setup', icon: Code },
-    { href: '/admin/team', label: 'Team', icon: Users },
-    { href: '/admin/settings', label: 'System settings', icon: Settings },
     { href: '/admin/security', label: 'Password management', icon: KeyRound },
     { href: '/admin/ai-chat', label: 'AI planning', icon: Bot },
   ] },
