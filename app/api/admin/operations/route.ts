@@ -3,7 +3,7 @@ import { desc, eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { listings } from '@/lib/db/schema'
 import { getAdminSession } from '@/lib/admin-auth'
-import { countByStatus, listOrders, listQuoteLeads, updateOrder, updateQuoteLead, QUOTE_STATUSES, ORDER_STATUSES } from '@/lib/followup'
+import { countByStatus, getOrderById, getQuoteLeadById, listOrders, listQuoteLeads, updateOrder, updateQuoteLead, QUOTE_STATUSES, ORDER_STATUSES } from '@/lib/followup'
 import { listCustomers } from '@/lib/admin-customers'
 
 export const dynamic = 'force-dynamic'
@@ -56,9 +56,8 @@ export async function PATCH(request: NextRequest) {
         }
       }
       const internalNotes = typeof body.internalNotes === 'string' ? body.internalNotes.trim().slice(0, 5000) : ''
-      const current = await listQuoteLeads(undefined, undefined, 1000)
-      const existing = current.find(item => String(item.id) === id)
-      if (!existing) return NextResponse.json({ error: 'Quote request not found in the latest records.' }, { status: 404 })
+      const existing = await getQuoteLeadById(Number(id))
+      if (!existing) return NextResponse.json({ error: 'Quote request not found.' }, { status: 404 })
       await updateQuoteLead(Number(id), {
         status: status as typeof QUOTE_STATUSES[number],
         internalNotes: body.internalNotes === undefined ? existing.internalNotes ?? '' : internalNotes,
@@ -70,9 +69,8 @@ export async function PATCH(request: NextRequest) {
     if (type === 'order') {
       const status = typeof body.status === 'string' ? body.status : ''
       if (!ORDER_STATUSES.includes(status as typeof ORDER_STATUSES[number])) return NextResponse.json({ error: 'Invalid order status.' }, { status: 400 })
-      const current = await listOrders(undefined, undefined, 1000)
-      const existing = current.find(item => item.id === id)
-      if (!existing) return NextResponse.json({ error: 'Order not found in the latest records.' }, { status: 404 })
+      const existing = await getOrderById(id)
+      if (!existing) return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
       const internalNotes = typeof body.internalNotes === 'string' ? body.internalNotes.trim().slice(0, 5000) : existing.internalNotes ?? ''
       await updateOrder(id, { status: status as typeof ORDER_STATUSES[number], internalNotes })
       return NextResponse.json({ success: true })
