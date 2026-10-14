@@ -28,7 +28,7 @@ export function getAllowedGitHubAdminIds(): Set<string> {
     (process.env.GITHUB_ADMIN_ALLOWED_IDS || '')
       .split(',')
       .map((id) => id.trim())
-      .filter((id) => /^\\d+$/.test(id)),
+      .filter((id) => /^\d+$/.test(id)),
   )
 }
 
