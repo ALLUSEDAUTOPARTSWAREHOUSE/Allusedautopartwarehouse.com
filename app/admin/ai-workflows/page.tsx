@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import {
-  Activity, ArrowRight, Bot, BrainCircuit, CheckCircle2, CircleDot,
+  Activity, ArrowRight, Bot, BrainCircuit, CheckCircle2,
   Code2, GitBranch, Layers3, MessageSquareText, ShieldCheck, Sparkles,
   Workflow, Wrench,
 } from 'lucide-react'
