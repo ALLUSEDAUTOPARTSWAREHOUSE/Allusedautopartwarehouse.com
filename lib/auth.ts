@@ -4,22 +4,20 @@ import { pool } from '@/lib/db'
 export const auth = betterAuth({
   database: pool,
   baseURL:
+    process.env.AUAPW_PUBLIC_URL ??
     process.env.BETTER_AUTH_URL ??
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : process.env.V0_RUNTIME_URL),
+    process.env.URL ??
+    process.env.V0_RUNTIME_URL,
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
   },
   trustedOrigins: [
+    ...(process.env.AUAPW_PUBLIC_URL ? [process.env.AUAPW_PUBLIC_URL] : []),
+    ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
+    ...(process.env.URL ? [process.env.URL] : []),
+    ...(process.env.DEPLOY_PRIME_URL ? [process.env.DEPLOY_PRIME_URL] : []),
     ...(process.env.V0_RUNTIME_URL ? [process.env.V0_RUNTIME_URL] : []),
-    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
-    ...(process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? [`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]
-      : []),
   ],
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
