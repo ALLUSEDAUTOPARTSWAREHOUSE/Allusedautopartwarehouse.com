@@ -63,15 +63,15 @@ export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-u
               <div className="absolute inset-0 bg-[linear-gradient(135deg,transparent_35%,rgba(243,107,33,0.2)_100%)]" />
             </div>
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-200"><span className="size-1.5 rounded-full bg-[#f36b21]" /> Built for the road ahead</span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-100"><span className="size-1.5 rounded-full bg-[#f36b21]" /> Built for the road ahead</span>
               <h2 className="mt-7 max-w-lg text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">{isSignUp ? 'Find the right part. Get back out there.' : 'Good to have you back.'}</h2>
-              <p className="mt-5 max-w-md text-sm leading-6 text-neutral-300 sm:text-base">{isSignUp ? 'Create your customer account to make your next parts search simpler.' : 'Sign in to continue your parts search and manage your customer account.'}</p>
+              <p className="mt-5 max-w-md text-sm leading-6 text-neutral-200 sm:text-base">{isSignUp ? 'Create your customer account to make your next parts search simpler.' : 'Sign in to continue your parts search and manage your customer account.'}</p>
             </div>
             <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm"><PackageSearch className="size-5 text-[#f36b21]" /><p className="mt-3 text-sm font-semibold">Parts made easier</p><p className="mt-1 text-xs leading-5 text-neutral-400">Keep your customer journey in one place.</p></div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm"><ShieldCheck className="size-5 text-[#f36b21]" /><p className="mt-3 text-sm font-semibold">Secure account access</p><p className="mt-1 text-xs leading-5 text-neutral-400">Your customer account stays separate from admin access.</p></div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm"><PackageSearch className="size-5 text-[#f36b21]" /><p className="mt-3 text-sm font-semibold">Parts made easier</p><p className="mt-1 text-xs leading-5 text-neutral-300">Keep your customer journey in one place.</p></div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm"><ShieldCheck className="size-5 text-[#f36b21]" /><p className="mt-3 text-sm font-semibold">Secure account access</p><p className="mt-1 text-xs leading-5 text-neutral-300">Your customer account stays separate from admin access.</p></div>
             </div>
-            <p className="mt-8 text-[11px] tracking-wide text-neutral-500">ALL USED AUTO PARTS WAREHOUSE</p>
+            <p className="mt-8 text-[11px] tracking-wide text-neutral-300">ALL USED AUTO PARTS WAREHOUSE</p>
           </div>
 
           <div className={`flex items-center justify-center p-6 transition-all duration-700 motion-reduce:transition-none sm:p-10 lg:p-14 ${isSignUp ? 'lg:order-1' : ''}`}>
