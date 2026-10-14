@@ -86,7 +86,7 @@ export default function AdminLoginPage() {
             <a href="/api/portal/auth/github" className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:border-slate-300 hover:bg-slate-50">
               <Github className="size-4" /> Continue with GitHub
             </a>
-            <p className="mt-3 text-xs leading-5 text-slate-500">GitHub sign-in is available only to explicitly authorized administrator usernames.</p>
+            <p className="mt-3 text-xs leading-5 text-slate-500">GitHub sign-in is available only to explicitly authorized GitHub account IDs.</p>
             <p className="mt-6 text-xs leading-5 text-slate-500">Administrators and authorized staff use this portal. Customer accounts sign in separately.</p>
             <Link href="/sign-in" className="mt-3 inline-block text-sm font-semibold text-orange-700 hover:underline">Customer sign in</Link>
             <div className="mt-8 flex items-center justify-center gap-2 text-xs text-slate-400"><ShieldCheck className="size-3.5" /> Protected sign-in · Role-based access</div>
