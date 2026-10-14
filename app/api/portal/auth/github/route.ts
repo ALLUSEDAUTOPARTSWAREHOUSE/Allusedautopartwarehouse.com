@@ -10,7 +10,7 @@ const FALLBACK_ORIGIN = 'https://www.allusedautopartswarehouse.com'
 export async function GET(request: NextRequest) {
   const origin = getPublicAppOrigin()
   const credentials = getGitHubOAuthCredentials()
-  const admins = getAllowedGitHubAdmins()
+  const admins = getAllowedGitHubAdminIds()
 
   if (!origin || !credentials || admins.size === 0) {
     return NextResponse.redirect(new URL('/admin/login?error=github_not_configured', origin || FALLBACK_ORIGIN))
