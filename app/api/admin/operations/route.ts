@@ -80,7 +80,7 @@ export async function PATCH(request: NextRequest) {
       const userId = id
       const phone = typeof body.phone === 'string' ? body.phone.trim() : undefined
       const businessName = typeof body.businessName === 'string' ? body.businessName.trim() : undefined
-      if (phone !== undefined && phone.length > 40 || businessName !== undefined && businessName.length > 200) {
+      if ((phone !== undefined && phone.length > 40) || (businessName !== undefined && businessName.length > 200)) {
         return NextResponse.json({ error: 'Phone or business name is too long.' }, { status: 400 })
       }
       if (phone === undefined && businessName === undefined) {
