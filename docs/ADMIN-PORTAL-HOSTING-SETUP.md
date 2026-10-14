@@ -27,7 +27,7 @@ After Netlify reports a successful deploy, test:
 - `/admin/workspace` redirects unauthenticated visitors to sign-in.
 - Quote/leads, orders, inventory, customer, and staff pages load with real database data.
 - Password reset/email delivery works if configured.
-- API routes, file uploads, and any scheduled tasks work on the new host.
+- API routes and file uploads work on the new host; configure a Netlify Scheduled Function or external scheduler to call `/api/cron/daily` with `CRON_SECRET` because the existing Vercel cron is not migrated.
 - Logs contain no missing environment variables or database connection errors.
 
 ## 4. Domain cutover
