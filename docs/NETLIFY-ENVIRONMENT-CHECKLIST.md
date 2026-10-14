@@ -6,11 +6,12 @@ Use this checklist when connecting the existing repository to Netlify. Do not cr
 
 - Repository: `ALLUSEDAUTOPARTSWAREHOUSE/Allusedautopartwarehouse.com`
 - Production branch: `main`
-- Build command: `pnpm build`
+- Build command: set in `netlify.toml` (installs the locked dependencies with pnpm 9.15.9 via `npx`, then runs `pnpm build`)
 - Package manager: pnpm `9.15.9` (lockfile is committed)
 - Node.js: `22`
 - Publish directory: leave Netlify's Next.js framework/runtime integration to configure it; do not force a static export for this application.
 - Configuration file: `netlify.toml`
+- Base directory: repository root. `netlify.toml` sets `base = "/"`, which overrides the UI "Base directory" field; leave that field empty.
 
 The application uses Next.js server routes and server-side authentication. A static-only export is not an appropriate deployment target.
 
