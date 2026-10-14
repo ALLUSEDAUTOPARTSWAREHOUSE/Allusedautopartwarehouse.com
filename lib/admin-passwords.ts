@@ -1,5 +1,5 @@
 import "server-only"
-import { randomBytes, scrypt as scryptCallback, timingSafeEqual, createHash } from "crypto"
+import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "crypto"
 import { promisify } from "util"
 import { pool } from "@/lib/db"
 
@@ -41,8 +41,15 @@ export async function verifyPassword(password: string, encoded: string): Promise
 }
 
 function constantTimeTextEqual(a: string, b: string): boolean {
-  const aa = createHash("sha256").update(a).digest()
-  const bb = createHash("sha256").update(b).digest()
+  const aa = Buffer.from(a, "utf8")
+  const bb = Buffer.from(b, "utf8")
+
+  if (aa.length !== bb.length) {
+    const padded = Buffer.alloc(aa.length)
+    timingSafeEqual(aa, padded)
+    return false
+  }
+
   return timingSafeEqual(aa, bb)
 }
 
