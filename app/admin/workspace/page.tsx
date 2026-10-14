@@ -4,7 +4,7 @@ import { getAdminSession } from '@/lib/admin-auth'
 import {
   ArrowUpRight, Boxes, ChartNoAxesCombined, CreditCard, Facebook, Gauge,
   Headset, Megaphone, Package, Settings2, ShieldCheck, ShoppingBag, Store,
-  Users, Workflow, Bot, KeyRound, PlugZap, Globe, Mail, Activity,
+  Users, Workflow, Bot, KeyRound,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -16,8 +16,8 @@ const workspaces = [
     description: 'Manage automotive parts, catalog quality, availability, and product publishing.',
     icon: Boxes,
     links: [
-      { label: 'Products & brands', href: '/admin/products', icon: Package },
-      { label: 'Orders & fulfilment', href: '/admin/orders', icon: ShoppingBag },
+      { label: 'Brands & products', href: '/admin/products', icon: Package },
+      { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
       { label: 'Payments', href: '/admin/payments', icon: CreditCard },
     ],
   },
@@ -26,9 +26,8 @@ const workspaces = [
     description: 'Review feed operations, product diagnostics, and Merchant Center setup.',
     icon: Store,
     links: [
-      { label: 'Merchant dashboard', href: '/admin/merchant', icon: Store },
-      { label: 'Marketing overview', href: '/admin/marketing', icon: ChartNoAxesCombined },
-      { label: 'Google reviews', href: '/admin/marketing/reviews', icon: ShieldCheck },
+      { label: 'Google Merchant', href: '/admin/merchant', icon: Store },
+      { label: 'Google Reviews', href: '/admin/marketing/reviews', icon: ShieldCheck },
     ],
   },
   {
@@ -38,31 +37,27 @@ const workspaces = [
     links: [
       { label: 'Social accounts', href: '/admin/marketing/social', icon: Facebook },
       { label: 'Marketing dashboard', href: '/admin/marketing', icon: Megaphone },
-      { label: 'System settings', href: '/admin/settings', icon: Settings2 },
     ],
   },
   {
     title: 'Sales & customer support',
-    description: 'Keep sales, quote requests, customer conversations, and team workflows together.',
+    description: 'Manage sales, quote requests, customer conversations, and the administrator-managed team directory.',
     icon: Headset,
     links: [
       { label: 'Sales dashboard', href: '/admin/sales', icon: ChartNoAxesCombined },
       { label: 'Leads & quotes', href: '/admin/quotes', icon: Workflow },
       { label: 'Customer chats', href: '/admin/chats', icon: Headset },
       { label: 'Customers', href: '/admin/customers', icon: Users },
-      { label: 'Team members', href: '/admin/team', icon: Users },
+      { label: 'Team', href: '/admin/team', icon: Users },
     ],
   },
   {
     title: 'Store configuration & operations',
-    description: 'Control store policies, payment setup, email delivery, system health, automation and team access.',
+    description: 'Manage store configuration, payment setup, email delivery, system health, and API automation.',
     icon: Settings2,
     links: [
-      { label: 'Store policies & system health', href: '/admin/settings', icon: Activity },
-      { label: 'Payment methods', href: '/admin/payments', icon: CreditCard },
-      { label: 'Email delivery settings', href: '/admin/settings', icon: Mail },
-      { label: 'Team directory & permissions', href: '/admin/team', icon: Users },
-      { label: 'API & automation setup', href: '/admin/development', icon: Workflow },
+      { label: 'System settings', href: '/admin/settings', icon: Settings2 },
+      { label: 'API & setup', href: '/admin/development', icon: Workflow },
     ],
   },
   {
@@ -70,10 +65,7 @@ const workspaces = [
     description: 'Plan website page changes, new features, bug fixes and API integrations, then manage settings and access.',
     icon: Bot,
     links: [
-      { label: 'AI development assistant', href: '/admin/ai-chat', icon: Bot },
-      { label: 'API & integration setup', href: '/admin/development', icon: PlugZap },
-      { label: 'Website products & content', href: '/admin/products', icon: Globe },
-      { label: 'System health & settings', href: '/admin/settings', icon: Settings2 },
+      { label: 'AI planning', href: '/admin/ai-chat', icon: Bot },
       { label: 'Password management', href: '/admin/security', icon: KeyRound },
     ],
   },
@@ -163,7 +155,7 @@ export default async function AdminWorkspacePage() {
         </div>
       </section>
       <p className="text-xs leading-5 text-muted-foreground">
-        API keys and payment secrets belong in Vercel Environment Variables, never in chat or ordinary forms. Social publishing and direct Google Merchant account authorization require provider connections. AI can help plan code changes; changes must be reviewed and deployed before they affect the live website.
+        Team access is informational only: staff sign-in, staff sessions, and role-scoped staff dashboards are not implemented. Only administrators can sign in to this portal. API keys and payment secrets belong in Vercel Environment Variables, never in chat or ordinary forms. Social publishing and direct Google Merchant account authorization require provider connections. AI can help plan code changes; changes must be reviewed and deployed before they affect the live website.
       </p>
     </div>
   )
