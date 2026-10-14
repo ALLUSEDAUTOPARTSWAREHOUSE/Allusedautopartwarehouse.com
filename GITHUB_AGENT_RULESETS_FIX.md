@@ -22,14 +22,10 @@ Repository administrators must grant bypass permissions for the GitHub agent app
    - Go to your GitHub repository
    - Click **Settings** → **Rules** → **Rulesets**
 
-2. **For each existing ruleset that affects agent workflows:**
+2. **For each ruleset that targets agent branches:**
    - Click on the ruleset name to edit it
-   - Scroll to "Bypass permissions" section
-   - Add the following GitHub apps to the bypass list:
-     - **Claude** (Anthropic Code Agent) - App ID: 2246796
-     - **Codex** (OpenAI Code Agent) - App ID: 2248422
-     - **Copilot** (Copilot SWE Agent) - App ID: 1143301
-     - **Copilot Pull Request Reviewer** - App ID: 946600
+   - In "Bypass permissions", add only the agent app(s) that must operate on those branches; do not add all four apps to production/default-branch rulesets
+   - Use the narrowest bypass mode available and retain required reviews and status checks on protected branches
 
 3. **Save the changes**
 
