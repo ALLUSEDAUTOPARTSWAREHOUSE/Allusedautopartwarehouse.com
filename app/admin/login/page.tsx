@@ -55,7 +55,7 @@ export default function AdminLoginPage() {
   return (
     <div className="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-6xl items-center px-3 py-8 sm:px-6">
       <section className="grid w-full overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950 text-white shadow-2xl lg:min-h-[620px] lg:grid-cols-2">
-        <div className="relative flex flex-col justify-between overflow-hidden p-7 sm:p-10 lg:p-12 animate-in fade-in slide-in-from-bottom-2 duration-700">
+        <div className="relative flex flex-col justify-between overflow-hidden p-7 sm:p-10 lg:p-12 animate-in fade-in slide-in-from-bottom-2 duration-700 motion-reduce:animate-none">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(249,115,22,.25),transparent_50%),radial-gradient(ellipse_at_bottom_right,rgba(14,165,233,.16),transparent_50%)]" />
           <div className="relative">
             <Link href="/" className="inline-flex items-center gap-3"><span className="flex size-11 items-center justify-center rounded-2xl bg-orange-500 text-slate-950"><Boxes className="size-6" /></span><span><b className="block text-sm">AUAPW</b><span className="text-xs text-slate-400">ALL USED AUTO PARTS WAREHOUSE</span></span></Link>
