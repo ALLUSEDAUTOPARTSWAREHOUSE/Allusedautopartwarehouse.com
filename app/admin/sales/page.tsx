@@ -170,15 +170,15 @@ export default async function SalesSupportWorkspace({
                     const assignment = isOrder ? staffOrderAssignments.get(item.id) : staffQuoteAssignments.get(item.id)
                     const amount = isOrder ? item.order.totalAmount : item.quote.quoteAmount
                     const status = isOrder ? item.order.status : item.quote.status
-                    const reference = isOrder ? item.order.orderNumber : `Quote #\${item.id}`
+                    const reference = isOrder ? item.order.orderNumber : `Quote #${item.id}`
                     return (
-                      <tr key={`activity-\${item.kind}-\${item.id}`} className="align-top hover:bg-muted/20">
+                      <tr key={`activity-${item.kind}-${item.id}`} className="align-top hover:bg-muted/20">
                         <td className="whitespace-nowrap px-4 py-3">
                           <span className="block font-mono text-xs font-semibold">{reference}</span>
                           <span className="mt-1 inline-flex rounded-full border border-border px-2 py-0.5 text-[11px] capitalize text-muted-foreground">{isOrder ? 'Order' : 'Quote lead'}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="block max-w-[190px] truncate font-medium" title={customer}>{customer}</span>
+                          <span className="block max-w-[190px] truncate font-medium" title={customer ?? ''}>{customer || 'Unknown customer'}</span>
                           <span className="mt-1 block max-w-[190px] truncate text-xs text-muted-foreground" title={contact}>{contact}</span>
                         </td>
                         <td className="px-4 py-3">
@@ -200,7 +200,7 @@ export default async function SalesSupportWorkspace({
                           ) : <span className="text-xs text-amber-600">Unassigned</span>}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums">
-                          {amount == null ? <span className="font-normal text-amber-600">Not quoted</span> : `$\${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                          {amount == null ? <span className="font-normal text-amber-600">Not quoted</span> : `$${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         </td>
                         <td className="px-4 py-3">
                           <span className="inline-flex max-w-[150px] rounded-full border border-border px-2.5 py-1 text-xs capitalize">{status.replaceAll('_', ' ')}</span>
