@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Install, lint, and test
+    name: Install, type-check, and test
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -38,8 +38,8 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm lint
+      - name: Type check
+        run: pnpm exec tsc --noEmit
 
       - name: Test
         run: pnpm test
