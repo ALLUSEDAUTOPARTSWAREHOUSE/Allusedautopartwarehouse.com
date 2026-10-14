@@ -1,0 +1,64 @@
+name: Next.js build artifact
+
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nextjs-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.1.0
+        with:
+          version: 9.15.9
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: |
+          BETTER_AUTH_SECRET="$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")" pnpm build
+
+      - name: Package build output
+        shell: bash
+        run: |
+          test -s .next/BUILD_ID
+          tar --exclude='.next/cache' --exclude='.env*' \
+            --exclude='node_modules' --exclude='*.[pP][eE][mM]' --exclude='*.[kK][eE][yY]' \
+            --exclude='*.[pP]12' --exclude='*.[pP][fF][xX]' \
+            -czf "$RUNNER_TEMP/nextjs-build.tar.gz" .next
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: nextjs-build-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/nextjs-build.tar.gz
+          retention-days: 7
+          if-no-files-found: error
+          include-hidden-files: false
+          compression-level: 0
