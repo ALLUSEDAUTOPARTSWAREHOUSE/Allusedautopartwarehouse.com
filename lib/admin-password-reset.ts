@@ -8,8 +8,10 @@ const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "Info@Allusedautopartswarehouse.
 const OTP_TTL_MINUTES = 10
 const MAX_ATTEMPTS = 5
 
+// Password reset codes must not be protected by Better Auth's implicit default
+// secret or by the admin session secret. Configure a dedicated random secret.
 function resetSecret(): string | null {
-  return process.env.ADMIN_RESET_SECRET || process.env.BETTER_AUTH_SECRET || process.env.ADMIN_SESSION_SECRET || null
+  return process.env.ADMIN_RESET_SECRET || null
 }
 
 function otpDigest(email: string, otp: string, secret: string): string {
