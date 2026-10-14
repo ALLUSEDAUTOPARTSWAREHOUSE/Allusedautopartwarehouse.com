@@ -1,4 +1,4 @@
-name: Netlify hosting preflight (replacement)
+name: Netlify hosting preflight
 
 on:
   pull_request:
@@ -20,9 +20,32 @@ concurrency:
 
 jobs:
   verify:
-    name: Verify GitHub can start a job
+    name: Install, lint, test, and build
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Confirm workflow and runner start
-        run: echo "Netlify preflight replacement workflow started successfully."
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Production build
+        run: pnpm build
