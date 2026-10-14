@@ -1,48 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { desc, eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { customers, listings, orders, user, vinQuotes } from '@/lib/db/schema'
+import { listings } from '@/lib/db/schema'
 import { getAdminSession } from '@/lib/admin-auth'
+import { countByStatus, listOrders, listQuoteLeads, updateOrder, updateQuoteLead, QUOTE_STATUSES, ORDER_STATUSES } from '@/lib/followup'
+import { listCustomers } from '@/lib/admin-customers'
 
 export const dynamic = 'force-dynamic'
-
-const quoteStatuses = ['pending', 'reviewed', 'quoted', 'converted', 'closed', 'rejected']
-const orderStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']
 const productStatuses = ['active', 'inactive', 'sold', 'delisted']
 
 export async function GET() {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   try {
-    const [quoteRows, orderRows, productRows, customerRows] = await Promise.all([
-      db.select({
-        id: vinQuotes.id, userId: vinQuotes.userId, vin: vinQuotes.vin, year: vinQuotes.year,
-        make: vinQuotes.make, model: vinQuotes.model, trim: vinQuotes.trim, parts: vinQuotes.parts,
-        status: vinQuotes.quoteStatus, createdAt: vinQuotes.createdAt, updatedAt: vinQuotes.updatedAt,
-      }).from(vinQuotes).orderBy(desc(vinQuotes.createdAt)).limit(100),
-      db.select({
-        id: orders.id, userId: orders.userId, orderNumber: orders.orderNumber, status: orders.status,
-        total: orders.total, paymentStatus: orders.paymentStatus, createdAt: orders.createdAt,
-        updatedAt: orders.updatedAt,
-      }).from(orders).orderBy(desc(orders.createdAt)).limit(100),
+    const [quotes, orders, products, customers, quoteCounts, orderCounts] = await Promise.all([
+      listQuoteLeads(undefined, undefined, 100),
+      listOrders(undefined, undefined, 100),
       db.select({
         id: listings.id, sku: listings.sku, title: listings.title, category: listings.category,
         price: listings.price, quantity: listings.quantity, status: listings.status,
         updatedAt: listings.updatedAt,
       }).from(listings).orderBy(desc(listings.updatedAt)).limit(100),
-      db.select({
-        id: user.id, userId: user.id, firstName: customers.firstName,
-        lastName: customers.lastName, email: user.email, phone: customers.phone,
-        businessName: customers.businessName, createdAt: user.createdAt,
-      }).from(user).leftJoin(customers, eq(customers.userId, user.id))
-        .where(eq(user.role, 'buyer')).orderBy(desc(user.createdAt)).limit(100),
+      listCustomers(undefined, 100),
+      countByStatus('leads'),
+      countByStatus('orders'),
     ])
-
     return NextResponse.json({
-      quotes: quoteRows,
-      orders: orderRows,
-      products: productRows,
-      customers: customerRows,
+      quotes, orders, products, customers, quoteCounts, orderCounts,
       limits: { rowsPerSection: 100 },
     })
   } catch (error) {
@@ -53,53 +36,45 @@ export async function GET() {
 
 export async function PATCH(request: NextRequest) {
   if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   try {
     const body = await request.json()
-    const id = typeof body.id === 'string' ? body.id.trim() : ''
+    const id = typeof body.id === 'string' || typeof body.id === 'number' ? String(body.id).trim() : ''
     const type = body.type
     if (!id) return NextResponse.json({ error: 'Record ID is required.' }, { status: 400 })
 
     if (type === 'quote') {
       const status = typeof body.status === 'string' ? body.status : ''
-      if (!quoteStatuses.includes(status)) return NextResponse.json({ error: 'Invalid quote status.' }, { status: 400 })
-      const [updated] = await db.update(vinQuotes).set({ quoteStatus: status, updatedAt: new Date() }).where(eq(vinQuotes.id, id)).returning({ id: vinQuotes.id })
-      if (!updated) return NextResponse.json({ error: 'Quote not found.' }, { status: 404 })
+      if (!QUOTE_STATUSES.includes(status as typeof QUOTE_STATUSES[number])) return NextResponse.json({ error: 'Invalid quote status.' }, { status: 400 })
+      const amountRaw = body.quoteAmount
+      let quoteAmount: number | null | undefined
+      if (amountRaw !== undefined) {
+        if (amountRaw === null || amountRaw === '') quoteAmount = null
+        else {
+          const parsed = Number(amountRaw)
+          if (!Number.isFinite(parsed) || parsed < 0 || parsed > 99999999) return NextResponse.json({ error: 'Enter a valid non-negative quote amount.' }, { status: 400 })
+          quoteAmount = Math.round(parsed * 100) / 100
+        }
+      }
+      const internalNotes = typeof body.internalNotes === 'string' ? body.internalNotes.trim().slice(0, 5000) : ''
+      const current = await listQuoteLeads(undefined, undefined, 1000)
+      const existing = current.find(item => String(item.id) === id)
+      if (!existing) return NextResponse.json({ error: 'Quote request not found in the latest records.' }, { status: 404 })
+      await updateQuoteLead(Number(id), {
+        status: status as typeof QUOTE_STATUSES[number],
+        internalNotes: body.internalNotes === undefined ? existing.internalNotes ?? '' : internalNotes,
+        quoteAmount: quoteAmount === undefined ? existing.quoteAmount : quoteAmount,
+      })
       return NextResponse.json({ success: true })
     }
 
     if (type === 'order') {
       const status = typeof body.status === 'string' ? body.status : ''
-      if (!orderStatuses.includes(status)) return NextResponse.json({ error: 'Invalid order status.' }, { status: 400 })
-      const [updated] = await db.update(orders).set({ status, updatedAt: new Date() }).where(eq(orders.id, id)).returning({ id: orders.id })
-      if (!updated) return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
-      return NextResponse.json({ success: true })
-    }
-
-    if (type === 'customer') {
-      const userId = id
-      const phone = typeof body.phone === 'string' ? body.phone.trim() : undefined
-      const businessName = typeof body.businessName === 'string' ? body.businessName.trim() : undefined
-      if ((phone !== undefined && phone.length > 40) || (businessName !== undefined && businessName.length > 200)) {
-        return NextResponse.json({ error: 'Phone or business name is too long.' }, { status: 400 })
-      }
-      if (phone === undefined && businessName === undefined) {
-        return NextResponse.json({ error: 'Provide a phone number or business name to update.' }, { status: 400 })
-      }
-      const [account] = await db.select({ email: user.email }).from(user).where(eq(user.id, userId)).limit(1)
-      if (!account) return NextResponse.json({ error: 'Customer account not found.' }, { status: 404 })
-      const updates: { phone?: string | null; businessName?: string | null; updatedAt: Date } = { updatedAt: new Date() }
-      if (phone !== undefined) updates.phone = phone || null
-      if (businessName !== undefined) updates.businessName = businessName || null
-      await db.insert(customers).values({
-        id: `customer_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        userId, email: account.email,
-        phone: phone === undefined ? null : phone || null,
-        businessName: businessName === undefined ? null : businessName || null,
-      }).onConflictDoUpdate({
-        target: customers.userId,
-        set: updates,
-      })
+      if (!ORDER_STATUSES.includes(status as typeof ORDER_STATUSES[number])) return NextResponse.json({ error: 'Invalid order status.' }, { status: 400 })
+      const current = await listOrders(undefined, undefined, 1000)
+      const existing = current.find(item => item.id === id)
+      if (!existing) return NextResponse.json({ error: 'Order not found in the latest records.' }, { status: 404 })
+      const internalNotes = typeof body.internalNotes === 'string' ? body.internalNotes.trim().slice(0, 5000) : existing.internalNotes ?? ''
+      await updateOrder(id, { status: status as typeof ORDER_STATUSES[number], internalNotes })
       return NextResponse.json({ success: true })
     }
 
@@ -124,7 +99,6 @@ export async function PATCH(request: NextRequest) {
       if (!updated) return NextResponse.json({ error: 'Product not found.' }, { status: 404 })
       return NextResponse.json({ success: true })
     }
-
     return NextResponse.json({ error: 'Unsupported record type.' }, { status: 400 })
   } catch (error) {
     console.error('[admin/operations] Failed to update operational record', error)
