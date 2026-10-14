@@ -24,6 +24,6 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
       - name: Run regression tests with coverage
         run: pnpm run test:coverage
