@@ -70,7 +70,7 @@ export default function ForgotAdminPasswordPage() {
         <p className="mb-2 text-sm font-semibold text-muted-foreground">AUAPW Admin</p>
         <h1 className="text-2xl font-bold text-foreground">Forgot password?</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Request a 6-digit code by email. The code expires after 10 minutes.
+          Enter your admin email to receive a reset code. It expires in 10 minutes.
         </p>
 
         {message && <div role="status" className="mt-4 rounded-md border border-border bg-muted p-3 text-sm">{message}</div>}
@@ -83,7 +83,7 @@ export default function ForgotAdminPasswordPage() {
         {!codeSent ? (
           <button type="button" disabled={busy || !email.trim()} onClick={sendCode}
             className="mt-4 w-full rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-foreground disabled:opacity-50">
-            {busy ? 'Sending code…' : 'Send OTP to email'}
+            {busy ? 'Sending code…' : 'Send email code'}
           </button>
         ) : (
           <form onSubmit={resetPassword} className="mt-4 space-y-4">
@@ -108,7 +108,7 @@ export default function ForgotAdminPasswordPage() {
             </div>
             <button type="submit" disabled={busy || otp.length !== 6}
               className="w-full rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-foreground disabled:opacity-50">
-              {busy ? 'Resetting password…' : 'Verify code & reset password'}
+              {busy ? 'Resetting password…' : 'Reset password'}
             </button>
             <button type="button" disabled={busy} onClick={sendCode}
               className="w-full rounded-lg border border-border px-4 py-2.5 font-medium text-foreground disabled:opacity-50">
