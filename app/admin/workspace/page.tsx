@@ -1,16 +1,20 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { getAdminSession } from '@/lib/admin-auth'
 import {
   ArrowUpRight, Boxes, ChartNoAxesCombined, CreditCard, Facebook, Gauge,
   Headset, Megaphone, Package, Settings2, ShieldCheck, ShoppingBag, Store,
-  Users, Wrench, Workflow, Bot, KeyRound, PlugZap, Globe,
+  Users, Workflow, Bot, KeyRound, PlugZap, Globe,
 } from 'lucide-react'
+
+export const dynamic = 'force-dynamic'
+export const metadata = { title: 'Admin Workspace | AUAPW', robots: { index: false, follow: false } }
 
 const workspaces = [
   {
     title: 'Commerce & inventory',
     description: 'Manage automotive parts, catalog quality, availability, and product publishing.',
     icon: Boxes,
-    accent: 'blue',
     links: [
       { label: 'Products & brands', href: '/admin/products', icon: Package },
       { label: 'Orders & fulfilment', href: '/admin/orders', icon: ShoppingBag },
@@ -21,7 +25,6 @@ const workspaces = [
     title: 'Google Merchant Center',
     description: 'Review feed operations, product diagnostics, and Merchant Center setup.',
     icon: Store,
-    accent: 'emerald',
     links: [
       { label: 'Merchant dashboard', href: '/admin/merchant', icon: Store },
       { label: 'Marketing overview', href: '/admin/marketing', icon: ChartNoAxesCombined },
@@ -32,7 +35,6 @@ const workspaces = [
     title: 'Social & growth',
     description: 'Coordinate social account links, marketing activity, and customer reputation.',
     icon: Megaphone,
-    accent: 'violet',
     links: [
       { label: 'Social accounts', href: '/admin/marketing/social', icon: Facebook },
       { label: 'Marketing dashboard', href: '/admin/marketing', icon: Megaphone },
@@ -43,7 +45,6 @@ const workspaces = [
     title: 'Sales & customer support',
     description: 'Keep sales, quote requests, customer conversations, and team workflows together.',
     icon: Headset,
-    accent: 'amber',
     links: [
       { label: 'Sales dashboard', href: '/admin/sales', icon: ChartNoAxesCombined },
       { label: 'Leads & quotes', href: '/admin/quotes', icon: Workflow },
@@ -56,7 +57,6 @@ const workspaces = [
     title: 'AI development, APIs & security',
     description: 'Plan website page changes, new features, bug fixes and API integrations, then manage settings and access.',
     icon: Bot,
-    accent: 'indigo',
     links: [
       { label: 'AI development assistant', href: '/admin/ai-chat', icon: Bot },
       { label: 'API & integration setup', href: '/admin/development', icon: PlugZap },
@@ -67,7 +67,10 @@ const workspaces = [
   },
 ]
 
-export default function AdminWorkspacePage() {
+export default async function AdminWorkspacePage() {
+  const session = await getAdminSession()
+  if (!session) redirect('/admin/login')
+
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-7">
       <section className="overflow-hidden rounded-2xl border border-border bg-card">
