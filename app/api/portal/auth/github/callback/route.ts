@@ -6,6 +6,7 @@ import { getAllowedGitHubAdminIds, getGitHubOAuthCredentials, getPublicAppOrigin
 
 export const runtime = 'nodejs'
 const STATE_COOKIE = 'auapw_github_oauth_state'
+const FALLBACK_ORIGIN = 'https://www.allusedautopartswarehouse.com'
 
 function safeStateMatch(expected: string, supplied: string): boolean {
   const left = Buffer.from(expected)
@@ -22,7 +23,7 @@ function loginRedirect(origin: string, error: string) {
 export async function GET(request: NextRequest) {
   const origin = getPublicAppOrigin()
   if (!origin) {
-    return NextResponse.redirect(new URL('/admin/login?error=github_not_configured', request.url))
+    return NextResponse.redirect(new URL('/admin/login?error=github_not_configured', FALLBACK_ORIGIN))
   }
 
   const code = request.nextUrl.searchParams.get('code')
