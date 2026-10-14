@@ -84,7 +84,7 @@ export async function GET(request: Request) {
   const encoder = new TextEncoder()
   let index = 0
 
-  const stream = new ReadableStream<Uint8Array>({
+  const stream = new ReadableStream<BufferSource>({
     start(controller) {
       controller.enqueue(
         encoder.encode(

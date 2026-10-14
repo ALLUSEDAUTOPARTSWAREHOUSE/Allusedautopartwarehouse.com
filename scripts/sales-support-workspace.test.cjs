@@ -4,6 +4,20 @@ const { readFileSync } = require('node:fs')
 
 const read = (path) => readFileSync(path, 'utf8')
 
+test('operations empty state checks products for inventory and the matching collection for other tabs', () => {
+  const operations = read('components/admin/admin-operations-client.tsx')
+  const condition = operations.match(/\{(filtered\[.+?\]\.length === 0) &&/)
+  assert.ok(condition, 'Expected an empty-state collection check')
+  const isEmpty = new Function('filtered', 'tab', `return ${condition[1]}`)
+  const keys = { quotes: 'quotes', orders: 'orders', inventory: 'products', customers: 'customers' }
+  for (const [tab, key] of Object.entries(keys)) {
+    const filtered = { quotes: [], orders: [], products: [], customers: [] }
+    assert.equal(isEmpty(filtered, tab), true)
+    filtered[key] = [{}]
+    assert.equal(isEmpty(filtered, tab), false)
+  }
+})
+
 test('product-page quote CTA carries product name and canonical page into the quote form', () => {
   const actions = read('components/products/product-card-actions.tsx')
   const quotePage = read('app/quote/page.tsx')

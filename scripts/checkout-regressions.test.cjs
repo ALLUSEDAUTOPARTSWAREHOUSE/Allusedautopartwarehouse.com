@@ -104,11 +104,24 @@ test('Google feed advertises the same $240 shipping rate as checkout', async () 
     '@/lib/site-policy': load('lib/site-policy.ts', {}),
     '@/lib/manual-products': manualProducts,
   })
-  const response = await feed.GET(new Request('https://example.com/feeds/google-shopping.xml?brand=acura'))
+  const url = 'https://example.com/feeds/google-shopping.xml?brand=acura'
+  const response = await feed.GET(new Request(url))
+  assert.equal(response.headers.get('Content-Encoding'), null)
   const xml = await response.text()
   assert.match(xml, /<g:shipping><g:country>US<\/g:country><g:price>240\.00 USD<\/g:price>/)
   assert.match(xml, /<g:max_transit_time>7<\/g:max_transit_time><\/g:shipping>/)
   assert.doesNotMatch(xml, /free insured freight/i)
+
+  for (const encoding of ['gzip', 'gzip;q=0', 'br']) {
+    const compressed = await feed.GET(new Request(url, { headers: { 'Accept-Encoding': encoding } }))
+    assert.equal(compressed.headers.get('Vary'), 'Accept-Encoding')
+    assert.equal(compressed.headers.get('Content-Type'), 'application/xml; charset=utf-8')
+    assert.equal(compressed.headers.get('Content-Encoding'), encoding === 'gzip' ? 'gzip' : null)
+    const body = encoding === 'gzip'
+      ? new Response(compressed.body.pipeThrough(new DecompressionStream('gzip')))
+      : compressed
+    assert.equal(await body.text(), xml)
+  }
 })
 test('feed titles drop the cut-off fragment the sheets end with', () => {
   assert.equal(
