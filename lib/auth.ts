@@ -7,7 +7,7 @@ export const auth = betterAuth({
     process.env.AUAPW_PUBLIC_URL ??
     process.env.BETTER_AUTH_URL ??
     process.env.URL ??
-    process.env.V0_RUNTIME_URL,
+    process.env.DEPLOY_PRIME_URL,
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
@@ -17,7 +17,6 @@ export const auth = betterAuth({
     ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
     ...(process.env.URL ? [process.env.URL] : []),
     ...(process.env.DEPLOY_PRIME_URL ? [process.env.DEPLOY_PRIME_URL] : []),
-    ...(process.env.V0_RUNTIME_URL ? [process.env.V0_RUNTIME_URL] : []),
   ],
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
