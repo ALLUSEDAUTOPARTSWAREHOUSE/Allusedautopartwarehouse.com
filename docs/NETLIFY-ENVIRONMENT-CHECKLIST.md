@@ -23,6 +23,7 @@ Use **Site configuration → Environment variables**. Transfer values from the a
 - `ADMIN_PASSWORD`: required for the environment-variable-based administrator login. Use a strong unique password. There is intentionally no production fallback password.
 - `ADMIN_EMAIL`: optional administrator login email; source default is `Info@Allusedautopartswarehouse.com`.
 - `BETTER_AUTH_SECRET` or `ADMIN_SESSION_SECRET`: set a strong random session-signing secret in production. Do not rely on the password-derived fallback when moving hosts.
+- `BETTER_AUTH_URL`: required on Netlify. It is the only explicit base-URL override honored by `lib/auth.ts`; the remaining fallbacks read Vercel-only variables that Netlify does not provide. Set it to the public site URL (the Netlify hostname first, then the custom domain at cutover) so Better Auth derives the correct `baseURL` and adds the origin to `trustedOrigins`.
 - Staff login also relies on the application's database and staff credential/session implementation.
 - If password reset is enabled, set `ADMIN_RESET_SECRET`, `RESEND_API_KEY`, and `ADMIN_RESET_FROM`. The sender must be verified with the email provider.
 
