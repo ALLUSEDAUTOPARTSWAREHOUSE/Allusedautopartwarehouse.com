@@ -1,0 +1,48 @@
+name: Admin OAuth quality checks
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - "feature/admin-github-oauth-netlify"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: admin-oauth-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, test, and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies and refresh lockfile for new lint packages
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Production build
+        run: pnpm build
