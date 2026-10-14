@@ -1,0 +1,18 @@
+name: Netlify preflight workflow diagnostic
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  workflow-resolution-smoke:
+    name: Verify GitHub can start a job
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Confirm workflow and runner start
+        run: echo "Netlify preflight diagnostic job started successfully."

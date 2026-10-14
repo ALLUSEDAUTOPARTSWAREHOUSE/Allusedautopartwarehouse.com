@@ -12,15 +12,19 @@ Use this checklist when connecting the existing repository to Netlify. Do not cr
 - Publish directory: leave Netlify's Next.js framework/runtime integration to configure it; do not force a static export for this application.
 - Configuration file: `netlify.toml`
 
-The application uses Next.js server routes and server-side authentication. A static-only export is not an appropriate deployment target.
+The application uses Next.js server routes and server-side authentication. A static-only export is not an appropriate deployment target. GitHub Actions preflight should run the frozen install, lint, tests, and the same `pnpm build` command before production hosting work proceeds.
 
 ## Configure secrets in Netlify
 
 Use **Site configuration → Environment variables**. Transfer values from the authoritative password manager/current production configuration; never commit values to the repository or paste secrets into issues or pull requests.
 
+### Database variable confirmed in source
+
+- `DATABASE_URL`: required by `lib/db/index.ts` to create the PostgreSQL connection pool. Configure a production database URL that is reachable from Netlify's runtime, and verify provider-required SSL settings. Do not put the actual connection string in GitHub.
+
 ### Authentication variables confirmed in source
 
-- `ADMIN_PASSWORD`: required for the environment-variable-based administrator login. Use a strong unique password. There is intentionally no production fallback password.
+- `ADMIN_PASSWORD`: required for the environment-variable-based administrator login when no administrator password hash has been stored. Use a strong unique password. There is intentionally no production fallback password.
 - `ADMIN_EMAIL`: optional administrator login email; source default is `Info@Allusedautopartswarehouse.com`.
 - `BETTER_AUTH_SECRET` or `ADMIN_SESSION_SECRET`: set a strong random session-signing secret in production. Do not rely on the password-derived fallback when moving hosts.
 - Staff login also relies on the application's database and staff credential/session implementation.
@@ -29,9 +33,8 @@ Use **Site configuration → Environment variables**. Transfer values from the a
 
 Inspect the current production environment and source code before transferring each value. Configure only the integrations that the business actually uses:
 
-- PostgreSQL/database connection settings and any required SSL options.
 - Email provider credentials and sender/domain verification for password reset and notifications.
-- Payment provider keys and webhook signing secrets, if payment flows are enabled.
+- `STRIPE_SECRET_KEY` and any webhook signing secrets, if payment flows are enabled.
 - Any AI, analytics, messaging, storage, or third-party API keys used by enabled routes.
 
 Do not guess variable names or copy preview-only values. Keep production and deploy-preview values separate. Restrict secrets to server-side use; do not prefix secrets with `NEXT_PUBLIC_`.
