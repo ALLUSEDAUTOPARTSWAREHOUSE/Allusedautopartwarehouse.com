@@ -4,3 +4,5 @@
 [build.environment]
   NODE_VERSION = "22"
   PNPM_VERSION = "9.15.9"
+  # Allow Netlify to reconcile the pnpm lockfile when manifest dependencies change.
+  PNPM_FLAGS = "--no-frozen-lockfile"
