@@ -1,5 +1,5 @@
 import 'server-only'
-import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto'
+import { createHash, createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
 import { cookies } from 'next/headers'
 import { pool } from '@/lib/db'
@@ -14,24 +14,56 @@ function secret() {
   return process.env.BETTER_AUTH_SECRET || process.env.ADMIN_SESSION_SECRET || null
 }
 export async function ensureStaffCredentialsTable() {
-  await pool.query(`CREATE TABLE IF NOT EXISTS staff_credentials (
+  await pool.query(`CREATE TABLE IF NOT EXISTS public.staff_credentials (
     staff_id TEXT PRIMARY KEY,
     password_hash TEXT NOT NULL,
     session_version INTEGER NOT NULL DEFAULT 0,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+  CREATE TABLE IF NOT EXISTS public.staff_login_attempts (
+    bucket TEXT PRIMARY KEY,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    window_started_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`)
 }
+export async function checkStaffLoginRateLimit(email: string, ip: string) {
+  const emailKey = `email:${createHash('sha256').update(email).digest('hex')}`
+  const ipKey = `ip:${createHash('sha256').update(ip).digest('hex')}`
+  await pool.query("DELETE FROM public.staff_login_attempts WHERE window_started_at < now() - interval '1 day'")
+  const { rows } = await pool.query(
+    `INSERT INTO public.staff_login_attempts AS limits (bucket, attempts, window_started_at)
+     SELECT bucket, 1, now() FROM unnest($1::text[]) AS source(bucket)
+     ON CONFLICT (bucket) DO UPDATE SET
+       attempts = CASE WHEN limits.window_started_at <= now() - interval '15 minutes' THEN 1 ELSE limits.attempts + 1 END,
+       window_started_at = CASE WHEN limits.window_started_at <= now() - interval '15 minutes' THEN now() ELSE limits.window_started_at END
+     RETURNING bucket, attempts`,
+    [[emailKey, ipKey]],
+  )
+  const attempts = new Map(rows.map((row) => [row.bucket, Number(row.attempts)]))
+  return (attempts.get(emailKey) ?? 0) <= 8 && (attempts.get(ipKey) ?? 0) <= 30
+}
 export async function hashStaffPassword(password: string) {
-  const salt = randomBytes(16).toString('hex')
+  const salt = randomBytes(16)
   const derived = (await scrypt(password, salt, 64)) as Buffer
-  return `scrypt:${salt}:${derived.toString('hex')}`
+  return `scrypt:${salt.toString('hex')}:${derived.toString('hex')}`
 }
 export async function verifyStaffPassword(password: string, encoded: string) {
+  if (typeof encoded !== 'string') {
+    await scrypt(password, Buffer.from('00112233445566778899aabbccddeeff', 'hex'), 64)
+    return false
+  }
   const [algorithm, salt, digest] = encoded.split(':')
-  if (algorithm !== 'scrypt' || !salt || !digest) return false
-  const expected = Buffer.from(digest, 'hex')
-  const actual = (await scrypt(password, salt, expected.length)) as Buffer
-  return expected.length === actual.length && timingSafeEqual(expected, actual)
+  if (algorithm !== 'scrypt' || !salt || !digest || !/^[\da-f]{32}$/i.test(salt) || !/^[\da-f]{128}$/i.test(digest)) {
+    await scrypt(password, Buffer.from('00112233445566778899aabbccddeeff', 'hex'), 64)
+    return false
+  }
+  try {
+    const expected = Buffer.from(digest, 'hex')
+    const actual = (await scrypt(password, Buffer.from(salt, 'hex'), expected.length)) as Buffer
+    return expected.length === actual.length && timingSafeEqual(expected, actual)
+  } catch {
+    return false
+  }
 }
 function signature(value: string, key: string) {
   return createHmac('sha256', key).update(value).digest('base64url')

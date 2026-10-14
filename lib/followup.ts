@@ -1,20 +1,11 @@
 import "server-only"
 import { randomUUID } from "crypto"
 import { pool } from "@/lib/db"
+import { ORDER_STATUSES, QUOTE_STATUSES } from "@/lib/followup-statuses"
+import type { OrderStatus, QuoteStatus } from "@/lib/followup-statuses"
 
-export const QUOTE_STATUSES = ["new", "contacted", "quoted", "won", "lost"] as const
-export const ORDER_STATUSES = [
-  "pending",
-  "reserved_pending_fitment",
-  "confirmed",
-  "paid",
-  "shipped",
-  "delivered",
-  "cancelled",
-] as const
-
-export type QuoteStatus = (typeof QUOTE_STATUSES)[number]
-export type OrderStatus = (typeof ORDER_STATUSES)[number]
+export { ORDER_STATUSES, QUOTE_STATUSES } from "@/lib/followup-statuses"
+export type { OrderStatus, QuoteStatus } from "@/lib/followup-statuses"
 
 export interface QuoteLead {
   id: number

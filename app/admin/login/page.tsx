@@ -18,7 +18,7 @@ export default function AdminLoginPage() {
     setError('')
     setIsLoading(true)
     try {
-      const response = await fetch('/api/portal/auth/login', {
+      const response = await fetch('/api/admin/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -68,8 +68,9 @@ export default function AdminLoginPage() {
               <div><div className="mb-2 flex items-center justify-between"><label htmlFor="portal-password" className="text-sm font-semibold text-slate-700">Password</label><Link href="/admin/forgot-password" className="text-xs font-semibold text-orange-700 hover:underline">Forgot password?</Link></div><div className="relative"><LockKeyhole className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400" /><input id="portal-password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter your password" required className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-12 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-400/15" /><button type="button" onClick={() => setShowPassword(v => !v)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-400 hover:text-slate-800">{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div></div>
               <button type="submit" disabled={isLoading} className="group flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 text-sm font-bold text-slate-950 shadow-lg shadow-orange-500/20 transition hover:-translate-y-0.5 hover:bg-orange-400 disabled:opacity-60">{isLoading ? 'Signing you in…' : 'Sign in to AUAPW'} {!isLoading && <ArrowRight className="size-4 transition group-hover:translate-x-1" />}</button>
             </form>
-            <p className="mt-6 text-xs leading-5 text-slate-500">Administrators and authorized staff use this portal. Customer accounts sign in separately.</p>
+            <p className="mt-6 text-xs leading-5 text-slate-500">Administrator access only. Staff and customer accounts sign in separately.</p>
             <Link href="/sign-in" className="mt-3 inline-block text-sm font-semibold text-orange-700 hover:underline">Customer sign in</Link>
+            <Link href="/staff/login" className="mt-3 inline-block text-sm font-semibold text-orange-700 hover:underline">Staff sign in</Link>
             <div className="mt-8 flex items-center justify-center gap-2 text-xs text-slate-400"><ShieldCheck className="size-3.5" /> Protected sign-in · Role-based access</div>
             <Link href="/" className="mt-4 block text-center text-xs font-medium text-slate-500 hover:text-slate-900">Back to website</Link>
           </div>
