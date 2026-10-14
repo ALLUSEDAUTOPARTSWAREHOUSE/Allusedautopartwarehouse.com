@@ -71,7 +71,7 @@ export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-u
               <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm"><PackageSearch className="size-5 text-[#f36b21]" /><p className="mt-3 text-sm font-semibold">Parts made easier</p><p className="mt-1 text-xs leading-5 text-neutral-400">Keep your customer journey in one place.</p></div>
               <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm"><ShieldCheck className="size-5 text-[#f36b21]" /><p className="mt-3 text-sm font-semibold">Secure account access</p><p className="mt-1 text-xs leading-5 text-neutral-400">Your customer account stays separate from admin access.</p></div>
             </div>
-            <p className="mt-8 text-[11px] tracking-wide text-neutral-500">ALL USED AUTO PARTS WAREHOUSE</p>
+            <p className="mt-8 text-[11px] tracking-wide text-neutral-400">ALL USED AUTO PARTS WAREHOUSE</p>
           </div>
 
           <div className={`flex items-center justify-center p-6 transition-all duration-700 motion-reduce:transition-none sm:p-10 lg:p-14 ${isSignUp ? 'lg:order-1' : ''}`}>
