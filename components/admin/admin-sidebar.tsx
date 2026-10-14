@@ -18,11 +18,6 @@ const GROUPS = [
     { href: '/admin/chats', label: 'Customer chats', icon: MessageSquare },
     { href: '/admin/payments', label: 'Payments', icon: CreditCard },
   ] },
-  { title: 'Store operations', links: [
-    { href: '/admin/settings', label: 'Policies & system health', icon: Settings },
-    { href: '/admin/payments', label: 'Payment methods', icon: CreditCard },
-    { href: '/admin/team', label: 'Team & permissions', icon: Users },
-  ] },
   { title: 'Development', links: [
     { href: '/admin/development', label: 'API & setup', icon: Code },
     { href: '/admin/team', label: 'Team', icon: Users },
