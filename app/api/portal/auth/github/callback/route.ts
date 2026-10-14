@@ -2,7 +2,7 @@ import { timingSafeEqual } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { generateAdminToken, ADMIN_COOKIE, ADMIN_SESSION_MAX_AGE } from '@/lib/admin-auth'
 import { getAdminSessionVersion } from '@/lib/admin-passwords'
-import { getAllowedGitHubAdmins, getGitHubOAuthCredentials, getPublicAppOrigin } from '@/lib/github-admin-oauth'
+import { getAllowedGitHubAdminIds, getGitHubOAuthCredentials, getPublicAppOrigin } from '@/lib/github-admin-oauth'
 
 export const runtime = 'nodejs'
 const STATE_COOKIE = 'auapw_github_oauth_state'
@@ -74,8 +74,8 @@ export async function GET(request: NextRequest) {
     })
     if (!userResponse.ok) return loginRedirect(origin, 'github_identity_failed')
     const user = await userResponse.json() as { login?: string; id?: number }
-    const login = typeof user.login === 'string' ? user.login.trim().toLowerCase() : ''
-    if (!login || !Number.isSafeInteger(user.id) || !allowedAdmins.has(login)) {
+    const githubId = typeof user.id === 'number' && Number.isSafeInteger(user.id) ? String(user.id) : ''
+    if (!githubId || !allowedAdminIds.has(githubId)) {
       return loginRedirect(origin, 'github_not_authorized')
     }
 
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
     })
     response.cookies.set(STATE_COOKIE, '', {
       httpOnly: true,
-      secure: true,
+      secure: origin.startsWith('https://'),
       sameSite: 'lax',
       path: '/api/portal/auth/github',
       maxAge: 0,
