@@ -36,7 +36,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
           </h1>
 
           <p className="text-sm text-muted-foreground mb-2 leading-relaxed">
-            An unexpected error occurred. Our team has been notified. You can try again or return home.
+            An unexpected error occurred. You can try again or return home.
           </p>
 
           {error.digest && (
