@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowRight, LockKeyhole, Mail, Eye, EyeOff, ShieldCheck, Boxes, Users, Headset, Code2, ShoppingBag } from 'lucide-react'
+import { ArrowRight, LockKeyhole, Mail, Eye, EyeOff, ShieldCheck, Boxes, Users, Headset, Code2, ShoppingBag, Github } from 'lucide-react'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -12,6 +12,20 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get('error')
+    const messages: Record<string, string> = {
+      github_not_configured: 'GitHub sign-in is not configured for this site yet. Use your email and password or contact an administrator.',
+      github_cancelled: 'GitHub sign-in was cancelled.',
+      github_state_invalid: 'The GitHub sign-in request expired or could not be verified. Please try again.',
+      github_exchange_failed: 'GitHub could not complete sign-in. Please try again.',
+      github_identity_failed: 'We could not verify your GitHub account. Please try again.',
+      github_not_authorized: 'This GitHub account is not authorized for the AUAPW admin workspace.',
+      github_signin_failed: 'GitHub sign-in failed. Please try again or use your existing login.',
+    }
+    if (code && messages[code]) setError(messages[code])
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -68,6 +82,11 @@ export default function AdminLoginPage() {
               <div><div className="mb-2 flex items-center justify-between"><label htmlFor="portal-password" className="text-sm font-semibold text-slate-700">Password</label><Link href="/admin/forgot-password" className="text-xs font-semibold text-orange-700 hover:underline">Forgot password?</Link></div><div className="relative"><LockKeyhole className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400" /><input id="portal-password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter your password" required className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-12 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-400/15" /><button type="button" onClick={() => setShowPassword(v => !v)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-400 hover:text-slate-800">{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div></div>
               <button type="submit" disabled={isLoading} className="group flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 text-sm font-bold text-slate-950 shadow-lg shadow-orange-500/20 transition hover:-translate-y-0.5 hover:bg-orange-400 disabled:opacity-60">{isLoading ? 'Signing you in…' : 'Sign in to AUAPW'} {!isLoading && <ArrowRight className="size-4 transition group-hover:translate-x-1" />}</button>
             </form>
+            <div className="my-5 flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-200" /><span>OR</span><span className="h-px flex-1 bg-slate-200" /></div>
+            <a href="/api/portal/auth/github" className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:border-slate-300 hover:bg-slate-50">
+              <Github className="size-4" /> Continue with GitHub
+            </a>
+            <p className="mt-3 text-xs leading-5 text-slate-500">GitHub sign-in is available only to explicitly authorized administrator GitHub account IDs.</p>
             <p className="mt-6 text-xs leading-5 text-slate-500">Administrators and authorized staff use this portal. Customer accounts sign in separately.</p>
             <Link href="/sign-in" className="mt-3 inline-block text-sm font-semibold text-orange-700 hover:underline">Customer sign in</Link>
             <div className="mt-8 flex items-center justify-center gap-2 text-xs text-slate-400"><ShieldCheck className="size-3.5" /> Protected sign-in · Role-based access</div>
