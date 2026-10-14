@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowRight, LockKeyhole, Mail, Eye, EyeOff, ShieldCheck, Boxes, Users, Headset, Code2, ShoppingBag, Github } from 'lucide-react'
+import { ArrowRight, LockKeyhole, Mail, Eye, EyeOff, ShieldCheck, Boxes, Users, Code2, ShoppingBag, Github } from 'lucide-react'
 
 export default function AdminLoginPage() {
   const router = useRouter()
