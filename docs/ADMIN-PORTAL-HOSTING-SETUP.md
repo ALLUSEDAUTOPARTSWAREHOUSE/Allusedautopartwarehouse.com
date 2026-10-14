@@ -15,7 +15,7 @@ Before publishing, open **Site configuration → Environment variables** and add
 
 - Never commit real secrets to GitHub.
 - Do not reuse a Vercel-only environment configuration automatically; copy values deliberately and confirm each provider supports the new deployment URL.
-- Set the final public site URL and authentication callback/allowed-origin settings to the Netlify site URL first. Add a custom domain only after DNS is ready.
+- Set `NEXT_PUBLIC_API_URL` to the Netlify site URL, and configure authentication callback/allowed-origin settings to that URL first. Add a custom domain only after DNS is ready.
 - Do not disable authentication to make deployment succeed.
 
 ## 3. Verify the admin portal
