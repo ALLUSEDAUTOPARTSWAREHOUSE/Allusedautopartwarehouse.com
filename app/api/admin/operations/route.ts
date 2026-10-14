@@ -78,19 +78,27 @@ export async function PATCH(request: NextRequest) {
 
     if (type === 'customer') {
       const userId = id
-      const phone = typeof body.phone === 'string' ? body.phone.trim() : ''
-      const businessName = typeof body.businessName === 'string' ? body.businessName.trim() : ''
-      if (phone.length > 40 || businessName.length > 200) {
+      const phone = typeof body.phone === 'string' ? body.phone.trim() : undefined
+      const businessName = typeof body.businessName === 'string' ? body.businessName.trim() : undefined
+      if (phone !== undefined && phone.length > 40 || businessName !== undefined && businessName.length > 200) {
         return NextResponse.json({ error: 'Phone or business name is too long.' }, { status: 400 })
+      }
+      if (phone === undefined && businessName === undefined) {
+        return NextResponse.json({ error: 'Provide a phone number or business name to update.' }, { status: 400 })
       }
       const [account] = await db.select({ email: user.email }).from(user).where(eq(user.id, userId)).limit(1)
       if (!account) return NextResponse.json({ error: 'Customer account not found.' }, { status: 404 })
+      const updates: { phone?: string | null; businessName?: string | null; updatedAt: Date } = { updatedAt: new Date() }
+      if (phone !== undefined) updates.phone = phone || null
+      if (businessName !== undefined) updates.businessName = businessName || null
       await db.insert(customers).values({
         id: `customer_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        userId, email: account.email, phone: phone || null, businessName: businessName || null,
+        userId, email: account.email,
+        phone: phone === undefined ? null : phone || null,
+        businessName: businessName === undefined ? null : businessName || null,
       }).onConflictDoUpdate({
         target: customers.userId,
-        set: { phone: phone || null, businessName: businessName || null, updatedAt: new Date() },
+        set: updates,
       })
       return NextResponse.json({ success: true })
     }
