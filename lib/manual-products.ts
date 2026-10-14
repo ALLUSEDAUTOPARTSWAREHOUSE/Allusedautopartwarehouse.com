@@ -163,6 +163,20 @@ export async function importProductSheet(brand: string, buffer: Buffer, mode: "a
   if (!sheetName) throw new Error("NO_PRODUCT_SHEET")
   const rows = utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[sheetName])
   if (!rows.length) return { inserted: 0, skipped: 0, missingPrices: 0 }
+  // Validate the entire workbook before opening a write transaction.
+  const normalizeBrand = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "")
+  const identities = new Set<string>()
+  for (const row of rows) {
+    const rowBrand = String(row["brand"] ?? row["Brand"] ?? "").trim()
+    if (rowBrand && normalizeBrand(rowBrand) !== normalizeBrand(brand)) throw new Error("BRAND_MISMATCH")
+    const name = String(row["name"] ?? row["Product Name"] ?? row["Name"] ?? "").trim()
+    if (!name) continue
+    const url = String(row["product_url"] ?? row["Product URL"] ?? "")
+    const identity = url.match(/\/products\/([a-z0-9-]+)\/?$/i)?.[1] || slugifyName(name)
+    if (identities.has(identity)) throw new Error("DUPLICATE_PRODUCTS")
+    identities.add(identity)
+  }
+
 
   let inserted = 0
   let skipped = 0

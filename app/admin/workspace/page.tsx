@@ -1,18 +1,23 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { getAdminSession } from '@/lib/admin-auth'
 import {
   ArrowUpRight, Boxes, ChartNoAxesCombined, CreditCard, Facebook, Gauge,
   Headset, Megaphone, Package, Settings2, ShieldCheck, ShoppingBag, Store,
-  Users, Wrench, Workflow,
+  Users, Workflow, Bot, KeyRound, PlugZap, Globe, Mail, Activity,
 } from 'lucide-react'
+
+export const dynamic = 'force-dynamic'
+export const metadata = { title: 'Admin Workspace | AUAPW', robots: { index: false, follow: false } }
 
 const workspaces = [
   {
     title: 'Commerce & inventory',
     description: 'Manage automotive parts, catalog quality, availability, and product publishing.',
     icon: Boxes,
-    accent: 'blue',
     links: [
       { label: 'Products & brands', href: '/admin/products', icon: Package },
+      { label: 'Live inventory editor', href: '/admin/operations', icon: Boxes },
       { label: 'Orders & fulfilment', href: '/admin/orders', icon: ShoppingBag },
       { label: 'Payments', href: '/admin/payments', icon: CreditCard },
     ],
@@ -21,7 +26,6 @@ const workspaces = [
     title: 'Google Merchant Center',
     description: 'Review feed operations, product diagnostics, and Merchant Center setup.',
     icon: Store,
-    accent: 'emerald',
     links: [
       { label: 'Merchant dashboard', href: '/admin/merchant', icon: Store },
       { label: 'Marketing overview', href: '/admin/marketing', icon: ChartNoAxesCombined },
@@ -32,7 +36,6 @@ const workspaces = [
     title: 'Social & growth',
     description: 'Coordinate social account links, marketing activity, and customer reputation.',
     icon: Megaphone,
-    accent: 'violet',
     links: [
       { label: 'Social accounts', href: '/admin/marketing/social', icon: Facebook },
       { label: 'Marketing dashboard', href: '/admin/marketing', icon: Megaphone },
@@ -43,18 +46,44 @@ const workspaces = [
     title: 'Sales & customer support',
     description: 'Keep sales, quote requests, customer conversations, and team workflows together.',
     icon: Headset,
-    accent: 'amber',
     links: [
-      { label: 'Sales dashboard', href: '/admin/sales', icon: ChartNoAxesCombined },
-      { label: 'Leads & quotes', href: '/admin/quotes', icon: Workflow },
+      { label: 'Sales & operations center', href: '/admin/operations', icon: ChartNoAxesCombined },
+      { label: 'Leads & quotes', href: '/admin/operations', icon: Workflow },
       { label: 'Customer chats', href: '/admin/chats', icon: Headset },
       { label: 'Customers', href: '/admin/customers', icon: Users },
       { label: 'Team members', href: '/admin/team', icon: Users },
     ],
   },
+  {
+    title: 'Store configuration & operations',
+    description: 'Control store policies, payment setup, email delivery, system health, automation and team access.',
+    icon: Settings2,
+    links: [
+      { label: 'Store policies & system health', href: '/admin/settings', icon: Activity },
+      { label: 'Payment methods', href: '/admin/payments', icon: CreditCard },
+      { label: 'Email delivery settings', href: '/admin/settings', icon: Mail },
+      { label: 'Team directory & permissions', href: '/admin/team', icon: Users },
+      { label: 'API & automation setup', href: '/admin/development', icon: Workflow },
+    ],
+  },
+  {
+    title: 'AI development, APIs & security',
+    description: 'Plan website page changes, new features, bug fixes and API integrations, then manage settings and access.',
+    icon: Bot,
+    links: [
+      { label: 'AI development assistant', href: '/admin/ai-chat', icon: Bot },
+      { label: 'API & integration setup', href: '/admin/development', icon: PlugZap },
+      { label: 'Website products & content', href: '/admin/products', icon: Globe },
+      { label: 'System health & settings', href: '/admin/settings', icon: Settings2 },
+      { label: 'Password management', href: '/admin/security', icon: KeyRound },
+    ],
+  },
 ]
 
-export default function AdminWorkspacePage() {
+export default async function AdminWorkspacePage() {
+  const session = await getAdminSession()
+  if (!session) redirect('/admin/login')
+
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-7">
       <section className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -63,10 +92,9 @@ export default function AdminWorkspacePage() {
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
               <Gauge className="size-3.5" /> ADMINISTRATOR WORKSPACE
             </div>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">One command center. Four workspaces.</h1>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">One command center. Six workspaces.</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-              Manage All Used Auto Parts Warehouse operations from one secure admin portal—store and inventory,
-              Google Merchant, social growth, and sales support.
+              Manage store and inventory, Google Merchant, social accounts, payment methods, sales support, API setup, security and AI-assisted development from one secure admin portal.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link href="/admin/dashboard" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90">
@@ -86,6 +114,8 @@ export default function AdminWorkspacePage() {
                 ['02', 'Google Merchant'],
                 ['03', 'Social & growth'],
                 ['04', 'Sales & support'],
+                ['05', 'Store configuration'],
+                ['06', 'AI & API development'],
               ].map(([n, label]) => (
                 <div key={n} className="rounded-lg border border-border bg-card p-3">
                   <span className="text-xs font-semibold text-primary">{n}</span>
@@ -101,7 +131,7 @@ export default function AdminWorkspacePage() {
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold tracking-tight">Your workspaces</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Direct access to the tools already organized in your admin portal.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Direct access to commerce, Merchant Center, social growth, sales support, store configuration and AI development tools.</p>
           </div>
           <span className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex"><ShieldCheck className="size-4" /> Admin access required</span>
         </div>
@@ -134,7 +164,7 @@ export default function AdminWorkspacePage() {
         </div>
       </section>
       <p className="text-xs leading-5 text-muted-foreground">
-        Payment-provider changes, product deletions, and publishing actions should be completed in their dedicated modules and confirmed against the connected production service.
+        API keys and payment secrets belong in your hosting provider’s secure environment-variable settings, never in chat or ordinary forms. Social publishing and direct Google Merchant account authorization require provider connections. AI can help plan code changes; changes must be reviewed and deployed before they affect the live website.
       </p>
     </div>
   )

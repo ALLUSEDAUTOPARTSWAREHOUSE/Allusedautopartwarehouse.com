@@ -67,3 +67,19 @@ test('removal creates hidden source markers atomically and preserves other overr
   assert.doesNotMatch(calls[2].sql, /price =|image_url =/)
   assert.equal(calls.at(-1).sql, 'COMMIT')
 })
+
+test('wrong brand and duplicate product identities reject before database writes', async () => {
+  for (const [rows, error] of [
+    [[{ name: 'Mazda engine', brand: 'Mazda', price: 1200 }], 'BRAND_MISMATCH'],
+    [[{ Name: 'Engine', 'Product URL': 'https://example.com/products/engine-1' }, { Name: 'Another engine', 'Product URL': 'https://example.com/products/engine-1' }], 'DUPLICATE_PRODUCTS'],
+  ]) {
+    const { run, calls } = importer({ Products: rows })
+    await assert.rejects(run('acura', Buffer.alloc(0)), new RegExp(error))
+    assert.equal(calls.length, 0)
+  }
+})
+test('Mazda migration headers import into Mazda only', async () => {
+  const { run, calls } = importer({ Controls: [{ title: 'Controls' }], Mazda: [{ name: 'Mazda engine', brand: 'Mazda', price: 1300, product_url: 'https://example.com/products/mazda-engine-p-1' }] })
+  assert.equal((await run('mazda', Buffer.alloc(0), 'all', true)).inserted, 1)
+  assert.ok(!calls.some(c => c.sql.startsWith('INSERT')))
+})
