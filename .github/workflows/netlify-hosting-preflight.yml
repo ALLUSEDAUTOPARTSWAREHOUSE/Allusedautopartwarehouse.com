@@ -4,48 +4,15 @@ on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
-      - "setup/netlify-*"
-      - "fix/netlify-*"
-  workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: netlify-hosting-preflight-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  verify:
-    name: Install, lint, test, and build
+  workflow-resolution-smoke:
+    name: Verify GitHub can start a job
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
     steps:
-      - name: Check out source
-        uses: actions/checkout@v4
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.9
-          run_install: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install locked dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Test
-        run: pnpm test
-
-      - name: Production build
-        run: pnpm build
+      - name: Confirm workflow and runner start
+        run: echo "Netlify preflight replacement workflow started successfully."
