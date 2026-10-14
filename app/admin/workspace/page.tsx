@@ -164,7 +164,7 @@ export default async function AdminWorkspacePage() {
         </div>
       </section>
       <p className="text-xs leading-5 text-muted-foreground">
-        API keys and payment secrets belong in Vercel Environment Variables, never in chat or ordinary forms. Social publishing and direct Google Merchant account authorization require provider connections. AI can help plan code changes; changes must be reviewed and deployed before they affect the live website.
+        API keys and payment secrets belong in your hosting provider’s secure environment-variable settings, never in chat or ordinary forms. Social publishing and direct Google Merchant account authorization require provider connections. AI can help plan code changes; changes must be reviewed and deployed before they affect the live website.
       </p>
     </div>
   )
