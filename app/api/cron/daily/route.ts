@@ -12,10 +12,8 @@ export const maxDuration = 300
 const digest = (value: string) => createHash("sha256").update(value).digest()
 
 /**
- * Vercel Cron sends `Authorization: Bearer $CRON_SECRET` when that variable is
- * set. Without it, only requests that look like Vercel's scheduler run the job;
- * the job is once-a-day idempotent and only emails the owner, so an early or
- * spoofed call can at most send that day's report sooner.
+ * The daily scheduler and background worker must provide bearer authentication
+ * with CRON_SECRET. Requests without the configured secret are always rejected.
  */
 function isAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET
