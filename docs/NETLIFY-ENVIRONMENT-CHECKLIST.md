@@ -14,6 +14,33 @@ Use this checklist when connecting the existing repository to Netlify. Do not cr
 
 The application uses Next.js server routes and server-side authentication. A static-only export is not an appropriate deployment target.
 
+## GitHub Actions build and download (no deployment)
+
+The **Next.js build artifact** workflow (`.github/workflows/build-upload.yml`) builds the root app on pushes to `main`, pull requests targeting `main` (including forks), and manual runs. It uses Node.js 22, pnpm 9.15.9, cached pnpm dependencies, and a frozen lockfile. New runs cancel older builds for the same ref.
+
+- **Run manually:** open the repository's **Actions → Next.js build artifact → Run workflow**, select the branch, and confirm.
+- **Download:** open a successful run and select `nextjs-build-<commit SHA>-<run ID>-<attempt>` under **Artifacts** while signed in to GitHub. Artifacts expire after seven days.
+- The downloaded ZIP contains `nextjs-build.tar.gz`. Extract it with `tar -xzf nextjs-build.tar.gz` to recover `.next`: compiled server/API code, client assets, prerendered output, and build metadata/manifests. Packaging includes the hidden `.next` directory without enabling hidden-file uploads; `.next/cache`, `.env*` files, `node_modules`, and PEM/key/P12/PFX files are excluded.
+- This is **build output, not a standalone deploy-ready bundle or a static site**. It does not include `public`, the server-side `data/brands/*.json` catalogs, source/configuration, or runtime dependencies. It is not a Netlify publish directory; a host must build and run this server-capable Next.js application with its required files and runtime configuration.
+- CI does not receive hosting or integration secrets. Better Auth validates its signing secret during production initialization, so the build command generates a fresh random `BETTER_AUTH_SECRET` for that process only; it is not logged, saved to an environment file, or usable as production configuration. Real authentication, database, payment, email, AI, and messaging configuration belongs in the host's environment for enabled runtime features (see below). Public build-time configuration, if supplied in a future workflow, can be embedded in compiled assets and must never contain secrets.
+
+To reproduce the build locally with Node.js 22 and pnpm 9.15.9:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+```
+
+Use your securely configured local environment for authentication initialization, or, for build-only validation without production credentials, run the workflow's equivalent:
+
+```bash
+BETTER_AUTH_SECRET="$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")" pnpm build
+```
+
+The build also requires access to Google Fonts for the existing `next/font/google` Roboto import. CI does not verify live integration credentials or production runtime behavior.
+
+Downloading an artifact **does not deploy to Netlify, change DNS, or modify the existing Vercel deployment**. Hosting accounts, production environment variables, runtime verification, and domain cutover remain manual steps in this checklist.
+
 ## Configure secrets in Netlify
 
 Use **Site configuration → Environment variables**. Transfer values from the authoritative password manager/current production configuration; never commit values to the repository or paste secrets into issues or pull requests.
