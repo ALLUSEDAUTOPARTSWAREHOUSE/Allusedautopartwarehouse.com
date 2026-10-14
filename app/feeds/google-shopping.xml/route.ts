@@ -147,7 +147,8 @@ export async function GET(request: Request) {
   })
 
   const gzip = acceptsGzip(request)
-  return new Response(gzip ? stream.pipeThrough(new CompressionStream("gzip")) : stream, {
+  const body = gzip ? (stream.pipeThrough(new CompressionStream("gzip") as any)) : stream
+  return new Response(body as any, {
     headers: {
       "Content-Type": "application/xml; charset=utf-8",
       ...(gzip ? { "Content-Encoding": "gzip" } : {}),
