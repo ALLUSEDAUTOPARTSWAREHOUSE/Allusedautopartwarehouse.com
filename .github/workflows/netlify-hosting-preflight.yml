@@ -4,15 +4,25 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
+      - "setup/netlify-*"
+      - "fix/netlify-*"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: netlify-hosting-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  workflow-resolution-smoke:
+  verify:
     name: Verify GitHub can start a job
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
     steps:
       - name: Confirm workflow and runner start
         run: echo "Netlify preflight replacement workflow started successfully."
