@@ -24,6 +24,7 @@ Use **Site configuration → Environment variables**. Transfer values from the a
 - `ADMIN_EMAIL`: optional administrator login email; source default is `Info@Allusedautopartswarehouse.com`.
 - `BETTER_AUTH_SECRET` or `ADMIN_SESSION_SECRET`: set a strong random session-signing secret in production. Do not rely on the password-derived fallback when moving hosts.
 - Staff login also relies on the application's database and staff credential/session implementation.
+- If password reset is enabled, set `ADMIN_RESET_SECRET`, `RESEND_API_KEY`, and `ADMIN_RESET_FROM`. The sender must be verified with the email provider.
 
 ### Application integrations
 
@@ -31,7 +32,7 @@ Inspect the current production environment and source code before transferring e
 
 - PostgreSQL/database connection settings and any required SSL options.
 - Email provider credentials and sender/domain verification for password reset and notifications.
-- Payment provider keys and webhook signing secrets, if payment flows are enabled.
+- Payment provider keys and webhook signing secrets, if payment flows are enabled. Also set `NEXT_PUBLIC_API_URL` to the Netlify site URL so Stripe checkout success and cancel URLs use the correct host.
 - Any AI, analytics, messaging, storage, or third-party API keys used by enabled routes.
 
 Do not guess variable names or copy preview-only values. Keep production and deploy-preview values separate. Restrict secrets to server-side use; do not prefix secrets with `NEXT_PUBLIC_`.
@@ -44,7 +45,7 @@ Do not guess variable names or copy preview-only values. Keep production and dep
 4. Verify database-backed Quotes & Leads, Orders, Inventory, Customers, and Team Directory actions.
 5. Test password-reset and notification email delivery end to end.
 6. Verify payment webhooks and other external callback URLs if applicable.
-7. Confirm uploaded files, scheduled jobs, and any long-running tasks are supported by the selected Netlify runtime.
+7. Confirm uploaded files and any long-running tasks are supported by the selected Netlify runtime. Configure a Netlify Scheduled Function or external scheduler to call `/api/cron/daily` daily with `CRON_SECRET`; the Vercel schedule in `vercel.json` does not run on Netlify.
 8. Check security headers, HTTPS, cookies, allowed origins, and provider callback URLs.
 9. Only after all checks pass, add the custom domain in Netlify and apply the exact DNS records shown by Netlify. Preserve MX and other email DNS records.
 
