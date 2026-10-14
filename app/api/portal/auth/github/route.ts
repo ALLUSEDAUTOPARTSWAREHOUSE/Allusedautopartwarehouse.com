@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import { getGitHubOAuthCredentials, getPublicAppOrigin, getAllowedGitHubAdmins } from '@/lib/github-admin-oauth'
+import { getGitHubOAuthCredentials, getPublicAppOrigin, getAllowedGitHubAdminIds } from '@/lib/github-admin-oauth'
 
 export const runtime = 'nodejs'
 const STATE_COOKIE = 'auapw_github_oauth_state'
