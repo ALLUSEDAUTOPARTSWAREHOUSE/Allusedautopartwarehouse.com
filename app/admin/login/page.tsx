@@ -61,11 +61,11 @@ export default function AdminLoginPage() {
           <div className="absolute -right-20 -top-20 size-64 rounded-full bg-orange-100 blur-3xl" />
           <div className="relative w-full max-w-md">
             <div className="mb-8 flex gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-              <button type="button" onClick={() => setTeamInfo(false)} className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-300 ${!teamInfo ? 'bg-slate-950 text-white' : 'text-slate-500 hover:text-slate-900'}`}>Administrator</button>
-              <button type="button" onClick={() => setTeamInfo(true)} className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-300 ${teamInfo ? 'bg-slate-950 text-white' : 'text-slate-500 hover:text-slate-900'}`}>Team access</button>
+              <button type="button" aria-pressed={!teamInfo} onClick={() => setTeamInfo(false)} className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-300 ${!teamInfo ? 'bg-slate-950 text-white' : 'text-slate-500 hover:text-slate-900'}`}>Administrator</button>
+              <button type="button" aria-pressed={teamInfo} onClick={() => setTeamInfo(true)} className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-300 ${teamInfo ? 'bg-slate-950 text-white' : 'text-slate-500 hover:text-slate-900'}`}>Team access</button>
             </div>
             <div className="relative min-h-[420px]">
-              <div className={`transition-all duration-500 ease-out ${teamInfo ? 'pointer-events-none absolute inset-0 -translate-x-5 opacity-0' : 'translate-x-0 opacity-100'}`} aria-hidden={teamInfo}>
+              <div inert={teamInfo} className={`transition-all duration-500 ease-out ${teamInfo ? 'pointer-events-none absolute inset-0 -translate-x-5 opacity-0' : 'translate-x-0 opacity-100'}`} aria-hidden={teamInfo}>
                 <div className="mb-6 flex size-12 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 text-orange-600"><ShieldCheck className="size-6" /></div>
                 <h2 className="text-3xl font-semibold tracking-tight">Welcome back</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">Sign in with your authorized administrator credentials.</p>
@@ -76,14 +76,14 @@ export default function AdminLoginPage() {
                   <button type="submit" disabled={isLoading} className="group flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 text-sm font-bold text-slate-950 shadow-lg shadow-orange-500/20 transition hover:-translate-y-0.5 hover:bg-orange-400 disabled:opacity-60">{isLoading ? 'Signing you in…' : 'Sign in to admin'} {!isLoading && <ArrowRight className="size-4 transition group-hover:translate-x-1" />}</button>
                 </form>
               </div>
-              <div className={`transition-all duration-500 ease-out ${teamInfo ? 'translate-x-0 opacity-100' : 'pointer-events-none absolute inset-0 translate-x-5 opacity-0'}`} aria-hidden={!teamInfo}>
+              <div inert={!teamInfo} className={`transition-all duration-500 ease-out ${teamInfo ? 'translate-x-0 opacity-100' : 'pointer-events-none absolute inset-0 translate-x-5 opacity-0'}`} aria-hidden={!teamInfo}>
                 <div className="mb-6 flex size-12 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700"><Users className="size-6" /></div>
                 <h2 className="text-3xl font-semibold tracking-tight">Team workspace</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">Your administrator can add team members and assign responsibilities.</p>
                 <div className="mt-6 space-y-3">
                   {[{ icon: ShoppingBag, title: 'Sales agents', desc: 'Quote leads, customer follow-up and orders' }, { icon: Headset, title: 'Support team', desc: 'Customer enquiries and support workflows' }, { icon: Code2, title: 'Developer team', desc: 'Website, API and development tasks' }].map(({ icon: Icon, title, desc }) => <div key={title} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4"><span className="rounded-lg bg-slate-100 p-2"><Icon className="size-4" /></span><div><p className="text-sm font-semibold">{title}</p><p className="mt-1 text-xs leading-5 text-slate-500">{desc}</p></div></div>)}
                 </div>
-                <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">Team directory entries do not automatically create login accounts. The administrator must issue secure access before team members can sign in.</p>
+                <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">Staff sign-in is not currently available. Team directory entries do not create login accounts.</p>
                 <Link href="/admin/forgot-password" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-orange-700 hover:underline">Account help <ArrowRight className="size-4" /></Link>
               </div>
             </div>
