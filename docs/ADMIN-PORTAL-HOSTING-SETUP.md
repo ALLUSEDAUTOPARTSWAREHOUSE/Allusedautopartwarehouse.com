@@ -15,7 +15,7 @@ Before publishing, open **Site configuration → Environment variables** and add
 
 - Never commit real secrets to GitHub.
 - Do not reuse a Vercel-only environment configuration automatically; copy values deliberately and confirm each provider supports the new deployment URL.
-- Set `NEXT_PUBLIC_API_URL` to the Netlify site's absolute HTTPS URL; Stripe Checkout uses it for success and cancel URLs. Update it when switching domains, and set authentication callback/allowed-origin settings to the final URL. Add a custom domain only after DNS is ready.
+- Set the final public site URL and authentication callback/allowed-origin settings to the Netlify site URL first. Add a custom domain only after DNS is ready.
 - Do not disable authentication to make deployment succeed.
 
 ## 3. Verify the admin portal
