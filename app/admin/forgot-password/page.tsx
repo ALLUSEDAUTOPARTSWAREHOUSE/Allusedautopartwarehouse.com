@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 
 export default function ForgotAdminPasswordPage() {
-  const [email, setEmail] = useState('Info@Allusedautopartswarehouse.com')
+  const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -21,7 +21,7 @@ export default function ForgotAdminPasswordPage() {
       const response = await fetch('/api/admin/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.trim() }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Unable to send reset code.')
@@ -48,7 +48,7 @@ export default function ForgotAdminPasswordPage() {
       const response = await fetch('/api/admin/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp, newPassword }),
+        body: JSON.stringify({ email: email.trim(), otp, newPassword }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Unable to reset password.')
@@ -77,11 +77,11 @@ export default function ForgotAdminPasswordPage() {
         {error && <div role="alert" className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
         <label htmlFor="reset-email" className="mt-5 block text-sm font-medium text-foreground">Administrator email</label>
-        <input id="reset-email" type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required
+        <input id="reset-email" type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Enter your administrator email" required
           className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-foreground" />
 
         {!codeSent ? (
-          <button type="button" disabled={busy} onClick={sendCode}
+          <button type="button" disabled={busy || !email.trim()} onClick={sendCode}
             className="mt-4 w-full rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-foreground disabled:opacity-50">
             {busy ? 'Sending code…' : 'Send OTP to email'}
           </button>
