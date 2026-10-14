@@ -16,17 +16,14 @@ const GROUPS = [
     { href: '/admin/quotes', label: 'Leads & quotes', icon: FileText },
     { href: '/admin/customers', label: 'Customers', icon: Users },
     { href: '/admin/chats', label: 'Customer chats', icon: MessageSquare },
-    { href: '/admin/payments', label: 'Payments', icon: CreditCard },
   ] },
   { title: 'Store operations', links: [
     { href: '/admin/settings', label: 'Policies & system health', icon: Settings },
     { href: '/admin/payments', label: 'Payment methods', icon: CreditCard },
-    { href: '/admin/team', label: 'Team & permissions', icon: Users },
+    { href: '/admin/team', label: 'Team directory', icon: Users },
   ] },
   { title: 'Development', links: [
     { href: '/admin/development', label: 'API & setup', icon: Code },
-    { href: '/admin/team', label: 'Team', icon: Users },
-    { href: '/admin/settings', label: 'System settings', icon: Settings },
     { href: '/admin/security', label: 'Password management', icon: KeyRound },
     { href: '/admin/ai-chat', label: 'AI planning', icon: Bot },
   ] },
@@ -40,14 +37,16 @@ const GROUPS = [
 
 export function AdminSidebar({ email }: { email: string }) {
   const pathname = usePathname()
-  const exact = GROUPS.some(group => group.links.some(link => link.href === pathname))
+  const activeHref = GROUPS.flatMap(group => group.links)
+    .filter(link => pathname === link.href || pathname?.startsWith(`${link.href}/`))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href
   return <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-border/40 bg-card lg:flex">
     <Link href="/admin/dashboard" className="border-b border-border/40 px-5 py-6 text-lg font-bold text-primary">AUAPW · Workspace</Link>
     <nav aria-label="Admin sidebar" className="flex-1 overflow-y-auto px-3 py-4">
       {GROUPS.map(group => <section key={group.title} className="mb-5">
         <h2 className="mb-2 px-3 text-[10px] font-semibold tracking-widest text-muted-foreground">{group.title}</h2>
         <ul className="space-y-1">{group.links.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || (!exact && pathname?.startsWith(`${href}/`))
+          const active = activeHref === href
           return <li key={href}><Link href={href} aria-current={active ? 'page' : undefined}
             className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors focus-visible:outline focus-visible:outline-2 ${active ? 'border-blue-500/30 bg-blue-500/10 font-semibold text-blue-800 dark:text-blue-300' : 'border-transparent text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
             <Icon className="size-4 shrink-0" aria-hidden="true" />{label}

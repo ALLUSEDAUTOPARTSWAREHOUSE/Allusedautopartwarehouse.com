@@ -4,7 +4,7 @@ import { getAdminSession } from '@/lib/admin-auth'
 import {
   ArrowUpRight, Boxes, ChartNoAxesCombined, CreditCard, Facebook, Gauge,
   Headset, Megaphone, Package, Settings2, ShieldCheck, ShoppingBag, Store,
-  Users, Workflow, Bot, KeyRound, PlugZap, Globe, Mail, Activity,
+  Users, Workflow, Bot, KeyRound, PlugZap, Globe, Activity,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -55,13 +55,12 @@ const workspaces = [
   },
   {
     title: 'Store configuration & operations',
-    description: 'Control store policies, payment setup, email delivery, system health, automation and team access.',
+    description: 'Manage store policies, payment setup, email delivery, system health, automation and team directory records. Staff sign-in and role-scoped staff dashboards are not currently implemented.',
     icon: Settings2,
     links: [
-      { label: 'Store policies & system health', href: '/admin/settings', icon: Activity },
+      { label: 'Store policies, email & system health', href: '/admin/settings', icon: Activity },
       { label: 'Payment methods', href: '/admin/payments', icon: CreditCard },
-      { label: 'Email delivery settings', href: '/admin/settings', icon: Mail },
-      { label: 'Team directory & permissions', href: '/admin/team', icon: Users },
+      { label: 'Team directory', href: '/admin/team', icon: Users },
       { label: 'API & automation setup', href: '/admin/development', icon: Workflow },
     ],
   },
