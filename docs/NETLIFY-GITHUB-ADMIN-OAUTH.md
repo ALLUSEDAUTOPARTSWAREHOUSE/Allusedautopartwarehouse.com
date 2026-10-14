@@ -1,6 +1,6 @@
 # AUAPW GitHub Admin Sign-in (Netlify)
 
-GitHub sign-in is an additional option for the existing administrator login. The email/password and staff sign-in endpoint is unchanged. GitHub OAuth grants the **admin** workspace only to usernames explicitly listed in `GITHUB_ADMIN_ALLOWED_USERS`; do not list general staff or customers.
+GitHub sign-in is an additional option for the existing administrator login. The email/password and staff sign-in endpoint is unchanged. GitHub OAuth grants the **admin** workspace only to account IDs explicitly listed in `GITHUB_ADMIN_ALLOWED_IDS`; do not list general staff or customers.
 
 ## 1. Register the GitHub OAuth App
 
@@ -21,7 +21,7 @@ In Netlify, open **Site configuration → Environment variables** and configure 
 | `AUAPW_PUBLIC_URL` | Canonical HTTPS origin, e.g. `https://www.allusedautopartswarehouse.com` (no path) |
 | `GITHUB_CLIENT_ID` | Client ID copied from the GitHub OAuth App |
 | `GITHUB_CLIENT_SECRET` | Client Secret from the GitHub OAuth App; store only in Netlify |
-| `GITHUB_ADMIN_ALLOWED_USERS` | Comma-separated GitHub usernames authorized for admin sign-in |
+| `GITHUB_ADMIN_ALLOWED_USERS` | Comma-separated numeric GitHub account IDs authorized for admin sign-in |
 | `ADMIN_EMAIL` | Existing administrator email shown in the admin session |
 | `BETTER_AUTH_SECRET` or `ADMIN_SESSION_SECRET` | Strong random session-signing secret already required by the portal |
 
