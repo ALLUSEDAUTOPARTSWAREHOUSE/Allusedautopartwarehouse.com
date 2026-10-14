@@ -27,16 +27,15 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.9
-          run_install: false
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      - name: Enable Corepack and verify pnpm
+        run: |
+          corepack enable
+          pnpm --version
 
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
