@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { desc, eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { customers, listings, orders, vinQuotes } from '@/lib/db/schema'
+import { customers, listings, orders, user, vinQuotes } from '@/lib/db/schema'
 import { getAdminSession } from '@/lib/admin-auth'
 
 export const dynamic = 'force-dynamic'
@@ -31,10 +31,11 @@ export async function GET() {
         updatedAt: listings.updatedAt,
       }).from(listings).orderBy(desc(listings.updatedAt)).limit(100),
       db.select({
-        id: customers.id, userId: customers.userId, firstName: customers.firstName,
-        lastName: customers.lastName, email: customers.email, phone: customers.phone,
-        businessName: customers.businessName, createdAt: customers.createdAt,
-      }).from(customers).orderBy(desc(customers.createdAt)).limit(100),
+        id: user.id, userId: user.id, firstName: customers.firstName,
+        lastName: customers.lastName, email: user.email, phone: customers.phone,
+        businessName: customers.businessName, createdAt: user.createdAt,
+      }).from(user).leftJoin(customers, eq(customers.userId, user.id))
+        .where(eq(user.role, 'buyer')).orderBy(desc(user.createdAt)).limit(100),
     ])
 
     return NextResponse.json({
@@ -72,6 +73,25 @@ export async function PATCH(request: NextRequest) {
       if (!orderStatuses.includes(status)) return NextResponse.json({ error: 'Invalid order status.' }, { status: 400 })
       const [updated] = await db.update(orders).set({ status, updatedAt: new Date() }).where(eq(orders.id, id)).returning({ id: orders.id })
       if (!updated) return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
+      return NextResponse.json({ success: true })
+    }
+
+    if (type === 'customer') {
+      const userId = id
+      const phone = typeof body.phone === 'string' ? body.phone.trim() : ''
+      const businessName = typeof body.businessName === 'string' ? body.businessName.trim() : ''
+      if (phone.length > 40 || businessName.length > 200) {
+        return NextResponse.json({ error: 'Phone or business name is too long.' }, { status: 400 })
+      }
+      const [account] = await db.select({ email: user.email }).from(user).where(eq(user.id, userId)).limit(1)
+      if (!account) return NextResponse.json({ error: 'Customer account not found.' }, { status: 404 })
+      await db.insert(customers).values({
+        id: `customer_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        userId, email: account.email, phone: phone || null, businessName: businessName || null,
+      }).onConflictDoUpdate({
+        target: customers.userId,
+        set: { phone: phone || null, businessName: businessName || null, updatedAt: new Date() },
+      })
       return NextResponse.json({ success: true })
     }
 
