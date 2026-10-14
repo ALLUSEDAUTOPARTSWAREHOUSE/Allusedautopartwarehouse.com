@@ -150,13 +150,13 @@ export default async function SalesSupportWorkspace({
               <table className="w-full min-w-[1050px] text-left text-sm">
                 <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Type / Reference</th>
-                    <th className="px-4 py-3 font-semibold">Customer</th>
-                    <th className="px-4 py-3 font-semibold">Product / Request</th>
-                    <th className="px-4 py-3 font-semibold">Assigned owner</th>
-                    <th className="px-4 py-3 text-right font-semibold">Value</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold">Created</th>
+                    <th scope="col" className="px-4 py-3 font-semibold">Type / Reference</th>
+                    <th scope="col" className="px-4 py-3 font-semibold">Customer</th>
+                    <th scope="col" className="px-4 py-3 font-semibold">Product / Request</th>
+                    <th scope="col" className="px-4 py-3 font-semibold">Assigned owner</th>
+                    <th scope="col" className="px-4 py-3 text-right font-semibold">Value</th>
+                    <th scope="col" className="px-4 py-3 font-semibold">Status</th>
+                    <th scope="col" className="px-4 py-3 font-semibold">Created</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
