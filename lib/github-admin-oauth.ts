@@ -23,12 +23,12 @@ export function getPublicAppOrigin(): string | null {
   }
 }
 
-export function getAllowedGitHubAdmins(): Set<string> {
+export function getAllowedGitHubAdminIds(): Set<string> {
   return new Set(
-    (process.env.GITHUB_ADMIN_ALLOWED_USERS || '')
+    (process.env.GITHUB_ADMIN_ALLOWED_IDS || '')
       .split(',')
-      .map((username) => username.trim().replace(/^@/, '').toLowerCase())
-      .filter(Boolean),
+      .map((id) => id.trim())
+      .filter((id) => /^\\d+$/.test(id)),
   )
 }
 
