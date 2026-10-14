@@ -4,7 +4,7 @@ import { getAdminSession } from '@/lib/admin-auth'
 import {
   ArrowUpRight, Boxes, ChartNoAxesCombined, CreditCard, Facebook, Gauge,
   Headset, Megaphone, Package, Settings2, ShieldCheck, ShoppingBag, Store,
-  Users, Workflow, Bot, KeyRound, PlugZap, Globe,
+  Users, Workflow, Bot, KeyRound, PlugZap, Globe, Mail, Activity,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -54,6 +54,18 @@ const workspaces = [
     ],
   },
   {
+    title: 'Store configuration & operations',
+    description: 'Control store policies, payment setup, email delivery, system health, automation and team access.',
+    icon: Settings2,
+    links: [
+      { label: 'Store policies & system health', href: '/admin/settings', icon: Activity },
+      { label: 'Payment methods', href: '/admin/payments', icon: CreditCard },
+      { label: 'Email delivery settings', href: '/admin/settings', icon: Mail },
+      { label: 'Team directory & permissions', href: '/admin/team', icon: Users },
+      { label: 'API & automation setup', href: '/admin/development', icon: Workflow },
+    ],
+  },
+  {
     title: 'AI development, APIs & security',
     description: 'Plan website page changes, new features, bug fixes and API integrations, then manage settings and access.',
     icon: Bot,
@@ -79,7 +91,7 @@ export default async function AdminWorkspacePage() {
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
               <Gauge className="size-3.5" /> ADMINISTRATOR WORKSPACE
             </div>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">One command center. Five workspaces.</h1>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">One command center. Six workspaces.</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
               Manage store and inventory, Google Merchant, social accounts, payment methods, sales support, API setup, security and AI-assisted development from one secure admin portal.
             </p>
@@ -101,7 +113,8 @@ export default async function AdminWorkspacePage() {
                 ['02', 'Google Merchant'],
                 ['03', 'Social & growth'],
                 ['04', 'Sales & support'],
-                ['05', 'AI & API development'],
+                ['05', 'Store configuration'],
+                ['06', 'AI & API development'],
               ].map(([n, label]) => (
                 <div key={n} className="rounded-lg border border-border bg-card p-3">
                   <span className="text-xs font-semibold text-primary">{n}</span>
@@ -117,7 +130,7 @@ export default async function AdminWorkspacePage() {
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold tracking-tight">Your workspaces</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Direct access to commerce, marketing, payment, development and security tools.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Direct access to commerce, Merchant Center, social growth, sales support, store configuration and AI development tools.</p>
           </div>
           <span className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex"><ShieldCheck className="size-4" /> Admin access required</span>
         </div>
