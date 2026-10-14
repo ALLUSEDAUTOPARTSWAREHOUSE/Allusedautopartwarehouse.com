@@ -2,6 +2,7 @@ const assert = require('node:assert/strict')
 const { test, beforeEach } = require('node:test')
 const { readFileSync } = require('node:fs')
 const { resolve } = require('node:path')
+const { gunzipSync } = require('node:zlib')
 const ts = require('typescript')
 
 // Load the real server modules without Next's server-only guard; replace only
@@ -109,6 +110,16 @@ test('Google feed advertises the same $240 shipping rate as checkout', async () 
   assert.match(xml, /<g:shipping><g:country>US<\/g:country><g:price>240\.00 USD<\/g:price>/)
   assert.match(xml, /<g:max_transit_time>7<\/g:max_transit_time><\/g:shipping>/)
   assert.doesNotMatch(xml, /free insured freight/i)
+  for (const encoding of ['gzip', 'br, gzip;q=0.5', 'gzip;q=0']) {
+    const encoded = await feed.GET(new Request('https://example.com/feeds/google-shopping.xml?brand=acura', {
+      headers: { 'Accept-Encoding': encoding },
+    }))
+    const gzip = encoding !== 'gzip;q=0'
+    assert.equal(encoded.headers.get('content-encoding'), gzip ? 'gzip' : null)
+    assert.equal(encoded.headers.get('vary'), 'Accept-Encoding')
+    const body = Buffer.from(await encoded.arrayBuffer())
+    assert.equal((gzip ? gunzipSync(body) : body).toString(), xml)
+  }
 })
 test('feed titles drop the cut-off fragment the sheets end with', () => {
   assert.equal(
