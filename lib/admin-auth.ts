@@ -6,14 +6,12 @@ import { getAdminSecurityState, getAdminSessionVersion, verifyPassword } from '@
  * Admin authentication backend.
  *
  * Credentials are sourced from environment variables. Sessions are stateless,
- * HMAC-signed tokens (signed with BETTER_AUTH_SECRET) with an expiry, stored in
- * an httpOnly cookie so they are never exposed to client-side JavaScript.
+ * HMAC-signed tokens with an expiry, stored in an httpOnly cookie so they are
+ * never exposed to client-side JavaScript.
  *
  * There is deliberately no fallback password: ADMIN_PASSWORD must be set or
- * admin login stays disabled. Without BETTER_AUTH_SECRET the signing key is
- * derived from ADMIN_PASSWORD, so it is never a value anyone else knows (and
- * changing the password signs everyone out); the fixed dev key is only used
- * outside production.
+ * admin login stays disabled. Set BETTER_AUTH_SECRET or ADMIN_SESSION_SECRET
+ * to a strong random value for production deployments.
  */
 
 export const ADMIN_COOKIE = 'auapw_admin_session'
@@ -25,13 +23,6 @@ function getSecret(): string | null {
   const password = process.env.ADMIN_PASSWORD
   if (password) return createHash('sha256').update(`auapw-admin-session:${password}`).digest('hex')
   return process.env.NODE_ENV === 'production' ? null : 'auapw-dev-only-secret-change-me'
-}
-
-/** Which Vercel deployment this is, in the words the Vercel dashboard uses. */
-function deploymentLabel(): string {
-  if (process.env.VERCEL_ENV === 'production') return 'Production'
-  if (process.env.VERCEL_ENV === 'preview') return 'Preview'
-  return 'this server'
 }
 
 function getAdminCredentials() {
@@ -53,9 +44,7 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(hashA, hashB)
 }
 
-/**
- * Validate admin login credentials against configured environment variables.
- */
+/** Validate admin login credentials against configured environment variables. */
 export async function validateAdminCredentials(
   email: string,
   password: string
@@ -67,16 +56,10 @@ export async function validateAdminCredentials(
   const creds = getAdminCredentials()
   const security = await getAdminSecurityState()
   if ((!security.passwordHash && !creds.password) || !getSecret()) {
-    // Names only, never values: say exactly what to add and where, because
-    // Vercel keeps separate settings for Production and Preview deployments.
-    const where = deploymentLabel()
-    console.error(`[admin] Login is disabled on ${where}: ADMIN_PASSWORD is not set`)
+    console.error('[admin] Login is disabled: administrator credentials or session secret are not configured')
     return {
       valid: false,
-      message:
-        where === 'this server'
-          ? 'Admin login is turned off: ADMIN_PASSWORD is not set on the server.'
-          : `Admin login is turned off on this ${where} deployment: ADMIN_PASSWORD is not set for ${where} in Vercel → Settings → Environment Variables. Add it (tick ${where}), then redeploy.`,
+      message: 'Admin login is not configured on this server. Ask an administrator to configure the production credentials and session secret.',
     }
   }
 
@@ -92,10 +75,7 @@ export async function validateAdminCredentials(
   return { valid: true, message: 'Login successful' }
 }
 
-/**
- * Generate a stateless, signed admin session token.
- * Format: base64url(payload).signature
- */
+/** Generate a stateless, signed admin session token. Format: base64url(payload).signature */
 export function generateAdminToken(adminEmail: string, sessionVersion = 0): string {
   const secret = getSecret()
   if (!secret) throw new Error('Admin session secret is not configured')
@@ -110,9 +90,7 @@ export function generateAdminToken(adminEmail: string, sessionVersion = 0): stri
   return `${encoded}.${signature}`
 }
 
-/**
- * Verify a signed admin session token.
- */
+/** Verify a signed admin session token. */
 export function verifyAdminToken(token: string | undefined): {
   valid: boolean
   email?: string
@@ -137,9 +115,7 @@ export function verifyAdminToken(token: string | undefined): {
   }
 }
 
-/**
- * Read and verify the admin session from the request cookies (server-side).
- */
+/** Read and verify the admin session from the request cookies (server-side). */
 export async function getAdminSession(): Promise<{ email: string } | null> {
   const cookieStore = await cookies()
   const token = cookieStore.get(ADMIN_COOKIE)?.value
