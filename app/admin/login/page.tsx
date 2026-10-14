@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowRight, LockKeyhole, Mail, Eye, EyeOff, ShieldCheck, Boxes, Users, Headset, Code2, ShoppingBag, Github } from 'lucide-react'
+import { ArrowRight, LockKeyhole, Mail, Eye, EyeOff, ShieldCheck, Boxes, Users, Code2, ShoppingBag, Github } from 'lucide-react'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -55,18 +55,21 @@ export default function AdminLoginPage() {
   return (
     <div className="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-6xl items-center px-3 py-8 sm:px-6">
       <section className="grid w-full overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950 text-white shadow-2xl lg:min-h-[620px] lg:grid-cols-2">
-        <div className="relative flex flex-col justify-between overflow-hidden p-7 sm:p-10 lg:p-12">
+        <div className="relative flex flex-col justify-between overflow-hidden p-7 sm:p-10 lg:p-12 animate-in fade-in slide-in-from-bottom-2 duration-700 motion-reduce:animate-none">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(249,115,22,.25),transparent_50%),radial-gradient(ellipse_at_bottom_right,rgba(14,165,233,.16),transparent_50%)]" />
           <div className="relative">
             <Link href="/" className="inline-flex items-center gap-3"><span className="flex size-11 items-center justify-center rounded-2xl bg-orange-500 text-slate-950"><Boxes className="size-6" /></span><span><b className="block text-sm">AUAPW</b><span className="text-xs text-slate-400">ALL USED AUTO PARTS WAREHOUSE</span></span></Link>
             <div className="mt-14 max-w-lg">
               <span className="rounded-full border border-orange-400/20 bg-orange-400/10 px-3 py-1.5 text-xs font-semibold text-orange-200">ONE SECURE PORTAL</span>
-              <h1 className="mt-6 text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">Your whole operation. <span className="text-orange-400">One sign-in.</span></h1>
-              <p className="mt-5 max-w-md text-sm leading-6 text-slate-300 sm:text-base">Inventory, quotes, orders, customers, support, and development tools — routed to the right workspace for your role.</p>
+              <h1 className="mt-6 text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">One secure portal. <span className="text-orange-400">Every team connected.</span></h1>
+              <p className="mt-5 max-w-md text-sm leading-6 text-slate-300 sm:text-base">Coordinate inventory, orders, customer support, and AI-assisted development from one role-aware workspace built for your team.</p>
           </div>
           </div>
-          <div className="relative mt-12 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[{ icon: ShoppingBag, label: 'Orders' }, { icon: Users, label: 'Sales agents' }, { icon: Headset, label: 'Support' }, { icon: Code2, label: 'Developers' }].map(({ icon: Icon, label }) => <div key={label} className="rounded-2xl border border-white/10 bg-white/[.04] p-3"><Icon className="size-4 text-orange-300" /><p className="mt-3 text-xs font-medium text-slate-200">{label}</p></div>)}
+          <div className="relative mt-12 rounded-2xl border border-white/10 bg-white/[.04] p-4 backdrop-blur-sm">
+            <div className="mb-3 flex items-center justify-between gap-3"><span className="text-xs font-semibold uppercase tracking-[.18em] text-slate-300">AI workflow</span><span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-300"><span className="size-1.5 rounded-full bg-emerald-300" /> Human reviewed</span></div>
+            <div className="grid grid-cols-3 gap-2">
+              {[{ icon: ShoppingBag, label: 'Operations' }, { icon: Users, label: 'Team roles' }, { icon: Code2, label: 'AI + build' }].map(({ icon: Icon, label }, index) => <div key={label} className="relative rounded-xl border border-white/10 bg-slate-900/70 p-3"><Icon className="size-4 text-orange-300" /><p className="mt-2 text-[11px] font-medium text-slate-200">{label}</p>{index < 2 ? <ArrowRight className="absolute -right-2.5 top-1/2 z-10 size-4 -translate-y-1/2 text-slate-400" /> : null}</div>)}
+            </div>
           </div>
           <p className="relative mt-8 text-xs text-slate-500">Authorized access only · Secure session</p>
         </div>
