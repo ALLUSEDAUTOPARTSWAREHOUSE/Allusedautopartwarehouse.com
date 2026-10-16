@@ -136,3 +136,8 @@ test('the sales workspace combines orders and quote leads in one status-filtered
   assert.match(quoteCard, /Request source:/)
   assert.match(quoteCard, /Quote amount/)
 })
+
+test('sales customer tooltip omits missing names instead of passing null to the DOM', () => {
+  const sales = read('app/admin/sales/page.tsx')
+  assert.match(sales, /title=\{customer \?\? undefined\}/)
+})
