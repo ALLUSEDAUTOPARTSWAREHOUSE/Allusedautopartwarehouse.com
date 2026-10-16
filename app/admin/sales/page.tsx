@@ -175,7 +175,7 @@ export default async function SalesSupportWorkspace({
                           <span className="mt-1 inline-flex rounded-full border border-border px-2 py-0.5 text-[11px] capitalize text-muted-foreground">{isOrder ? 'Order' : 'Quote lead'}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="block max-w-[190px] truncate font-medium" title={customer}>{customer}</span>
+                          <span className="block max-w-[190px] truncate font-medium" title={customer ?? undefined}>{customer}</span>
                           <span className="mt-1 block max-w-[190px] truncate text-xs text-muted-foreground" title={contact}>{contact}</span>
                         </td>
                         <td className="px-4 py-3">
