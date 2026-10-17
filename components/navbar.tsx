@@ -313,11 +313,11 @@ export function Navbar() {
               {/* ── Quick-contact strip ── */}
               <div className="grid grid-cols-2 gap-2">
                 <a
-                  href="tel:+17088962383"
+                  href="tel:+18888874199"
                   className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-green-500/15 border border-green-500/30 hover:bg-green-500/25 active:scale-95 transition-all"
                 >
                   <Phone className="w-4 h-4 text-green-400 shrink-0" />
-                  <span className="text-xs font-black text-green-300 tracking-wide">(708) 896-2383</span>
+                  <span className="text-xs font-black text-green-300 tracking-wide">1-888-887-4199</span>
                 </a>
                 <Link
                   href="/quote"

@@ -9,7 +9,7 @@ import { Phone, MapPin, Clock } from "lucide-react"
 
 export const metadata = {
   title: "Contact Us - AUAPW LLC",
-  description: "Get in touch with AUAPW LLC. Call (708) 896-2383 or fill out our contact form. We respond within 24 hours.",
+  description: "Get in touch with AUAPW LLC. Call 1-888-887-4199 or fill out our contact form. We respond within 24 hours.",
 }
 
 export default function ContactPage() {
@@ -31,7 +31,7 @@ export default function ContactPage() {
             {/* Contact Info - shown after form on mobile */}
             <div className="flex flex-col gap-3 sm:gap-4 order-2 lg:order-1">
               {[
-                { icon: Phone, title: "(708) 896-2383", sub: "Mon-Sat 8am-6pm PST", href: "tel:+17088962383" },
+                { icon: Phone, title: "1-888-887-4199", sub: "Mon-Sat 8am-6pm PST", href: "tel:+18888874199" },
                 { image: "/images/icon-email-logo.png", title: "auapworld@gmail.com", sub: "Response within 24 hours", href: "mailto:auapworld@gmail.com" },
                 { icon: MapPin, title: "508 S Elm St, Ste 104, Denton, TX 76201", sub: "United States", href: "https://maps.google.com/?q=508+S+Elm+St+Ste+104+Denton+TX+76201" },
                 { icon: Clock, title: "Business Hours", sub: "Monday-Saturday 8:00am - 6:00pm PST", href: "#" },
@@ -54,7 +54,7 @@ export default function ContactPage() {
               <div className="glass-card rounded-sm p-6 mt-2">
                 <div className="metal-line mb-5" />
                 <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Prefer to Call?</p>
-                <a href="tel:+17088962383" className="text-2xl font-bold text-foreground block mb-1">(708) 896-2383</a>
+                <a href="tel:+18888874199" className="text-2xl font-bold text-foreground block mb-1">1-888-887-4199</a>
                 <p className="text-[11px] text-muted-foreground">Mon-Sat 8am-6pm PST</p>
               </div>
             </div>

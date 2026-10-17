@@ -22,8 +22,8 @@ interface ProductCardActionsProps {
   isQuoteOnly?: boolean
 }
 
-const PHONE_SALES = '708-896-2383'
-const PHONE_DISPLAY = '(708) 896-2383'
+const PHONE_SALES = '1-888-887-4199'
+const PHONE_DISPLAY = '1-888-887-4199'
 const CONTACT_EMAIL = 'auapworld@gmail.com'
 
 export function ProductCardActions({

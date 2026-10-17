@@ -358,8 +358,8 @@ export default function MakesPage() {
                 <Link href={`/search?make=${encodeURIComponent(selectedMake)}`} className="auapw-btn auapw-btn-blue inline-flex items-center justify-center gap-2 px-5 py-3 text-[0.68rem] font-bold tracking-[0.18em] uppercase rounded-sm">
                   <Search className="w-3.5 h-3.5" /> Search {selectedMake} Parts
                 </Link>
-                <a href="tel:+17088962383" className="inline-flex items-center justify-center gap-2 px-5 py-3 text-[0.65rem] font-bold tracking-[0.18em] uppercase border border-border/60 text-muted-foreground rounded-sm hover:border-foreground/50 hover:text-foreground transition-all">
-                  <Phone className="w-3 h-3" /> Call (708) 896-2383
+                <a href="tel:+18888874199" className="inline-flex items-center justify-center gap-2 px-5 py-3 text-[0.65rem] font-bold tracking-[0.18em] uppercase border border-border/60 text-muted-foreground rounded-sm hover:border-foreground/50 hover:text-foreground transition-all">
+                  <Phone className="w-3 h-3" /> Call 1-888-887-4199
                 </a>
               </div>
             </div>

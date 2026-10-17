@@ -410,7 +410,7 @@ npm start
 
 For issues or questions:
 - Email: support@auapw.com
-- Phone: (708) 896-2383
+- Phone: 1-888-887-4199
 - Hours: 7 days a week, 24-hour response time
 
 ---

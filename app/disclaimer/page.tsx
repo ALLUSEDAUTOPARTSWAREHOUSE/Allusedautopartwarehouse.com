@@ -48,7 +48,7 @@ export default function DisclaimerPage() {
             <p className="mb-4">All warranties are limited to the replacement or refund of the purchased part only. AUAPW does not cover labor, installation, removal, or any consequential damages resulting from part failure.</p>
 
             <h2 className="text-2xl font-bold mt-8 mb-4">Contact for Questions</h2>
-            <p className="mb-4">If you have questions about this disclaimer, please contact us at auapworld@gmail.com or (708) 896-2383.</p>
+            <p className="mb-4">If you have questions about this disclaimer, please contact us at auapworld@gmail.com or 1-888-887-4199.</p>
           </div>
         </div>
         <BrandLogosSection />

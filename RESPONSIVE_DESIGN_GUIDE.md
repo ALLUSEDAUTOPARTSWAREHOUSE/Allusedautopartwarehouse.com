@@ -21,7 +21,7 @@ Your website is fully responsive. To see how it appears on desktop, tablet, and 
 - Full-width header with all navigation visible
 - Logo: 56px with embossed text visible
 - Nav items: embossed typography pills centered
-- Phone display: visible inline with "(708) 896-2383"
+- Phone display: visible inline with "1-888-887-4199"
 - Process section: 4-column grid layout
 - Hero section: 2-column layout (content + form side-by-side)
 - All premium effects: shadows, glows, embossing fully visible

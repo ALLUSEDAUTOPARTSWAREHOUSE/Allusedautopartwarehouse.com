@@ -55,7 +55,7 @@ export default function TermsPage() {
             <p className="mb-4">These terms and conditions are governed by and construed in accordance with the laws of the United States, and you irrevocably submit to the exclusive jurisdiction of the courts in that location.</p>
 
             <h2 className="text-2xl font-bold mt-8 mb-4">9. Contact Information</h2>
-            <p className="mb-4">If you have any questions about these Terms and Conditions, please contact us at auapworld@gmail.com or call (708) 896-2383.</p>
+            <p className="mb-4">If you have any questions about these Terms and Conditions, please contact us at auapworld@gmail.com or call 1-888-887-4199.</p>
           </div>
         </div>
         <BrandLogosSection />
