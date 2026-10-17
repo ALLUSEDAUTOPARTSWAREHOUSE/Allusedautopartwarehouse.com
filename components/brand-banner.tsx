@@ -82,7 +82,7 @@ export function BrandBanner({ subtitle }: BrandBannerProps) {
 
         {/* Mobile CTA Button — luxury call button with mercury LED on phones */}
         <a
-          href="tel:+17088962383"
+          href="tel:+18888874199"
           className="sm:hidden w-full luxury-phone-cta justify-center mercury-led-text font-bold"
         >
           <Phone className="luxury-phone-cta-icon" />

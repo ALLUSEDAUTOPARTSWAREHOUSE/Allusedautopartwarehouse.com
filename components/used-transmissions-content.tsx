@@ -109,7 +109,7 @@ export function UsedTransmissionsContent() {
             </Accordion>
 
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Got any more questions? Get in touch with us through our toll-free number <a href="tel:+17088962383" className="text-primary font-bold">{PHONE_DISPLAY}</a>
+              Got any more questions? Get in touch with us through our toll-free number <a href="tel:+18888874199" className="text-primary font-bold">{PHONE_DISPLAY}</a>
             </p>
           </div>
 

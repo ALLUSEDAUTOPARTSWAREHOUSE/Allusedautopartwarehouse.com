@@ -491,8 +491,8 @@ export const NAV_LINKS = [
   { label: "Contact",          href: "/contact" },
 ]
 
-export const PHONE_SALES = "1-708-896-2383"
-export const PHONE_DISPLAY = "(708) 896-2383"
+export const PHONE_SALES = "1-888-887-4199"
+export const PHONE_DISPLAY = "1-888-887-4199"
 export const CONTACT_EMAIL = "auapworld@gmail.com"
 export const COMPANY_TAGLINE = "Trusted Partner for Automotive Services and Solutions"
 

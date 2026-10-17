@@ -5,7 +5,7 @@ import { CAR_MAKES, CAR_MODELS, YEARS } from "@/lib/data"
 import { Phone, AlertCircle, CheckCircle2, Mail, Loader2 } from "lucide-react"
 
 const CONTACT_EMAIL = "auapworld@gmail.com"
-const PHONE_DISPLAY = "(708) 896-2383"
+const PHONE_DISPLAY = "1-888-887-4199"
 
 interface QuoteFormProps {
   defaultPart?: "Engine" | "Transmission" | ""
@@ -96,7 +96,7 @@ export function QuoteForm({ defaultPart = "", compact = false }: QuoteFormProps)
         {customerEmailNotice ? <p role="status" className="max-w-xl text-xs text-muted-foreground">{customerEmailNotice}</p> : null}
         <div className="w-full bg-card/50 border border-border/30 rounded-lg p-4 flex flex-col sm:flex-row gap-3 justify-center">
           <p className="text-xs text-muted-foreground w-full text-center mb-1 sm:hidden">Need it faster? Contact us directly:</p>
-          <a href="tel:+17088962383" className="auapw-btn auapw-btn-green auapw-btn-sm">
+          <a href="tel:+18888874199" className="auapw-btn auapw-btn-green auapw-btn-sm">
             <Phone className="w-4 h-4" />
             {PHONE_DISPLAY}
           </a>

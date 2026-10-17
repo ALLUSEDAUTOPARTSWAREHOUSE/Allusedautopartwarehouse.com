@@ -4,9 +4,9 @@
  * the site can never again say "$240" in one place and "free" in another.
  */
 
-export const PHONE_SALES = "708-896-2383"
-export const PHONE_DISPLAY = "(708) 896-2383"
-export const PHONE_HREF = "tel:+17088962383"
+export const PHONE_SALES = "1-888-887-4199"
+export const PHONE_DISPLAY = "1-888-887-4199"
+export const PHONE_HREF = "tel:+18888874199"
 
 export const SHIPPING = {
   price: 240,

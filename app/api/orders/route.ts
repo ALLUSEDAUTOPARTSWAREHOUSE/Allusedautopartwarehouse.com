@@ -110,7 +110,7 @@ export async function POST(request: Request) {
     } catch (err) {
       console.error("[orders] Failed to save reservation order:", err instanceof Error ? err.message : err)
       return NextResponse.json(
-        { error: "We couldn't place your reservation. Please call us at (708) 896-2383." },
+        { error: "We couldn't place your reservation. Please call us at 1-888-887-4199." },
         { status: 500 },
       )
     }
@@ -155,7 +155,7 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[orders] Failed to save order:", err instanceof Error ? err.message : err)
     return NextResponse.json(
-      { error: "We couldn't place your order. Please call us at (708) 896-2383." },
+      { error: "We couldn't place your order. Please call us at 1-888-887-4199." },
       { status: 500 },
     )
   }

@@ -75,12 +75,12 @@ export function SearchForm({ compact = false }: SearchFormProps) {
             </span>
           </div>
           <a
-            href="tel:+17088962383"
+            href="tel:+18888874199"
             className="hidden sm:flex items-center gap-1.5 text-[0.7rem] font-semibold text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Call (708) 896-2383"
+            aria-label="Call 1-888-887-4199"
           >
             <Phone className="w-3.5 h-3.5" aria-hidden="true" />
-            (708) 896-2383
+            1-888-887-4199
           </a>
         </div>
 
@@ -226,13 +226,13 @@ export function SearchForm({ compact = false }: SearchFormProps) {
               Search Available Parts
             </button>
             <a
-              href="tel:+17088962383"
+              href="tel:+18888874199"
               className="auapw-btn auapw-btn-green auapw-btn-sm sm:auapw-btn-lg justify-center"
-              aria-label="Call us at (708) 896-2383"
+              aria-label="Call us at 1-888-887-4199"
             >
               <Phone className="w-4 h-4" aria-hidden="true" />
               <span className="sm:hidden">Call</span>
-              <span className="hidden sm:inline">(708) 896-2383</span>
+              <span className="hidden sm:inline">1-888-887-4199</span>
             </a>
             <a
               href="/quote"

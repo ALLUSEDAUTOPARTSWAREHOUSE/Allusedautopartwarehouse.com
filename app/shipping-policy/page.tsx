@@ -56,7 +56,7 @@ export default function ShippingPolicyPage() {
             <h2 className="text-2xl font-bold mt-8 mb-4">Contact Us</h2>
             <p className="mb-4">For shipping inquiries, contact us at:</p>
             <ul className="list-none pl-0 space-y-2">
-              <li>📞 Phone: <a href="tel:+17088962383" className="text-blue-400 hover:text-blue-300">(708) 896-2383</a></li>
+              <li>📞 Phone: <a href="tel:+18888874199" className="text-blue-400 hover:text-blue-300">1-888-887-4199</a></li>
               <li>📧 Email: <a href="mailto:support@allusedautopartswarehouse.com" className="text-blue-400 hover:text-blue-300">support@allusedautopartswarehouse.com</a></li>
             </ul>
           </div>
