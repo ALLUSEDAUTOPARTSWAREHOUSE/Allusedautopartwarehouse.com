@@ -68,6 +68,29 @@ export default function CheckoutPage() {
     // After secure sign-in, resume at shipping details instead of showing the account chooser again.
     if (new URLSearchParams(window.location.search).get('resume') === '1') setStep('shipping')
   }, [])
+  useEffect(() => {
+    const sessionId = new URLSearchParams(window.location.search).get('session_id')
+    if (!sessionId?.startsWith('cs_')) return
+    let cancelled = false
+    fetch(`/api/checkout/stripe/session/${encodeURIComponent(sessionId)}`)
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}))
+        if (cancelled || !res.ok || !data.paid) return
+        setPaymentConfirmed(true)
+        setPlacedOrder({
+          orderNumber: data.orderNumber,
+          totalAmount: data.totalAmount,
+          invoiceToken: data.invoiceToken,
+          emailStatus: data.emailStatus ?? null,
+        })
+        clearCart()
+        setStep('confirmation')
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [clearCart])
 
   useEffect(() => {
     fetch('/api/payment-gateways')
@@ -589,6 +612,7 @@ export default function CheckoutPage() {
                                 <StripeCardPayment
                                   customer={formData}
                                   items={items.map(({ id, make, price, quantity }) => ({ id, make, price, quantity }))}
+                                  amountLabel={`$${finalTotal.toFixed(2)}`}
                                   onPaid={handleStripePaid}
                                   onError={handleStripeError}
                                 />
