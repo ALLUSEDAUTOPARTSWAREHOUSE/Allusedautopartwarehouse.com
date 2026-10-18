@@ -1,3 +1,4 @@
+import { CatalogHealthDashboard } from "@/components/admin/merchant/catalog-health-dashboard"
 import { getBrandLogoUrl } from "@/lib/data"
 import Link from "next/link"
 import { redirect } from "next/navigation"
@@ -91,6 +92,8 @@ export default async function AdminMerchantPage({
           Upload spreadsheets and manage product prices, images and page content. Google feed monitoring is on its own dashboard.
         </p>
       </header>
+
+      <CatalogHealthDashboard stats={brand ? brandStats.filter(item => item.slug === brand) : brandStats} checkedAt={new Date().toISOString()} />
 
       <section aria-labelledby="brand-heading" className="space-y-3">
         <h2 id="brand-heading" className="text-xl font-semibold">Choose a brand</h2>

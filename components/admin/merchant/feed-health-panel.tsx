@@ -32,7 +32,7 @@ export function FeedHealthPanel({ alerts, snapshots }: { alerts: FeedAlert[]; sn
         {alerts.length === 0 ? (
           <p className="flex items-center gap-2 text-sm text-foreground">
             <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden="true" />
-            All checks passed — the feed is healthy.
+            No local feed alerts recorded. Google acceptance and image accuracy are not verified.
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -54,7 +54,7 @@ export function FeedHealthPanel({ alerts, snapshots }: { alerts: FeedAlert[]; sn
       </div>
 
       <div className="mt-5">
-        <h3 className="mb-2 text-sm font-medium text-foreground">Products sent to Google, by day</h3>
+        <h3 className="mb-2 text-sm font-medium text-foreground">Local feed-eligible products, by day</h3>
         {trend.length === 0 ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="h-4 w-4" aria-hidden="true" />
