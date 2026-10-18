@@ -37,8 +37,8 @@ export interface StripeCheckoutCustomer {
 
 /**
  * Re-prices the cart server-side, creates a pending order, and starts a
- * Stripe embedded Checkout Session for the exact validated total. The
- * customer enters real card details inside Stripe's own secure iframe.
+ * Checkout Session in `elements` mode so AUAPW can render its own card form
+ * (Payment Element) while Stripe still tokenizes the card.
  */
 export async function createStripeCheckoutSession(
   customer: StripeCheckoutCustomer,
@@ -113,12 +113,15 @@ export async function createStripeCheckoutSession(
 
   try {
     const session = await stripe.checkout.sessions.create({
-      ui_mode: "embedded_page",
-      redirect_on_completion: "never",
+      ui_mode: "elements",
       mode: "payment",
       customer_email: customer.email,
       line_items: lineItems,
+      return_url: `${siteUrl ?? "https://allusedautopartwarehouse.com"}/checkout?session_id={CHECKOUT_SESSION_ID}`,
       metadata: { orderId: order.id, orderNumber: order.orderNumber },
+      integration_identifier: `auapw-checkout-${Array.from(crypto.getRandomValues(new Uint8Array(8)), (n) =>
+        "abcdefghijklmnopqrstuvwxyz"[n % 26],
+      ).join("")}`,
     }, { idempotencyKey: `checkout-${order.id}` })
 
     await attachStripeSession(order.id, session.id)

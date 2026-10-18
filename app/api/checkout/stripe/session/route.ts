@@ -49,10 +49,11 @@ const BodySchema = z.object({
         id: z.string().min(1).max(300),
         make: z.string().max(60).optional(),
         price: z.number().finite(),
-        quantity: z.number(),
+        quantity: z.number().int().positive().max(5),
       }),
     )
-    .min(1),
+    .min(1)
+    .max(20),
 })
 
 export async function POST(request: Request) {
