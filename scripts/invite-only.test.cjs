@@ -3,7 +3,7 @@ const assert = require('node:assert/strict')
 const { readFileSync } = require('node:fs')
 const ts = require('typescript')
 function load(path, deps) {
-  const output = ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
+  const output = ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { jsx: ts.JsxEmit.React, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
   const module = { exports: {} }
   new Function('require', 'module', 'exports', output)(name => name in deps ? deps[name] : require(name), module, module.exports)
   return module.exports
@@ -110,4 +110,31 @@ test('customer invite sender uses configured origin, never returns token, and re
       else process.env[name] = value
     }
   }
+})
+
+test('account signup forwards its invitation without changing sign-in', async () => {
+  let value
+  const calls = []
+  const react = {
+    createContext: () => ({ Provider: ({ value: provided }) => { value = provided } }),
+    useContext: () => value,
+    useEffect: () => {},
+    createElement: (type, props) => type(props),
+  }
+  const { AuthProvider } = load('lib/auth-context.tsx', {
+    react: { ...react, default: react },
+    '@/lib/auth-client': { authClient: {
+      useSession: () => ({ data: null, isPending: false, refetch: async () => {} }),
+      signUp: { email: async (...args) => { calls.push(args); return {} } },
+      signIn: { email: async (...args) => { calls.push(args); return {} } },
+    } },
+  })
+  AuthProvider({ children: null })
+  await value.signup('user@example.com', 'password123', 'Customer', 'a'.repeat(43))
+  assert.deepEqual(calls.pop(), [
+    { email: 'user@example.com', password: 'password123', name: 'Customer' },
+    { headers: { 'x-auapw-invite': 'a'.repeat(43) } },
+  ])
+  await value.login('user@example.com', 'password123')
+  assert.deepEqual(calls.pop(), [{ email: 'user@example.com', password: 'password123' }])
 })

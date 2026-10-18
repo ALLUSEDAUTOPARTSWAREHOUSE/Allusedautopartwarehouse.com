@@ -1,13 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight, CheckCircle2, Eye, EyeOff, Mail, LockKeyhole, UserRound, PackageCheck, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 
-export default function AccountLoginPage() {
+function AccountLoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const inviteToken = searchParams.get('invite') ?? ''
+  const hasValidInvite = /^[A-Za-z0-9_-]{43}$/.test(inviteToken)
   const { login, signup, user, isLoading } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [name, setName] = useState('')
@@ -29,11 +32,15 @@ export default function AccountLoginPage() {
     setMessage('')
     try {
       if (mode === 'signup') {
+        if (!hasValidInvite) {
+          setError('New accounts are invite-only. Ask the store administrator to email you an invitation.')
+          return
+        }
         if (password.length < 8) {
           setError('Choose a password with at least 8 characters.')
           return
         }
-        await signup(email.trim(), password, name.trim())
+        await signup(email.trim(), password, name.trim(), inviteToken)
         setMessage('Your account is ready. You are now signed in.')
       } else {
         await login(email.trim(), password)
@@ -84,6 +91,7 @@ export default function AccountLoginPage() {
             <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white">{mode === 'signin' ? 'Your account' : 'Create your account'}</h2>
             <p className="mt-3 text-sm leading-6 text-slate-400">{mode === 'signin' ? 'Sign in to continue to AUAPW.' : 'Use your email to create a customer account.'}</p>
 
+            {mode === 'signup' && !hasValidInvite && <div role="status" className="mt-5 rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">New accounts are invite-only. Ask the store administrator to email you an invitation. Already have an account? Use the “Sign in” tab.</div>}
             {error && <div role="alert" className="mt-5 rounded-xl border border-red-400/25 bg-red-400/10 px-4 py-3 text-sm text-red-200">{error}</div>}
             {message && <div role="status" className="mt-5 rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">{message}</div>}
 
@@ -91,7 +99,7 @@ export default function AccountLoginPage() {
               {mode === 'signup' && <div><label htmlFor="customer-name" className="mb-2 block text-sm font-medium text-slate-200">Full name</label><div className="relative"><UserRound className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /><input id="customer-name" autoComplete="name" value={name} onChange={e => setName(e.target.value)} placeholder="Your full name" required className="h-12 w-full rounded-xl border border-white/10 bg-white/[.04] pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/70 focus:ring-4 focus:ring-cyan-300/10" /></div></div>}
               <div><label htmlFor="customer-email" className="mb-2 block text-sm font-medium text-slate-200">Email address</label><div className="relative"><Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /><input id="customer-email" type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required className="h-12 w-full rounded-xl border border-white/10 bg-white/[.04] pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/70 focus:ring-4 focus:ring-cyan-300/10" /></div></div>
               <div><label htmlFor="customer-password" className="mb-2 block text-sm font-medium text-slate-200">Password</label><div className="relative"><LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /><input id="customer-password" type={showPassword ? 'text' : 'password'} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} minLength={mode === 'signup' ? 8 : undefined} value={password} onChange={e => setPassword(e.target.value)} placeholder={mode === 'signup' ? 'At least 8 characters' : 'Enter your password'} required className="h-12 w-full rounded-xl border border-white/10 bg-white/[.04] pl-11 pr-12 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/70 focus:ring-4 focus:ring-cyan-300/10" /><button type="button" onClick={() => setShowPassword(v => !v)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-500 transition hover:text-white">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div>{mode === 'signup' && <p className="mt-1.5 text-xs text-slate-500">Use at least 8 characters.</p>}</div>
-              <button type="submit" disabled={busy || isLoading} className="group mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-cyan-300 px-4 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/15 transition hover:bg-cyan-200 focus:outline-none focus:ring-4 focus:ring-cyan-300/20 disabled:cursor-not-allowed disabled:opacity-60">{busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'} {!busy && <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />}</button>
+              <button type="submit" disabled={busy || isLoading || (mode === 'signup' && !hasValidInvite)} className="group mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-cyan-300 px-4 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/15 transition hover:bg-cyan-200 focus:outline-none focus:ring-4 focus:ring-cyan-300/20 disabled:cursor-not-allowed disabled:opacity-60">{busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'} {!busy && <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />}</button>
             </form>
             <div className="mt-7 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[.025] p-4"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" /><p className="text-xs leading-5 text-slate-400">Your account is handled by the site's authentication service. We never show your password in the browser.</p></div>
             <p className="mt-6 text-center text-xs text-slate-500">Need administrator access? <Link href="/admin/login" className="text-cyan-300 underline underline-offset-4 hover:text-cyan-200">Admin sign in</Link></p>
@@ -99,5 +107,13 @@ export default function AccountLoginPage() {
         </section>
       </div>
     </main>
+  )
+}
+
+export default function AccountLoginPage() {
+  return (
+    <Suspense fallback={<main className="flex min-h-[calc(100svh-5rem)] items-center justify-center bg-[#080d18] text-sm text-slate-400">Loading…</main>}>
+      <AccountLoginForm />
+    </Suspense>
   )
 }
