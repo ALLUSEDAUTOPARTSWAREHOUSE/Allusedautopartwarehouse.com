@@ -16,7 +16,7 @@ export function ClientWidgets() {
   if (!ready) return null
 
   return (
-    <ErrorBoundary fallback={null} context="widgets">
+    <ErrorBoundary context="widgets">
       <MobileThemeFab />
       <IntercomProvider />
       <LiveChatWidget />

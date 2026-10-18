@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Trash2, Download, History } from 'lucide-react';
+import { X, Send, Trash2 } from 'lucide-react';
 import { ChatSession, Message, chatStorage } from '@/lib/chat-storage';
 import Link from 'next/link';
 
@@ -140,14 +140,20 @@ export function FloatingChatWidget() {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center pointer-events-auto"
+        className="fixed bottom-6 right-6 z-40 size-14 overflow-hidden rounded-full border border-border bg-black text-primary-foreground shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center pointer-events-auto"
         aria-label="Open chat"
         style={{ pointerEvents: 'auto' }}
       >
         {isOpen ? (
           <X className="w-6 h-6" />
         ) : (
-          <MessageCircle className="w-6 h-6" />
+          <img
+            src="/images/icon-chat-auapw.png"
+            alt=""
+            width={56}
+            height={56}
+            className="size-14 object-cover"
+          />
         )}
       </button>
 
@@ -157,10 +163,12 @@ export function FloatingChatWidget() {
           {/* Header */}
           <div className="bg-gradient-to-r from-primary/20 to-primary/10 border-b border-border/30 p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img 
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/II%20%28512%20x%20512%20px%29-09IvNqKjkkSDxuKfJ7dluqviRGQn9v.png" 
-                alt="AUAPW Assistant" 
-                className="w-8 h-8 rounded-full object-cover"
+              <img
+                src="/images/icon-chat-auapw.png"
+                alt="AUAPW Assistant"
+                width={32}
+                height={32}
+                className="size-8 rounded-full bg-black object-cover"
               />
               <div>
                 <h3 className="font-semibold text-sm">AUAPW AI Assistant</h3>
@@ -182,10 +190,12 @@ export function FloatingChatWidget() {
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50">
             {currentChat.messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center gap-3">
-                <img 
-                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/II%20%28512%20x%20512%20px%29-09IvNqKjkkSDxuKfJ7dluqviRGQn9v.png" 
-                  alt="AUAPW" 
-                  className="w-16 h-16 rounded-full object-cover opacity-80"
+                <img
+                  src="/images/icon-chat-auapw.png"
+                  alt="AUAPW"
+                  width={64}
+                  height={64}
+                  className="size-16 rounded-full bg-black object-cover"
                 />
                 <div>
                   <p className="text-sm font-medium">Welcome to AUAPW!</p>

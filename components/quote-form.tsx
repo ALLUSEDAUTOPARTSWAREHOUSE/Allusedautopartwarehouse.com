@@ -10,9 +10,10 @@ const PHONE_DISPLAY = "1-888-887-4199"
 interface QuoteFormProps {
   defaultPart?: "Engine" | "Transmission" | ""
   compact?: boolean
+  source?: string
 }
 
-export function QuoteForm({ defaultPart = "", compact = false }: QuoteFormProps) {
+export function QuoteForm({ defaultPart = "", compact = false, source }: QuoteFormProps) {
   const [part, setPart]       = useState(defaultPart)
   const [make, setMake]       = useState("")
   const [model, setModel]     = useState("")
@@ -55,7 +56,7 @@ export function QuoteForm({ defaultPart = "", compact = false }: QuoteFormProps)
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           part, make, model, year, option, name, phone, email, zip, message,
-          source: compact ? "quote-widget" : "quote-form",
+          source: source ?? (compact ? "quote-widget" : "quote-form"),
           pageUrl: window.location.pathname,
           website: honeypot ?? "",
         }),
