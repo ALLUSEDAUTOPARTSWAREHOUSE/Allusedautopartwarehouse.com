@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label'
 
 export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-up'; redirectTo?: string }) {
   const router = useRouter()
-  const [name, setName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -41,7 +42,7 @@ export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-u
     setLoading(true)
     try {
       const result = isSignUp
-        ? await authClient.signUp.email({ email, password, name })
+        ? await authClient.signUp.email({ email, password, name: `${firstName} ${lastName}`.trim() })
         : await authClient.signIn.email({ email, password })
       if (result.error) {
         setError(result.error.message ?? 'Unable to authenticate. Please try again.')
@@ -96,7 +97,7 @@ export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-u
               </div>
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                {isSignUp && <div className="flex flex-col gap-2"><Label htmlFor="name" className="text-sm font-medium">Full name</Label><Input id="name" value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" placeholder="Your full name" className="h-12 rounded-xl border-neutral-200 bg-neutral-50 px-4 focus-visible:ring-[#f36b21]" /></div>}
+                {isSignUp && <div className="grid grid-cols-1 gap-5 sm:grid-cols-2"><div className="flex flex-col gap-2"><Label htmlFor="firstName" className="text-sm font-medium">First name</Label><Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} required autoComplete="given-name" placeholder="First name" className="h-12 rounded-xl border-neutral-200 bg-neutral-50 px-4 focus-visible:ring-[#f36b21]" /></div><div className="flex flex-col gap-2"><Label htmlFor="lastName" className="text-sm font-medium">Last name</Label><Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required autoComplete="family-name" placeholder="Last name" className="h-12 rounded-xl border-neutral-200 bg-neutral-50 px-4 focus-visible:ring-[#f36b21]" /></div></div>}
                 <div className="flex flex-col gap-2"><Label htmlFor="email" className="text-sm font-medium">Email address</Label><Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" placeholder="you@example.com" className="h-12 rounded-xl border-neutral-200 bg-neutral-50 px-4 focus-visible:ring-[#f36b21]" /></div>
                 <div className="flex flex-col gap-2"><div className="flex items-center justify-between gap-3"><Label htmlFor="password" className="text-sm font-medium">Password</Label></div><div className="relative"><Input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete={isSignUp ? 'new-password' : 'current-password'} placeholder={isSignUp ? 'At least 8 characters' : 'Enter your password'} className="h-12 rounded-xl border-neutral-200 bg-neutral-50 px-4 pr-12 focus-visible:ring-[#f36b21]" /><button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-neutral-500 transition hover:bg-neutral-200 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f36b21]">{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div></div>
 
