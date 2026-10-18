@@ -21,14 +21,14 @@ export function ContactForm() {
     setError("")
 
     try {
-      const response = await fetch("/api/quote", {
+      const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name,
           email: form.email,
-          message: `[${form.subject}] ${form.message}`,
-          source: "contact-form",
+          subject: form.subject,
+          message: form.message,
           pageUrl: window.location.pathname,
         }),
       })
