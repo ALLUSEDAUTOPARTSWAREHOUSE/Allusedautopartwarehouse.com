@@ -445,7 +445,7 @@ export default function CheckoutPage() {
                           <Input placeholder="Billing name / business" value={billingAddress.name} onChange={(e) => setBillingAddress((p) => ({ ...p, name: e.target.value }))} />
                           <Input placeholder="Billing street address" value={billingAddress.address} onChange={(e) => setBillingAddress((p) => ({ ...p, address: e.target.value }))} />
                           <div className="grid sm:grid-cols-2 gap-3"><Input placeholder="Billing city" value={billingAddress.city} onChange={(e) => setBillingAddress((p) => ({ ...p, city: e.target.value }))} /><Input placeholder="Billing state" value={billingAddress.state} onChange={(e) => setBillingAddress((p) => ({ ...p, state: e.target.value }))} /></div>
-                          <div className="grid sm:grid-cols-2 gap-3"><Input placeholder="Billing ZIP / postal code" value={billingAddress.zipCode} onChange={(e) => setBillingAddress((p) => ({ ...p, zipCode: p.zipCode, country: p.country }))} /><Input placeholder="Country code (e.g. US)" value={billingAddress.country} onChange={(e) => setBillingAddress((p) => ({ ...p, country: e.target.value }))} /></div>
+                          <div className="grid sm:grid-cols-2 gap-3"><Input placeholder="Billing ZIP / postal code" value={billingAddress.zipCode} onChange={(e) => setBillingAddress((p) => ({ ...p, zipCode: e.target.value }))} /><Input placeholder="Country code (e.g. US)" value={billingAddress.country} onChange={(e) => setBillingAddress((p) => ({ ...p, country: e.target.value }))} /></div>
                         </div>}
                         <Button size="lg" className="w-full" onClick={handleShippingSubmit}>
                           Continue to Payment
