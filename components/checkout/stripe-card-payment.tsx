@@ -30,7 +30,7 @@ interface CartLine {
 interface StripeCardPaymentProps {
   customer: StripeCustomer
   items: CartLine[]
-  onPaid: (result: { orderNumber: string; totalAmount: number; emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null }) => void
+  onPaid: (result: { orderNumber: string; totalAmount: number; invoiceToken?: string | null; emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null }) => void
   onError: (message: string) => void
 }
 
@@ -76,7 +76,7 @@ export function StripeCardPayment({ customer, items, onPaid, onError }: StripeCa
       const res = await fetch(`/api/checkout/stripe/session/${encodeURIComponent(sessionId)}`)
       const data = await res.json().catch(() => ({}))
       if (res.ok && data.paid) {
-        onPaidRef.current({ orderNumber: data.orderNumber, totalAmount: data.totalAmount, emailStatus: data.emailStatus ?? null })
+        onPaidRef.current({ orderNumber: data.orderNumber, totalAmount: data.totalAmount, invoiceToken: data.invoiceToken, emailStatus: data.emailStatus ?? null })
       } else {
         onErrorRef.current(
           "Payment completed, but we could not confirm your order. Please call us at 1-888-887-4199.",

@@ -67,6 +67,9 @@ export interface CustomerOrder {
   totalAmount: number
   paymentGateway: string | null
   stripeSessionId: string | null
+  emailVerifiedAt: string | null
+  emailVerifyToken: string | null
+  invoiceToken: string | null
   createdAt: string
   updatedAt: string
 }
@@ -118,6 +121,9 @@ function mapOrder(r: Record<string, unknown>): CustomerOrder {
     totalAmount: toNumber(r.totalamount),
     paymentGateway: (r.payment_gateway as string) ?? null,
     stripeSessionId: (r.stripe_session_id as string) ?? null,
+    emailVerifiedAt: r.email_verified_at ? toIso(r.email_verified_at) : null,
+    emailVerifyToken: (r.email_verify_token as string) ?? null,
+    invoiceToken: (r.invoice_token as string) ?? null,
     createdAt: toIso(r.createdat),
     updatedAt: toIso(r.updatedat),
   }
@@ -209,16 +215,38 @@ function makeOrderNumber() {
   return `AUA-${date}-${suffix}`
 }
 
+let orderInvoiceColumnsReady: Promise<void> | null = null
+
+export async function ensureOrderInvoiceColumns(): Promise<void> {
+  orderInvoiceColumnsReady ??= pool
+    .query(
+      `ALTER TABLE public.orders
+         ADD COLUMN IF NOT EXISTS email_verified_at timestamptz,
+         ADD COLUMN IF NOT EXISTS email_verify_token text,
+         ADD COLUMN IF NOT EXISTS invoice_token text`,
+    )
+    .then(() => undefined)
+    .catch((error) => {
+      orderInvoiceColumnsReady = null
+      throw error
+    })
+  return orderInvoiceColumnsReady
+}
+
 export async function createOrder(input: NewOrderInput): Promise<CustomerOrder> {
+  await ensureOrderInvoiceColumns()
   const client = await pool.connect()
   try {
     await client.query("BEGIN")
     const id = randomUUID()
+    const emailVerifyToken = randomUUID().replace(/-/g, "")
+    const invoiceToken = randomUUID().replace(/-/g, "")
     const { rows } = await client.query(
       `INSERT INTO public.orders
          (id, userid, ordernumber, status, totalamount, subtotal, tax, shippingcost,
-          shippingaddress, items, customer_name, customer_email, customer_phone, customer_notes, payment_gateway)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11,$12,$13,$14,$15)
+          shippingaddress, items, customer_name, customer_email, customer_phone, customer_notes, payment_gateway,
+          email_verify_token, invoice_token)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11,$12,$13,$14,$15,$16,$17)
        RETURNING *`,
       [
         id,
@@ -236,6 +264,8 @@ export async function createOrder(input: NewOrderInput): Promise<CustomerOrder> 
         input.customerPhone,
         input.customerNotes || null,
         input.paymentGateway || null,
+        emailVerifyToken,
+        invoiceToken,
       ],
     )
     for (const line of input.items) {
@@ -278,8 +308,45 @@ export async function getOrderByStripeSession(sessionId: string): Promise<Custom
  */
 export async function markOrderPaid(orderId: string): Promise<CustomerOrder | null> {
   const { rows } = await pool.query(
-    `UPDATE public.orders SET status = 'paid', updatedat = now() WHERE id = $1 AND status <> 'paid' RETURNING *`,
+    `UPDATE public.orders
+        SET status = 'paid',
+            email_verified_at = coalesce(email_verified_at, now()),
+            updatedat = now()
+      WHERE id = $1 AND status <> 'paid'
+      RETURNING *`,
     [orderId],
+  )
+  return rows[0] ? mapOrder(rows[0]) : null
+}
+
+export async function getOrderByVerifyToken(token: string): Promise<CustomerOrder | null> {
+  if (!token) return null
+  await ensureOrderInvoiceColumns()
+  const { rows } = await pool.query(`SELECT * FROM public.orders WHERE email_verify_token = $1 LIMIT 1`, [token])
+  return rows[0] ? mapOrder(rows[0]) : null
+}
+
+export async function verifyOrderEmail(token: string): Promise<{ order: CustomerOrder; newlyVerified: boolean } | null> {
+  if (!token) return null
+  await ensureOrderInvoiceColumns()
+  const { rows: verified } = await pool.query(
+    `UPDATE public.orders
+        SET email_verified_at = now(), updatedat = now()
+      WHERE email_verify_token = $1 AND email_verified_at IS NULL
+      RETURNING *`,
+    [token],
+  )
+  if (verified[0]) return { order: mapOrder(verified[0]), newlyVerified: true }
+  const existing = await getOrderByVerifyToken(token)
+  return existing ? { order: existing, newlyVerified: false } : null
+}
+
+export async function getOrderByInvoiceToken(orderNumber: string, token: string): Promise<CustomerOrder | null> {
+  if (!orderNumber || !token) return null
+  await ensureOrderInvoiceColumns()
+  const { rows } = await pool.query(
+    `SELECT * FROM public.orders WHERE ordernumber = $1 AND invoice_token = $2 LIMIT 1`,
+    [orderNumber, token],
   )
   return rows[0] ? mapOrder(rows[0]) : null
 }
@@ -313,6 +380,7 @@ export async function listQuoteLeads(status?: string, search?: string, limit = 3
 }
 
 export async function listOrders(status?: string, search?: string, limit = 300): Promise<CustomerOrder[]> {
+  await ensureOrderInvoiceColumns()
   const { rows } = await pool.query(
     `SELECT * FROM public.orders
      WHERE ($1::text IS NULL OR status = $1)
@@ -363,6 +431,7 @@ export async function updateOrder(id: string, patch: { status: OrderStatus; inte
 
 /** Admin-only callers must authenticate before invoking this lookup. */
 export async function getOrderByNumber(orderNumber: string): Promise<CustomerOrder | null> {
+  await ensureOrderInvoiceColumns()
   const { rows } = await pool.query("SELECT * FROM public.orders WHERE ordernumber = $1 LIMIT 1", [orderNumber])
   return rows[0] ? mapOrder(rows[0]) : null
 }

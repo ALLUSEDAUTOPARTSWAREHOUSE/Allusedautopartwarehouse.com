@@ -105,6 +105,7 @@ export default function CheckoutPage() {
     orderNumber: string
     totalAmount: number
     reserved?: boolean
+    invoiceToken?: string | null
     emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null
   } | null>(null)
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
@@ -166,7 +167,13 @@ export default function CheckoutPage() {
         setError(data.error ?? 'We could not place your order. Please call 1-888-887-4199.')
         return
       }
-      setPlacedOrder({ orderNumber: data.orderNumber, totalAmount: data.totalAmount, reserved: isReservationCart, emailStatus: data.emailStatus })
+      setPlacedOrder({
+        orderNumber: data.orderNumber,
+        totalAmount: data.totalAmount,
+        reserved: isReservationCart,
+        invoiceToken: data.invoiceToken,
+        emailStatus: data.emailStatus,
+      })
       clearCart()
       setStep('confirmation')
     } catch {
@@ -176,7 +183,7 @@ export default function CheckoutPage() {
     }
   }
 
-  const handleStripePaid = (result: { orderNumber: string; totalAmount: number; emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null }) => {
+  const handleStripePaid = (result: { orderNumber: string; totalAmount: number; invoiceToken?: string | null; emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null }) => {
     setPaymentConfirmed(true)
     setPlacedOrder(result)
     clearCart()
@@ -300,10 +307,10 @@ export default function CheckoutPage() {
               </h2>
               <p className="text-foreground/60 mb-8 text-pretty">
                 {paymentConfirmed
-                  ? 'Your payment was received securely through Stripe. A parts specialist will call you within one business day to confirm fitment and delivery details. No additional payment is needed for this order.'
+                  ? 'Your payment was received securely through Stripe. Your order will now be processed. A parts specialist will call you within one business day to confirm fitment and delivery details. No additional payment is needed for this order.'
                   : placedOrder?.reserved
-                    ? 'This part is reserved for you — no payment has been taken. A parts specialist will call you within one business day to confirm fitment, give you the final price and warranty terms in writing, and take payment only once you approve it.'
-                    : 'A parts specialist will call you within one business day to confirm fitment and take payment securely by phone. Nothing has been charged yet.'}
+                    ? 'This part is reserved for you — no payment has been taken. Check your email and verify the address to confirm this reservation. Your order will be processed after payment confirmation.'
+                    : 'Check your email and click the verification link to confirm this order. Your order will be processed after payment confirmation. A parts specialist will also call you within one business day to confirm fitment and take payment.'}
               </p>
               {placedOrder?.emailStatus ? (
                 <p role="status" className="mx-auto mb-5 max-w-xl text-sm text-foreground/70">
@@ -321,8 +328,13 @@ export default function CheckoutPage() {
                 <p className="text-2xl font-bold text-blue-400">${(placedOrder?.totalAmount ?? 0).toFixed(2)}</p>
               </div>
               <div className="flex gap-4 justify-center">
+                {placedOrder?.invoiceToken ? (
+                  <Link href={`/invoice/${encodeURIComponent(placedOrder.orderNumber)}?t=${encodeURIComponent(placedOrder.invoiceToken)}`}>
+                    <Button size="lg">View invoice</Button>
+                  </Link>
+                ) : null}
                 <Link href="/parts">
-                  <Button size="lg">Continue Shopping</Button>
+                  <Button size="lg" variant={placedOrder?.invoiceToken ? 'outline' : 'default'}>Continue Shopping</Button>
                 </Link>
                 <Link href="/">
                   <Button size="lg" variant="outline">
