@@ -12,6 +12,14 @@ const nextConfig: NextConfig = {
     // These pages showed sample products with made-up prices and were
     // removed; old links and search results go to the real catalog.
     return [
+      // Keep the storefront homepage unchanged; the admin hostname uses the
+      // existing session-aware entry point and the same protected login.
+      {
+        source: "/",
+        has: [{ type: "host", value: "admin.allusedautopartswarehouse.com" }],
+        destination: "/admin",
+        permanent: false,
+      },
       // Unused admin demos (CMS content never shown on the site, a seller
       // marketplace this store doesn't run) were removed.
       { source: "/admin/cms/:path*", destination: "/admin/dashboard", permanent: false },
