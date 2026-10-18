@@ -38,8 +38,7 @@ export default function AccountLoginPage() {
       } else {
         await login(email.trim(), password)
       }
-      router.refresh()
-      router.push('/')
+      window.location.assign('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'We could not complete your request. Please try again.')
     } finally {

@@ -4,11 +4,8 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import Script from 'next/script'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AuthProvider } from '@/lib/auth-context'
-import { MobileThemeFab } from '@/components/mobile-theme-fab'
-import { IntercomProvider } from '@/components/intercom-provider'
+import { ClientWidgets } from '@/components/client-widgets'
 import { GoogleCustomerReviewsBadge } from '@/components/google-customer-reviews'
-import { LiveChatWidget } from '@/components/chat/live-chat-widget'
-import { AuthorizedWorkAssistant } from '@/components/authorized-work-assistant'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -92,10 +89,7 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider>
             {children}
-            <MobileThemeFab />
-            <IntercomProvider />
-            <LiveChatWidget />
-            <AuthorizedWorkAssistant />
+            <ClientWidgets />
           </ThemeProvider>
         </AuthProvider>
         <GoogleCustomerReviewsBadge />
