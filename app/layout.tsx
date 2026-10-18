@@ -8,6 +8,7 @@ import { MobileThemeFab } from '@/components/mobile-theme-fab'
 import { IntercomProvider } from '@/components/intercom-provider'
 import { GoogleCustomerReviewsBadge } from '@/components/google-customer-reviews'
 import { LiveChatWidget } from '@/components/chat/live-chat-widget'
+import { AuthorizedWorkAssistant } from '@/components/authorized-work-assistant'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -94,6 +95,7 @@ export default function RootLayout({
             <MobileThemeFab />
             <IntercomProvider />
             <LiveChatWidget />
+            <AuthorizedWorkAssistant />
           </ThemeProvider>
         </AuthProvider>
         <GoogleCustomerReviewsBadge />
