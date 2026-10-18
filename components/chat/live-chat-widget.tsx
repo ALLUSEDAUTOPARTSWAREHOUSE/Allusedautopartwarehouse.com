@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { usePathname } from 'next/navigation'
 import useSWR from 'swr'
-import { MessageCircle, Send, X } from 'lucide-react'
+import { Send, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface WidgetMessage {
@@ -98,9 +98,18 @@ export function LiveChatWidget() {
           className="flex h-[min(36rem,calc(100dvh-10rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl"
         >
           <header className="flex items-center justify-between gap-3 border-b border-border bg-primary px-4 py-3 text-primary-foreground">
-            <div className="flex flex-col">
-              <h2 className="text-sm font-bold">Chat with a parts specialist</h2>
-              <p className="text-xs opacity-80">Fast help from our parts team — usually within a few minutes.</p>
+            <div className="flex items-center gap-3">
+              <img
+                src="/images/icon-chat-specialist.png"
+                alt=""
+                width={40}
+                height={40}
+                className="size-10 shrink-0 rounded-full bg-black object-cover"
+              />
+              <div className="flex flex-col">
+                <h2 className="text-sm font-bold">Chat with a parts specialist</h2>
+                <p className="text-xs opacity-80">Fast help from our parts team — usually within a few minutes.</p>
+              </div>
             </div>
             <button
               type="button"
@@ -205,9 +214,19 @@ export function LiveChatWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={open ? 'Close live chat' : 'Open live chat'}
-        className="relative flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105"
+        className="relative flex size-14 items-center justify-center overflow-hidden rounded-full border border-border bg-black text-primary-foreground shadow-lg transition-transform hover:scale-105"
       >
-        {open ? <X className="size-6" /> : <MessageCircle className="size-6" />}
+        {open ? (
+          <X className="size-6" />
+        ) : (
+          <img
+            src="/images/icon-chat-metallic.png"
+            alt=""
+            width={56}
+            height={56}
+            className="size-14 object-cover"
+          />
+        )}
         {hasUnread ? (
           <span className="absolute -right-0.5 -top-0.5 size-3.5 rounded-full border-2 border-background bg-destructive">
             <span className="sr-only">New reply</span>
