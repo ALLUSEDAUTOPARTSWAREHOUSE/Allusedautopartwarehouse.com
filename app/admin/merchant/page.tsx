@@ -1,3 +1,4 @@
+import { CatalogHealthDashboard } from "@/components/admin/merchant/catalog-health-dashboard"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getAdminSession } from "@/lib/admin-auth"
@@ -22,6 +23,7 @@ export default async function GoogleFeedDashboard() {
       <p className="text-sm text-muted-foreground">Monitor Google Shopping feed health, errors and fetch history.</p>
       <Link href="/admin/products" className="text-primary underline">Manage products, uploads, prices and images</Link>
     </header>
+    <CatalogHealthDashboard stats={stats} checkedAt={new Date().toISOString()} />
     <MerchantOverview stats={stats} fetches={fetches} overrideCount={overrides.length} />
     <FeedHealthPanel alerts={alerts} snapshots={snapshots} />
   </div>
