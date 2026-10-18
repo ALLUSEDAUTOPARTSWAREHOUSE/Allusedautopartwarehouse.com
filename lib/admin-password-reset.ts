@@ -3,8 +3,7 @@ import "server-only"
 import { createHash, randomInt, timingSafeEqual } from "crypto"
 import { pool } from "@/lib/db"
 import { saveAdminPassword } from "@/lib/admin-passwords"
-
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "Info@Allusedautopartswarehouse.com").trim().toLowerCase()
+import { isAllowedAdminEmail } from "@/lib/admin-auth"
 const OTP_TTL_MINUTES = 10
 const MAX_ATTEMPTS = 5
 
@@ -59,7 +58,7 @@ export async function requestAdminPasswordOtp(emailInput: string) {
   await ensureResetTable()
 
   // Always return the same public result for unknown addresses.
-  if (email !== ADMIN_EMAIL) return
+  if (!isAllowedAdminEmail(email)) return
 
   const otp = String(randomInt(0, 1_000_000)).padStart(6, "0")
   const otpHash = otpDigest(email, otp, secret)
@@ -101,7 +100,7 @@ export async function verifyAdminPasswordOtpAndReset(emailInput: string, otpInpu
   const otp = otpInput.trim()
   const secret = resetSecret()
   if (!secret) throw new Error("Password reset is not configured.")
-  if (email !== ADMIN_EMAIL || !/^\d{6}$/.test(otp)) return false
+  if (!isAllowedAdminEmail(email) || !/^\d{6}$/.test(otp)) return false
 
   await ensureResetTable()
   const result = await pool.query(

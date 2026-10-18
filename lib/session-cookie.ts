@@ -7,12 +7,11 @@ type CookieOptions = {
 }
 
 export function authCookieOptions(maxAge: number): CookieOptions {
-  const preview = process.env.NODE_ENV !== 'production'
   return {
     httpOnly: true,
     path: '/',
     maxAge,
-    secure: preview || process.env.NODE_ENV === 'production',
-    sameSite: preview ? 'none' : 'lax',
+    secure: true,
+    sameSite: 'none',
   }
 }
