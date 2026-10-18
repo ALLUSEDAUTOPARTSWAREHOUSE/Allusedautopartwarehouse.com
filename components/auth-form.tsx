@@ -1,6 +1,6 @@
 'use client'
 
-import { Eye, EyeOff, ArrowRight, ShieldCheck, PackageSearch, Wrench } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, ShieldCheck, PackageSearch, Wrench, Chrome, Apple } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -21,6 +21,19 @@ export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-u
   const isSignUp = mode === 'sign-up'
   const target = redirectTo.startsWith('/') && !redirectTo.startsWith('//') && !redirectTo.includes(String.fromCharCode(92)) && !redirectTo.split(/[?#]/, 1)[0].split('/').some((part) => part === '.' || part === '..') ? redirectTo : '/'
   const switchHref = `${isSignUp ? '/sign-in' : '/sign-up'}?redirectTo=${encodeURIComponent(target)}`
+
+  const handleSocialAuth = async (provider: 'google' | 'apple') => {
+    setError(null)
+    setLoading(true)
+    try {
+      const result = await authClient.signIn.social({ provider, callbackURL: target })
+      if (result.error) setError(result.error.message ?? `Unable to continue with ${provider}. Please try again.`)
+    } catch {
+      setError(`Unable to continue with ${provider}. Please try again.`)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,7 +61,7 @@ export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-u
       <div className="mx-auto flex min-h-[calc(100svh-3rem)] w-full max-w-6xl flex-col">
         <header className="flex items-center justify-between gap-4 py-2">
           <Link href="/" className="flex items-center gap-3" aria-label="All Used Auto Parts Warehouse home">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-[#f36b21] text-white"><Wrench className="size-5" /></span>
+            <span className="flex size-10 items-center justify-center overflow-hidden rounded-xl bg-white ring-1 ring-black/10"><img src="/auapw-logo.png" alt="AUAPW" className="size-9 object-contain" /></span>
             <span className="text-xs font-black leading-tight tracking-[0.12em] sm:text-sm">ALL USED AUTO PARTS<br />WAREHOUSE</span>
           </Link>
           <Link href="/" className="text-sm font-medium text-neutral-600 transition hover:text-[#f36b21]">Back to store <ArrowRight className="ml-1 inline size-4" /></Link>
@@ -91,6 +104,11 @@ export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-u
                 <Button type="submit" disabled={loading} className="h-12 w-full rounded-xl bg-[#f36b21] font-semibold text-white shadow-sm transition hover:bg-[#d95c19] disabled:opacity-60">{loading ? 'Please wait…' : isSignUp ? 'Create account' : 'Sign in'} <ArrowRight className="ml-2 size-4" /></Button>
               </form>
 
+              <div className="my-7 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400"><span className="h-px flex-1 bg-neutral-200" />Or continue with<span className="h-px flex-1 bg-neutral-200" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <Button type="button" variant="outline" disabled={loading} onClick={() => handleSocialAuth('google')} className="h-11 rounded-xl border-neutral-200 bg-white font-medium text-neutral-800 hover:bg-neutral-50"><Chrome className="mr-2 size-4" />Google</Button>
+                <Button type="button" variant="outline" disabled={loading} onClick={() => handleSocialAuth('apple')} className="h-11 rounded-xl border-neutral-200 bg-white font-medium text-neutral-800 hover:bg-neutral-50"><Apple className="mr-2 size-4" />Apple</Button>
+              </div>
               <p className="mt-7 text-center text-sm text-neutral-500">{isSignUp ? 'Already have an account?' : "Don’t have an account?"}{' '}<Link href={switchHref} className="font-semibold text-[#d95c19] underline-offset-4 hover:underline">{isSignUp ? 'Sign in' : 'Create account'}</Link></p>
               <p className="mt-8 text-center text-[11px] leading-5 text-neutral-400">By continuing, you agree to use your account responsibly. Customer access does not grant administrator permissions.</p>
             </div>
