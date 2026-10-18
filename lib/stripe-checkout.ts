@@ -9,7 +9,7 @@ import {
   listUnconfirmedStripeSessions,
   type CustomerOrder,
 } from "@/lib/followup"
-import { notifyNewOrder, sendCustomerOrderInvoice } from "@/lib/followup-notify"
+import { notifyNewOrder, sendCustomerOrderInvoice, sendCustomerOrderVerification } from "@/lib/followup-notify"
 
 export interface StripeCheckoutCustomer {
   userId?: string
@@ -29,7 +29,11 @@ export interface StripeCheckoutCustomer {
  * Stripe embedded Checkout Session for the exact validated total. The
  * customer enters real card details inside Stripe's own secure iframe.
  */
-export async function createStripeCheckoutSession(customer: StripeCheckoutCustomer, items: CartLineInput[]) {
+export async function createStripeCheckoutSession(
+  customer: StripeCheckoutCustomer,
+  items: CartLineInput[],
+  siteUrl?: string,
+) {
   if (!stripe) {
     return { ok: false as const, error: "Card payments are not configured. Please choose another payment method." }
   }
@@ -93,12 +97,18 @@ export async function createStripeCheckoutSession(customer: StripeCheckoutCustom
     }, { idempotencyKey: `checkout-${order.id}` })
 
     await attachStripeSession(order.id, session.id)
+    if (siteUrl) {
+      sendCustomerOrderVerification(order, siteUrl).catch((err) => {
+        console.error("[v0] Stripe order verification email failed:", err)
+      })
+    }
 
     return {
       ok: true as const,
       clientSecret: session.client_secret,
       orderNumber: order.orderNumber,
       totalAmount: order.totalAmount,
+      invoiceToken: order.invoiceToken,
     }
   } catch (error) {
     console.error("[v0] Stripe checkout session error:", error)

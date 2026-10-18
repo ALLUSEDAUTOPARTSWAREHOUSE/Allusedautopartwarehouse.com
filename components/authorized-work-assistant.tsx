@@ -25,6 +25,13 @@ export function AuthorizedWorkAssistant() {
     sessionFetcher,
     { revalidateOnFocus: true },
   )
+  const authorized = Boolean(user) || Boolean(workspace?.authorized)
+
+  if (isLoading || (!user && workspaceLoading) || !authorized) return null
+  return <WorkAssistantChat />
+}
+
+function WorkAssistantChat() {
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
   const transport = useMemo(
@@ -33,9 +40,6 @@ export function AuthorizedWorkAssistant() {
   )
   const { messages, sendMessage, status, error } = useChat({ transport })
   const busy = status === 'submitted' || status === 'streaming'
-  const authorized = Boolean(user) || Boolean(workspace?.authorized)
-
-  if (isLoading || (!user && workspaceLoading) || !authorized) return null
 
   function submit() {
     const text = input.trim()

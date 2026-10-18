@@ -5,6 +5,7 @@ import type { DashboardMetrics } from "@/lib/admin-metrics"
 import type { FeedAlert, FeedSnapshot } from "@/lib/merchant-health"
 import { PHONE_DISPLAY, SHIPPING, WARRANTY_SUMMARY } from "@/lib/site-policy"
 import { pool } from "@/lib/db"
+import { absoluteUrl, buildCustomerInvoiceEmail, invoiceUrl, type InvoiceEmailKind } from "@/lib/invoice"
 
 const STAFF_EMAIL = process.env.FOLLOWUP_EMAIL || "support@auapw.com"
 const SUPPORT_EMAIL = "support@auapw.com"
@@ -194,7 +195,13 @@ export async function notifyNewQuote(lead: QuoteLead, siteUrl: string) {
 
 export async function notifyNewOrder(order: CustomerOrder, siteUrl: string) {
   const items = order.items
-    .map((l) => `<li>${escapeHtml(l.name)} × ${l.quantity} — ${money(l.lineTotal)}</li>`)
+    .map((l) => {
+      const href = l.url ? absoluteUrl(l.url, siteUrl) : ""
+      const name = href
+        ? `<a href="${escapeHtml(href)}">${escapeHtml(l.name)}</a>`
+        : escapeHtml(l.name)
+      return `<li>${name} × ${l.quantity} — ${money(l.lineTotal)}</li>`
+    })
     .join("")
   const body = `<table style="width:100%;border-collapse:collapse">${rows([
     ["Order #", order.orderNumber],
@@ -206,6 +213,7 @@ export async function notifyNewOrder(order: CustomerOrder, siteUrl: string) {
     ["Payment", order.paymentGateway ?? "phone"],
     ["Status", order.status],
     ["Total", money(order.totalAmount)],
+    ["Invoice", invoiceUrl(order, siteUrl)],
   ])}</table><h3>Items</h3><ul>${items}</ul>`
   return sendToOperations(
     `New order ${order.orderNumber} — ${money(order.totalAmount)}`,
@@ -214,64 +222,28 @@ export async function notifyNewOrder(order: CustomerOrder, siteUrl: string) {
   )
 }
 
+function invoiceKindFor(order: CustomerOrder): InvoiceEmailKind {
+  if (order.status === "paid") return "paid"
+  if (order.status === "reserved_pending_fitment") return "reserved"
+  return "awaiting_payment"
+}
+
+/** Asks the customer to verify their email before the order is treated as confirmed. */
+export async function sendCustomerOrderVerification(order: CustomerOrder, siteUrl: string) {
+  if (!order.customerEmail) return { ok: false, error: "No customer email address was provided." }
+  if (!order.emailVerifyToken) return { ok: false, error: "This order has no email verification token." }
+  const { subject, html } = buildCustomerInvoiceEmail(order, siteUrl, "verify")
+  return sendWithResult(subject, html, [order.customerEmail])
+}
+
 /**
- * Emails the customer an invoice-style receipt for their own order. Sent
- * on every placed order (pending phone orders and Stripe-paid orders alike)
- * so the customer always has a record of exactly what they entered.
+ * Emails the customer a branded invoice with product-page links and brand
+ * images. Unpaid orders say they will be processed after payment confirmation.
  */
 export async function sendCustomerOrderInvoice(order: CustomerOrder, siteUrl: string) {
   if (!order.customerEmail) return { ok: false, error: "No customer email address was provided." }
-
-  const items = order.items
-    .map(
-      (l) => {
-        const productUrl = l.url ? new URL(l.url, siteUrl).toString() : siteUrl
-        return `<li style="margin-bottom:10px"><a href="${escapeHtml(productUrl)}" style="color:#b45309;font-weight:bold">${escapeHtml(l.name)}</a> × ${l.quantity} — ${money(l.lineTotal)}<br /><span style="color:#6b7280;font-size:13px">${escapeHtml(l.make)}</span></li>`
-      },
-    )
-    .join("")
-  const paid = order.status === "paid"
-  const reserved = order.status === "reserved_pending_fitment"
-  const body = `
-    <p>Thanks for your ${reserved ? "reservation" : "order"}, ${escapeHtml(order.customerName) || "there"}! Here is your receipt.</p>
-    <table style="width:100%;border-collapse:collapse">${rows([
-      ["Order #", order.orderNumber],
-      ["Date", new Date(order.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })],
-      ["Ship to", order.shippingAddress],
-      ["Phone", order.customerPhone],
-      ["Notes", order.customerNotes],
-    ])}</table>
-    <h3>Items</h3>
-    <ul>${items}</ul>
-    <table style="width:100%;border-collapse:collapse;margin-top:8px">${rows([
-      ["Subtotal", money(order.subtotal)],
-      ["Tax", money(order.tax)],
-      ["Shipping", money(order.shippingCost)],
-      ["Total", money(order.totalAmount)],
-    ])}</table>
-    <p style="margin-top:16px">
-      ${
-        paid
-          ? `Your card has been charged and your order is confirmed.`
-          : reserved
-            ? `This part is reserved for you — no payment has been taken. A parts specialist will call you at ${escapeHtml(order.customerPhone)} within one business day to confirm fitment, give you the final price in writing, and take payment only once you approve it. Your warranty coverage is confirmed in writing at that time too.`
-            : `Your order has been received and will be processed after payment confirmation. No charge has been made yet — a parts specialist will call you at ${escapeHtml(order.customerPhone)} within one business day to confirm fitment and collect payment securely.`
-      }
-    </p>`
-
-  return sendWithResult(
-    `Your AUAPW ${reserved ? "reservation" : "order"} ${order.orderNumber}${paid ? " — paid" : reserved ? " — reserved" : " — received"}`,
-    `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-      <div style="background:#0f1117;color:#fff;padding:20px;border-radius:8px 8px 0 0">
-        <h2 style="margin:0">${paid ? "Payment Received" : reserved ? "Part Reserved" : "Order Received"}</h2>
-      </div>
-      <div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px">
-        ${body}
-        <p style="margin-top:20px;color:#6b7280;font-size:13px">Need help? Email <a href="mailto:${SUPPORT_EMAIL}" style="color:#b45309">${SUPPORT_EMAIL}</a> or call ${escapeHtml(PHONE_DISPLAY)}.</p>
-      </div>
-    </div>`,
-    [order.customerEmail],
-  )
+  const { subject, html } = buildCustomerInvoiceEmail(order, siteUrl, invoiceKindFor(order))
+  return sendWithResult(subject, html, [order.customerEmail])
 }
 
 /** Send a receipt-style acknowledgement after a quote request is saved. */

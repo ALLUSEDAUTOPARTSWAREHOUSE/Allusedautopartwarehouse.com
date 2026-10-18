@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     // A valid guest checkout can still proceed without a customer-account association.
   }
   const customer = { ...parsed.data.customer, userId }
-  const result = await createStripeCheckoutSession(customer, parsed.data.items)
+  const result = await createStripeCheckoutSession(customer, parsed.data.items, new URL(request.url).origin)
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 422 })
   }

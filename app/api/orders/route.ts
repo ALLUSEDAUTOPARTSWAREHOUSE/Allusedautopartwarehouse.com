@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { createOrder } from "@/lib/followup"
-import { notifyNewOrder, sendCustomerOrderInvoice } from "@/lib/followup-notify"
+import { notifyNewOrder, sendCustomerOrderVerification } from "@/lib/followup-notify"
 import { priceCart, priceReservationCart } from "@/lib/order-pricing"
 
 const req = (label: string, max: number) => z.string().trim().min(1, `Please enter your ${label}.`).max(max)
@@ -99,12 +99,13 @@ export async function POST(request: Request) {
       const origin = new URL(request.url).origin
       const [teamNotice, customerNotice] = await Promise.all([
         notifyNewOrder(order, origin).catch(() => ({ ok: false })),
-        sendCustomerOrderInvoice(order, origin).catch(() => ({ ok: false })),
+        sendCustomerOrderVerification(order, origin).catch(() => ({ ok: false })),
       ])
       return NextResponse.json({
         ok: true,
         orderNumber: order.orderNumber,
         totalAmount: order.totalAmount,
+        invoiceToken: order.invoiceToken,
         emailStatus: { teamNotificationAccepted: teamNotice.ok, customerConfirmationAccepted: customerNotice.ok },
       })
     } catch (err) {
@@ -144,12 +145,13 @@ export async function POST(request: Request) {
     const origin = new URL(request.url).origin
     const [teamNotice, customerNotice] = await Promise.all([
       notifyNewOrder(order, origin).catch(() => ({ ok: false })),
-      sendCustomerOrderInvoice(order, origin).catch(() => ({ ok: false })),
+      sendCustomerOrderVerification(order, origin).catch(() => ({ ok: false })),
     ])
     return NextResponse.json({
       ok: true,
       orderNumber: order.orderNumber,
       totalAmount: order.totalAmount,
+      invoiceToken: order.invoiceToken,
       emailStatus: { teamNotificationAccepted: teamNotice.ok, customerConfirmationAccepted: customerNotice.ok },
     })
   } catch (err) {

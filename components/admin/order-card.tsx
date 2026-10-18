@@ -38,6 +38,15 @@ export function OrderCard({ order, statuses, staffOptions, assignment }: { order
                 {order.paymentGateway}
               </span>
             )}
+            {order.emailVerifiedAt ? (
+              <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
+                Email verified
+              </span>
+            ) : (
+              <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-400">
+                Awaiting email verification
+              </span>
+            )}
             <time className="text-xs text-muted-foreground" dateTime={order.createdAt}>
               Created {new Date(order.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
             </time>
@@ -106,6 +115,17 @@ export function OrderCard({ order, statuses, staffOptions, assignment }: { order
               {order.customerNotes}
             </p>
           )}
+          {order.invoiceToken ? (
+            <p className="mt-3">
+              <Link
+                href={`/invoice/${encodeURIComponent(order.orderNumber)}?t=${encodeURIComponent(order.invoiceToken)}`}
+                className="text-sm font-semibold text-primary underline"
+                target="_blank"
+              >
+                Open branded invoice
+              </Link>
+            </p>
+          ) : null}
         </div>
 
         <div className="flex w-full flex-col gap-3 lg:w-80">

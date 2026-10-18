@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
-import { createStaffToken, ensureStaffCredentialsTable, STAFF_COOKIE, verifyStaffPassword } from '@/lib/staff-auth'
+import { createStaffToken, ensureStaffCredentialsTable, STAFF_COOKIE, verifyStaffPassword, type StaffRole } from '@/lib/staff-auth'
 import { validateAdminCredentials, generateAdminToken, ADMIN_COOKIE, ADMIN_SESSION_MAX_AGE } from '@/lib/admin-auth'
 import { getAdminSessionVersion } from '@/lib/admin-passwords'
 import { authCookieOptions } from '@/lib/session-cookie'
@@ -21,19 +21,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Enter your email and password.' }, { status: 400 })
     }
 
-    await ensureStaffCredentialsTable()
-    const staffResult = await pool.query(
-      `SELECT s.id, s.name, s.email, s.role, s.status, c.password_hash, c.session_version
-       FROM staff_members s JOIN staff_credentials c ON c.staff_id = s.id
-       WHERE lower(s.email) = $1 LIMIT 1`, [email])
-    const staff = staffResult.rows[0]
+    let staff: {
+      id: string
+      name: string
+      email: string
+      role: string
+      status: string
+      password_hash: string
+      session_version: number
+    } | undefined
+    try {
+      await ensureStaffCredentialsTable()
+      const staffResult = await pool.query(
+        `SELECT s.id, s.name, s.email, s.role, s.status, c.password_hash, c.session_version
+         FROM staff_members s JOIN staff_credentials c ON c.staff_id = s.id
+         WHERE lower(s.email) = $1 LIMIT 1`, [email])
+      staff = staffResult.rows[0]
+    } catch {
+      console.error('[portal-auth] Staff lookup failed; continuing with administrator login')
+    }
 
     if (staff) {
       if (staff.status !== 'active' || !await verifyStaffPassword(password, staff.password_hash)) {
         return NextResponse.json({ message: 'Invalid email or password, or account is inactive.' }, { status: 401 })
       }
       const session = createStaffToken(
-        { id: staff.id, name: staff.name, email: staff.email, role: staff.role },
+        { id: staff.id, name: staff.name, email: staff.email, role: staff.role as StaffRole },
         Number(staff.session_version)
       )
       const redirectTo = staff.role === 'sales_agent' ? '/staff/sales'
