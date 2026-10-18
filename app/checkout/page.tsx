@@ -29,6 +29,22 @@ interface PaymentGateway {
   instructions?: string | null
 }
 
+const STRIPE_CARD_GATEWAY: PaymentGateway = {
+  id: 'stripe-card',
+  name: 'Credit or Debit Card',
+  slug: 'stripe',
+  type: 'card',
+  description: 'Pay now with Visa, Mastercard, American Express, or Discover. Card details stay with Stripe.',
+  isEnabled: true,
+  isDefault: true,
+}
+
+function withStripeCardGateway(gateways: PaymentGateway[]): PaymentGateway[] {
+  const others = gateways.filter((g) => g.isEnabled && g.slug !== 'stripe')
+  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) return others
+  return [STRIPE_CARD_GATEWAY, ...others]
+}
+
 export default function CheckoutPage() {
   const router = useRouter()
   const items = useCartStore((state) => state.items)
@@ -57,14 +73,16 @@ export default function CheckoutPage() {
     fetch('/api/payment-gateways')
       .then((res) => (res.ok ? res.json() : { gateways: [] }))
       .then((data) => {
-        const enabled: PaymentGateway[] = (data.gateways ?? []).filter(
-          (g: PaymentGateway) => g.isEnabled
-        )
+        const enabled = withStripeCardGateway(data.gateways ?? [])
         setGateways(enabled)
         const def = enabled.find((g) => g.isDefault) ?? enabled[0]
         if (def) setSelectedGateway(def.slug)
       })
-      .catch(() => {})
+      .catch(() => {
+        const enabled = withStripeCardGateway([])
+        setGateways(enabled)
+        if (enabled[0]) setSelectedGateway(enabled[0].slug)
+      })
   }, [])
 
   // Supports Google Merchant Center's "Checkout URL" deep link
@@ -438,7 +456,7 @@ export default function CheckoutPage() {
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step !== 'shipping' ? 'bg-blue-500 text-white' : 'bg-white/10 text-foreground/60'}`}>
                         2
                       </div>
-                      <h2 className="text-xl font-bold">Review &amp; Place Order</h2>
+                      <h2 className="text-xl font-bold">{isReservationCart ? 'Review & Place Order' : 'Payment'}</h2>
                     </div>
 
                     {step === 'payment' && (
@@ -576,7 +594,7 @@ export default function CheckoutPage() {
                                 />
                                 <p className="flex items-center gap-1.5 text-xs text-foreground/50">
                                   <Lock className="w-3 h-3" />
-                                  Enter your card details above. Your card is charged securely by Stripe.
+                                  Enter your credit or debit card details above. Stripe charges the card securely — we never see the full number.
                                 </p>
                               </div>
                             )

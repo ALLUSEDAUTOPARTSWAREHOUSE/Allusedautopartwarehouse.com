@@ -94,6 +94,9 @@ export async function createStripeCheckoutSession(
       customer_email: customer.email,
       line_items: lineItems,
       metadata: { orderId: order.id, orderNumber: order.orderNumber },
+      integration_identifier: `auapw-checkout-${Array.from(crypto.getRandomValues(new Uint8Array(8)), (n) =>
+        "abcdefghijklmnopqrstuvwxyz"[n % 26],
+      ).join("")}`,
     }, { idempotencyKey: `checkout-${order.id}` })
 
     await attachStripeSession(order.id, session.id)

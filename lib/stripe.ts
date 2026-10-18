@@ -8,9 +8,7 @@ try {
     console.warn('[v0] STRIPE_SECRET_KEY is not set - Stripe features will be disabled')
     stripe = null
   } else {
-    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2026-06-24.dahlia' as any,
-    })
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
   }
 } catch (error) {
   console.warn('[v0] Stripe module not available - Stripe features will be disabled', error)
