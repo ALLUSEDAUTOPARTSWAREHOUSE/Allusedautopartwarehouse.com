@@ -3,7 +3,7 @@
   "framework": "nextjs",
   "installCommand": "pnpm install",
   "buildCommand": "pnpm run build",
-  "outputDirectory": ".next",
+  "outputDirectory": null,
   "crons": [
     {
       "path": "/api/cron/daily",

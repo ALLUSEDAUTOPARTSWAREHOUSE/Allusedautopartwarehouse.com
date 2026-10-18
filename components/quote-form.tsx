@@ -93,10 +93,6 @@ export function QuoteForm({ defaultPart = "", compact = false }: QuoteFormProps)
           {quoteId ? <>Your reference is <strong>#{quoteId}</strong>. </> : null}
           A parts specialist will call you within <strong>one business day</strong> with pricing and availability.
         </p>
-        <div className="flex w-full max-w-xl items-center gap-3 rounded-lg border border-primary/15 bg-primary/5 px-4 py-3 text-left" role="status">
-          <Mail className="size-5 shrink-0 text-primary" aria-hidden="true" />
-          <p className="text-xs leading-relaxed text-muted-foreground">If you entered an email address, we&apos;ll send your request reference and next steps there too.</p>
-        </div>
         {customerEmailNotice ? <p role="status" className="max-w-xl text-xs text-muted-foreground">{customerEmailNotice}</p> : null}
         <div className="w-full bg-card/50 border border-border/30 rounded-lg p-4 flex flex-col sm:flex-row gap-3 justify-center">
           <p className="text-xs text-muted-foreground w-full text-center mb-1 sm:hidden">Need it faster? Contact us directly:</p>

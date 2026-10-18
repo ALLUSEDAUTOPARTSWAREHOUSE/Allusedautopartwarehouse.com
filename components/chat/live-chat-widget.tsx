@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { usePathname } from 'next/navigation'
 import useSWR from 'swr'
-import { FileText, Mail, MessageCircle, Phone, Send, X } from 'lucide-react'
+import { MessageCircle, Send, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface WidgetMessage {
@@ -200,25 +200,6 @@ export function LiveChatWidget() {
         </section>
       ) : null}
 
-      {!open ? (
-        <div className="flex flex-col items-end gap-2" aria-label="Contact AUAPW">
-          <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold text-card-foreground shadow-lg">
-            <span className="size-2 animate-pulse rounded-full bg-emerald-500" aria-hidden="true" />
-            Need help finding a part?
-          </div>
-          <div className="flex items-center gap-2">
-            <a href="/quote" className="flex size-11 items-center justify-center rounded-full border border-border bg-card text-card-foreground shadow-lg transition-transform hover:scale-105" aria-label="Get a free quote">
-              <FileText className="size-5" />
-            </a>
-            <a href="tel:+18888874199" className="flex size-11 items-center justify-center rounded-full border border-border bg-card text-card-foreground shadow-lg transition-transform hover:scale-105" aria-label="Call a parts specialist">
-              <Phone className="size-5" />
-            </a>
-            <a href="mailto:auapworld@gmail.com" className="flex size-11 items-center justify-center rounded-full border border-border bg-card text-card-foreground shadow-lg transition-transform hover:scale-105" aria-label="Email a parts specialist">
-              <Mail className="size-5" />
-            </a>
-          </div>
-        </div>
-      ) : null}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
