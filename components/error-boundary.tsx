@@ -30,6 +30,12 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error(`[ErrorBoundary${this.props.context ? ` – ${this.props.context}` : ""}]`, error, info)
   }
 
+  componentDidUpdate(prevProps: Props) {
+    if (this.state.hasError && prevProps.children !== this.props.children) {
+      this.setState({ hasError: false, error: null, errorInfo: null })
+    }
+  }
+
   handleReset = () => {
     this.setState({ hasError: false, error: null, errorInfo: null })
   }
