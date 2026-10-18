@@ -31,6 +31,13 @@ const CheckoutDetailsSchema = z.object({
   shippingPolicyAccepted: z.literal(true),
   returnsPolicyAccepted: z.literal(true),
   approvedTotal: z.number().finite().nonnegative(),
+}).superRefine((details, ctx) => {
+  if (!details.billingSameAsShipping) {
+    const billing = details.billingAddress
+    for (const key of ["name", "address", "city", "state", "zipCode", "country"] as const) {
+      if (!billing?.[key]?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["billingAddress", key], message: "Please complete the separate billing address." })
+    }
+  }
 })
 
 const BodySchema = z.object({
