@@ -1,5 +1,5 @@
 import 'server-only'
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { pool } from '@/lib/db'
 
 const INVITE_TTL_HOURS = 72
@@ -36,18 +36,11 @@ export async function consumeStaffInvite(token: string, staffId: string) {
   await ensureStaffInvitesTable()
   const result = await pool.query(
     `UPDATE staff_invites SET consumed_at = NOW()
-     WHERE id = (
-       SELECT id FROM staff_invites
-       WHERE staff_id = $1 AND consumed_at IS NULL AND expires_at > NOW()
-       ORDER BY created_at DESC LIMIT 1
-     ) AND staff_id = $1
-     RETURNING token_hash`,
-    [staffId])
-  const row = result.rows[0]
-  if (!row) return false
-  const expected = Buffer.from(String(row.token_hash), 'hex')
-  const actual = Buffer.from(tokenDigest(token), 'hex')
-  return expected.length === actual.length && timingSafeEqual(expected, actual)
+     WHERE staff_id = $1 AND token_hash = $2
+       AND consumed_at IS NULL AND expires_at > NOW()
+     RETURNING id`,
+    [staffId, tokenDigest(token)])
+  return result.rows.length === 1
 }
 
 export async function sendStaffInviteEmail(params: { email: string; name: string; inviteUrl: string }) {
@@ -57,7 +50,7 @@ export async function sendStaffInviteEmail(params: { email: string; name: string
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      from: 'notifications@allusedautopartswarehouse.com',
+      from: process.env.ADMIN_RESET_FROM || 'notifications@allusedautopartswarehouse.com',
       to: [params.email],
       subject: 'You are invited to the AUAPW team portal',
       text: `Hi ${params.name},\n\nYou have been invited to the All Used Auto Parts Warehouse team portal. Set your password to activate your account:\n\n${params.inviteUrl}\n\nThis link expires in ${INVITE_TTL_HOURS} hours. After setting your password, sign in at the staff login page. If you were not expecting this invitation, ignore this email.`,
