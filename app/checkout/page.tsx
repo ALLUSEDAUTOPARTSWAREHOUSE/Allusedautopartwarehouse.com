@@ -127,6 +127,9 @@ export default function CheckoutPage() {
   const liftgateFee = Number(process.env.NEXT_PUBLIC_AUAPW_LIFTGATE_FEE ?? 0) || 0
   const checkoutFees = (addressType === 'residential' ? residentialFee : 0) + (liftgateRequired ? liftgateFee : 0)
   const finalTotal = Math.round((totalPrice + shipping + tax + checkoutFees) * 100) / 100
+  useEffect(() => {
+    setPriceApprovalAccepted(false)
+  }, [finalTotal])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -137,6 +140,10 @@ export default function CheckoutPage() {
     const { firstName, lastName, email, phone, address, city, state, zipCode } = formData
     if (!firstName || !lastName || !email || !address || !city || !state || !zipCode) {
       setError('Please fill in all shipping fields.')
+      return
+    }
+    if (!billingSameAsShipping && (!billingAddress.name || !billingAddress.address || !billingAddress.city || !billingAddress.state || !billingAddress.zipCode || !billingAddress.country)) {
+      setError('Please complete all required billing address fields or select that billing matches shipping.')
       return
     }
     if (phone.replace(/\D/g, '').length < 10) {
