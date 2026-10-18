@@ -3,6 +3,7 @@ import { pool } from '@/lib/db'
 import { createStaffToken, ensureStaffCredentialsTable, STAFF_COOKIE, verifyStaffPassword } from '@/lib/staff-auth'
 import { validateAdminCredentials, generateAdminToken, ADMIN_COOKIE, ADMIN_SESSION_MAX_AGE } from '@/lib/admin-auth'
 import { getAdminSessionVersion } from '@/lib/admin-passwords'
+import { authCookieOptions } from '@/lib/session-cookie'
 
 export const runtime = 'nodejs'
 
@@ -40,10 +41,7 @@ export async function POST(request: NextRequest) {
         : staff.role === 'developer_team' ? '/staff/developer' : null
       if (!redirectTo) return NextResponse.json({ message: 'This account does not have a supported portal role.' }, { status: 403 })
       const response = NextResponse.json({ success: true, role: staff.role, redirectTo })
-      response.cookies.set(STAFF_COOKIE, session.token, {
-        httpOnly: true, secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax', path: '/', maxAge: session.maxAge,
-      })
+      response.cookies.set(STAFF_COOKIE, session.token, authCookieOptions(session.maxAge))
       return response
     }
 
@@ -53,10 +51,7 @@ export async function POST(request: NextRequest) {
     }
     const token = generateAdminToken(email, await getAdminSessionVersion())
     const response = NextResponse.json({ success: true, role: 'admin', redirectTo: '/admin/workspace' })
-    response.cookies.set(ADMIN_COOKIE, token, {
-      httpOnly: true, secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax', path: '/', maxAge: ADMIN_SESSION_MAX_AGE,
-    })
+    response.cookies.set(ADMIN_COOKIE, token, authCookieOptions(ADMIN_SESSION_MAX_AGE))
     return response
   } catch (error) {
     console.error('[portal-auth] Sign-in failed', error)

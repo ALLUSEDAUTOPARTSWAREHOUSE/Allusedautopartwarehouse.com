@@ -6,6 +6,7 @@ import {
   ADMIN_SESSION_MAX_AGE,
 } from '@/lib/admin-auth'
 import { getAdminSessionVersion } from '@/lib/admin-passwords'
+import { authCookieOptions } from '@/lib/session-cookie'
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,13 +44,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
 
-    response.cookies.set(ADMIN_COOKIE, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: ADMIN_SESSION_MAX_AGE,
-    })
+    response.cookies.set(ADMIN_COOKIE, token, authCookieOptions(ADMIN_SESSION_MAX_AGE))
 
     return response
   } catch (error) {

@@ -34,14 +34,26 @@ async function ensureResetTable() {
   `)
 }
 
+function resetFromAddress(): string | null {
+  const configured = process.env.ADMIN_RESET_FROM?.trim()
+  if (configured && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(configured.replace(/^.*<([^>]+)>$/, "$1"))) {
+    return configured
+  }
+  const domain = process.env.RESEND_EMAIL_DOMAIN?.trim()
+  if (domain && /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
+    return `AUAPW Admin <no-reply@${domain}>`
+  }
+  return null
+}
+
 export async function requestAdminPasswordOtp(emailInput: string) {
   const email = emailInput.trim().toLowerCase()
   const secret = resetSecret()
   const apiKey = process.env.RESEND_API_KEY
-  const from = process.env.ADMIN_RESET_FROM
+  const from = resetFromAddress()
 
   if (!secret || !apiKey || !from) {
-    throw new Error("Password reset email is not configured. Set ADMIN_RESET_SECRET, RESEND_API_KEY, and ADMIN_RESET_FROM in Vercel.")
+    throw new Error("Password reset email is not configured. Set ADMIN_RESET_SECRET, RESEND_API_KEY, and a valid ADMIN_RESET_FROM or RESEND_EMAIL_DOMAIN in Vercel.")
   }
 
   await ensureResetTable()
@@ -78,7 +90,8 @@ export async function requestAdminPasswordOtp(emailInput: string) {
       "UPDATE public.admin_password_reset_otps SET consumed_at = now() WHERE email = $1 AND consumed_at IS NULL",
       [email],
     )
-    console.error("[admin-password-reset] Email provider rejected reset email", response.status)
+    const providerError = await response.text().catch(() => "")
+    console.error("[admin-password-reset] Email provider rejected reset email", response.status, providerError)
     throw new Error("Unable to send the reset email. Check the email provider configuration.")
   }
 }
