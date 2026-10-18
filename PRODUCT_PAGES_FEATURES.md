@@ -10,7 +10,7 @@ Each product card includes:
 - ✅ **Quantity Selector** (1-10 units)
 - ✅ **ADD TO CART** (Blue button) - Adds to cart store
 - ✅ **BUY NOW** (Green button) - Adds to cart and redirects to checkout
-- ✅ **CALL** Button - (708) 896-2383
+- ✅ **CALL** Button - 1-888-887-4199
 - ✅ **MESSAGE** Button - Pre-populated email inquiries
 - ✅ **QUOTE** Button - Detailed quote form with product info
 - Grid and list view toggle
@@ -164,7 +164,7 @@ Each product card includes:
 
 **Support Box:**
 - "Still have questions?" section
-- Call (708) 896-2383
+- Call 1-888-887-4199
 - Email Support button
 - 24/7 customer support availability message
 

@@ -24,6 +24,7 @@ const GROUPS = [
     { href: '/admin/settings', label: 'System settings', icon: Settings },
     { href: '/admin/security', label: 'Password management', icon: KeyRound },
     { href: '/admin/ai-chat', label: 'AI planning', icon: Bot },
+    { href: '/admin/agent', label: 'eve agent workspace', icon: PanelsTopLeft },
   ] },
   { title: 'Marketing', links: [
     { href: '/admin/marketing', label: 'Marketing dashboard', icon: Megaphone },

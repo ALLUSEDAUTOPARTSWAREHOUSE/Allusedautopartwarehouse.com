@@ -60,7 +60,7 @@ export default function ReturnPolicyPage() {
             <p className="mb-4">If you receive a defective part, we will replace it free of charge or provide a full refund. Contact us immediately with photos and documentation of the defect.</p>
 
             <h2 className="text-2xl font-bold mt-8 mb-4">Contact for Returns</h2>
-            <p className="mb-4">Email: auapworld@gmail.com | Phone: (708) 896-2383</p>
+            <p className="mb-4">Email: auapworld@gmail.com | Phone: 1-888-887-4199</p>
           </div>
         </div>
         <BrandLogosSection />

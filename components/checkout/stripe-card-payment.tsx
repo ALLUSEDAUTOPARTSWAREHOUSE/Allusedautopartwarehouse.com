@@ -69,7 +69,7 @@ export function StripeCardPayment({ customer, items, onPaid, onError }: StripeCa
   const handleComplete = useCallback(async () => {
     const sessionId = sessionIdRef.current
     if (!sessionId) {
-      onErrorRef.current("Payment completed, but we could not confirm your order. Please call us at (708) 896-2383.")
+      onErrorRef.current("Payment completed, but we could not confirm your order. Please call us at 1-888-887-4199.")
       return
     }
     try {
@@ -79,11 +79,11 @@ export function StripeCardPayment({ customer, items, onPaid, onError }: StripeCa
         onPaidRef.current({ orderNumber: data.orderNumber, totalAmount: data.totalAmount, emailStatus: data.emailStatus ?? null })
       } else {
         onErrorRef.current(
-          "Payment completed, but we could not confirm your order. Please call us at (708) 896-2383.",
+          "Payment completed, but we could not confirm your order. Please call us at 1-888-887-4199.",
         )
       }
     } catch {
-      onErrorRef.current("Payment completed, but we could not confirm your order. Please call us at (708) 896-2383.")
+      onErrorRef.current("Payment completed, but we could not confirm your order. Please call us at 1-888-887-4199.")
     }
   }, [])
 

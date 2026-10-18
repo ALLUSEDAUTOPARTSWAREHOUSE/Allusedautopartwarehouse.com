@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import { Roboto } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import Script from 'next/script'
@@ -9,14 +8,8 @@ import { MobileThemeFab } from '@/components/mobile-theme-fab'
 import { IntercomProvider } from '@/components/intercom-provider'
 import { GoogleCustomerReviewsBadge } from '@/components/google-customer-reviews'
 import { LiveChatWidget } from '@/components/chat/live-chat-widget'
+import { AuthorizedWorkAssistant } from '@/components/authorized-work-assistant'
 import './globals.css'
-
-const roboto = Roboto({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "700", "900"],
-  variable: "--font-sans",
-  display: "swap",
-})
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.allusedautopartswarehouse.com'),
@@ -85,7 +78,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark bg-background" suppressHydrationWarning>
-      <body className={`${roboto.variable} font-sans antialiased bg-background text-foreground`}>
+      <body className="font-sans antialiased bg-background text-foreground">
         {/* Intercom messenger — loads after page is interactive */}
         <Script 
           id="intercom-bootstrap"
@@ -102,6 +95,7 @@ export default function RootLayout({
             <MobileThemeFab />
             <IntercomProvider />
             <LiveChatWidget />
+            <AuthorizedWorkAssistant />
           </ThemeProvider>
         </AuthProvider>
         <GoogleCustomerReviewsBadge />

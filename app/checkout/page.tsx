@@ -163,14 +163,14 @@ export default function CheckoutPage() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(data.error ?? 'We could not place your order. Please call (708) 896-2383.')
+        setError(data.error ?? 'We could not place your order. Please call 1-888-887-4199.')
         return
       }
       setPlacedOrder({ orderNumber: data.orderNumber, totalAmount: data.totalAmount, reserved: isReservationCart, emailStatus: data.emailStatus })
       clearCart()
       setStep('confirmation')
     } catch {
-      setError('Network error. Please try again or call (708) 896-2383.')
+      setError('Network error. Please try again or call 1-888-887-4199.')
     } finally {
       setIsProcessing(false)
     }
