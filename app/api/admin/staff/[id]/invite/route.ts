@@ -8,6 +8,7 @@ export const runtime = 'nodejs'
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await getAdminSession()
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (request.headers.get('origin') !== new URL(request.url).origin) return NextResponse.json({ error: 'Invalid origin' }, { status: 403 })
   try {
     const { id } = await params
     const result = await pool.query(
@@ -18,7 +19,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Activate this staff member before sending an invitation.' }, { status: 409 })
     }
     const token = await createStaffInvite(staff.id)
-    const origin = request.headers.get('origin') || new URL(request.url).origin
+    const configuredOrigin = process.env.AUAPW_PUBLIC_URL || process.env.BETTER_AUTH_URL
+    if (!configuredOrigin) throw new Error('Public invitation origin is not configured')
+    const base = new URL(configuredOrigin)
+    if (base.protocol !== 'https:' || base.username || base.password) throw new Error('Invalid invitation origin')
+    const origin = base.origin
     const inviteUrl = `${origin}/staff/accept-invite?token=${encodeURIComponent(token)}&staff=${encodeURIComponent(staff.id)}`
     await sendStaffInviteEmail({ email: staff.email, name: staff.name, inviteUrl })
     return NextResponse.json({ success: true, message: `Invitation sent to ${staff.email}.` })

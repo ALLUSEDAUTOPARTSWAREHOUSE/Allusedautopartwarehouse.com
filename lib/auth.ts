@@ -1,8 +1,22 @@
+import { consumeCustomerInvite } from '@/lib/customer-invites'
+import { APIError } from 'better-auth/api'
 import { betterAuth } from 'better-auth'
 import { pool } from '@/lib/db'
 
 export const auth = betterAuth({
   database: pool,
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user, context) => {
+          if (!await consumeCustomerInvite(user.email, context?.headers?.get('x-auapw-invite'))) {
+            throw new APIError('FORBIDDEN', { message: 'An unused, unexpired invitation for this email is required.' })
+          }
+          return { data: user }
+        },
+      },
+    },
+  },
   secret: process.env.BETTER_AUTH_SECRET ?? process.env.ADMIN_SESSION_SECRET,
   baseURL:
     process.env.AUAPW_PUBLIC_URL ??
