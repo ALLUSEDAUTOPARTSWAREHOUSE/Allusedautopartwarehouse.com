@@ -5,9 +5,7 @@ import Link from "next/link"
 import { Activity, ArrowUpRight, BarChart3, CheckCircle2, CircleAlert, Facebook, Globe2, Instagram, PackageCheck, RefreshCw, ShoppingBag, Sparkles } from "lucide-react"
 
 type Destination = "google" | "openai" | "facebook" | "instagram" | "tiktok" | "pinterest"
-const OBJECTIVE_LABELS: Record<string, string> = { product_sales: "Product sales", traffic: "Website traffic", leads: "Quote requests / leads", remarketing: "Remarketing", brand_awareness: "Brand awareness" }
-
-const DESTINATIONS: { id: Destination; name: string; detail: string; status: string; icon: typeof ShoppingBag; href: string }[] = [
+const OBJECTIVE_LABELS: Record<string, string> = { product_sales: "Product sales", traffic: "Website traffic", leads: "Quote requests / leads", remarketing: "Remarketing", brand_awareness: "Brand awareness" }\n\nconst DESTINATIONS: { id: Destination; name: string; detail: string; status: string; icon: typeof ShoppingBag; href: string }[] = [
   { id: "google", name: "Google Merchant Center", detail: "Shopping listings, price and availability", status: "Connection must be verified", icon: Globe2, href: "/admin/merchant" },
   { id: "openai", name: "ChatGPT Ads product feed", detail: "Product discovery and eligible ad placements", status: "Feed connection not verified", icon: Sparkles, href: "https://ads.openai.com/" },
   { id: "facebook", name: "Facebook catalog & ads", detail: "Meta catalog and campaign destinations", status: "Connect account to enable", icon: Facebook, href: "/admin/marketing/social" },
