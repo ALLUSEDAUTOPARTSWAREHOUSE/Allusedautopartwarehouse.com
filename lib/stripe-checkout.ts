@@ -11,6 +11,17 @@ import {
 } from "@/lib/followup"
 import { notifyNewOrder, sendCustomerOrderInvoice, sendCustomerOrderVerification } from "@/lib/followup-notify"
 
+export interface StripeCheckoutDetails {
+  addressType: "commercial" | "residential"
+  liftgateRequired: boolean
+  billingSameAsShipping: boolean
+  billingAddress?: { name?: string; address?: string; city?: string; state?: string; zipCode?: string; country?: string }
+  termsAccepted: true
+  shippingPolicyAccepted: true
+  returnsPolicyAccepted: true
+  approvedTotal: number
+}
+
 export interface StripeCheckoutCustomer {
   userId?: string
   firstName: string
@@ -32,6 +43,7 @@ export interface StripeCheckoutCustomer {
 export async function createStripeCheckoutSession(
   customer: StripeCheckoutCustomer,
   items: CartLineInput[],
+  checkoutDetails: StripeCheckoutDetails,
   siteUrl?: string,
 ) {
   if (!stripe) {
@@ -40,6 +52,18 @@ export async function createStripeCheckoutSession(
 
   const pricing = await priceCart(items)
   if (!pricing.ok) return { ok: false as const, error: pricing.error }
+  const fee = (name: string) => {
+    const n = Number(process.env[name] ?? "0")
+    return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : 0
+  }
+  const checkoutFees =
+    (checkoutDetails.addressType === "residential" ? fee("AUAPW_RESIDENTIAL_DELIVERY_FEE") : 0) +
+    (checkoutDetails.liftgateRequired ? fee("AUAPW_LIFTGATE_FEE") : 0)
+  const shippingCost = Math.round((pricing.shippingCost + checkoutFees) * 100) / 100
+  const totalAmount = Math.round((pricing.subtotal + pricing.tax + shippingCost) * 100) / 100
+  if (Math.abs(totalAmount - checkoutDetails.approvedTotal) > 0.02) {
+    return { ok: false as const, error: "The order total changed. Please review the updated total and approve it again." }
+  }
 
   const order = await createOrder({
     userId: customer.userId,
@@ -51,8 +75,9 @@ export async function createStripeCheckoutSession(
     items: pricing.lines,
     subtotal: pricing.subtotal,
     tax: pricing.tax,
-    shippingCost: pricing.shippingCost,
-    totalAmount: pricing.totalAmount,
+    shippingCost,
+    totalAmount,
+    checkoutDetails: { ...checkoutDetails, policyAcceptedAt: new Date().toISOString(), policyVersion: "checkout-v1" },
     paymentGateway: "stripe",
     status: "pending",
   })
@@ -66,12 +91,12 @@ export async function createStripeCheckoutSession(
     quantity: line.quantity,
   }))
 
-  if (pricing.shippingCost > 0) {
+  if (shippingCost > 0) {
     lineItems.push({
       price_data: {
         currency: "usd",
-        product_data: { name: "Shipping" },
-        unit_amount: Math.round(pricing.shippingCost * 100),
+        product_data: { name: "Shipping and selected freight services" },
+        unit_amount: Math.round(shippingCost * 100),
       },
       quantity: 1,
     })
