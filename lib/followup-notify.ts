@@ -6,7 +6,8 @@ import type { FeedAlert, FeedSnapshot } from "@/lib/merchant-health"
 import { PHONE_DISPLAY, SHIPPING, WARRANTY_SUMMARY } from "@/lib/site-policy"
 import { pool } from "@/lib/db"
 
-const STAFF_EMAIL = process.env.FOLLOWUP_EMAIL || "auapworld@gmail.com"
+const STAFF_EMAIL = process.env.FOLLOWUP_EMAIL || "support@auapw.com"
+const SUPPORT_EMAIL = "support@auapw.com"
 const FROM =
   process.env.EMAIL_FROM ||
   (process.env.RESEND_EMAIL_DOMAIN
@@ -138,9 +139,10 @@ export function customerEmailReady(): { ok: boolean; reason?: string } {
   return { ok: true }
 }
 
-function customerShell(title: string, body: string) {
+function customerShell(title: string, body: string, siteUrl = "https://allusedautopartwarehouse.com") {
   return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
     <div style="background:#0f1117;color:#fff;padding:20px;border-radius:8px 8px 0 0">
+      <img src="${escapeHtml(`${siteUrl}/auapw-logo.png`)}" alt="All Used Auto Parts Warehouse" width="180" style="display:block;max-width:180px;height:auto;margin-bottom:16px;background:#fff;padding:8px;border-radius:4px" />
       <h2 style="margin:0">${escapeHtml(title)}</h2>
     </div>
     <div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px">
@@ -222,8 +224,10 @@ export async function sendCustomerOrderInvoice(order: CustomerOrder, siteUrl: st
 
   const items = order.items
     .map(
-      (l) =>
-        `<li>${escapeHtml(l.name)} × ${l.quantity} — ${money(l.lineTotal)}</li>`,
+      (l) => {
+        const productUrl = l.url ? new URL(l.url, siteUrl).toString() : siteUrl
+        return `<li style="margin-bottom:10px"><a href="${escapeHtml(productUrl)}" style="color:#b45309;font-weight:bold">${escapeHtml(l.name)}</a> × ${l.quantity} — ${money(l.lineTotal)}<br /><span style="color:#6b7280;font-size:13px">${escapeHtml(l.make)}</span></li>`
+      },
     )
     .join("")
   const paid = order.status === "paid"
@@ -251,7 +255,7 @@ export async function sendCustomerOrderInvoice(order: CustomerOrder, siteUrl: st
           ? `Your card has been charged and your order is confirmed.`
           : reserved
             ? `This part is reserved for you — no payment has been taken. A parts specialist will call you at ${escapeHtml(order.customerPhone)} within one business day to confirm fitment, give you the final price in writing, and take payment only once you approve it. Your warranty coverage is confirmed in writing at that time too.`
-            : `No charge has been made yet — a parts specialist will call you at ${escapeHtml(order.customerPhone)} within one business day to confirm fitment and take payment securely by phone.`
+            : `Your order has been received and will be processed after payment confirmation. No charge has been made yet — a parts specialist will call you at ${escapeHtml(order.customerPhone)} within one business day to confirm fitment and collect payment securely.`
       }
     </p>`
 
@@ -263,6 +267,7 @@ export async function sendCustomerOrderInvoice(order: CustomerOrder, siteUrl: st
       </div>
       <div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px">
         ${body}
+        <p style="margin-top:20px;color:#6b7280;font-size:13px">Need help? Email <a href="mailto:${SUPPORT_EMAIL}" style="color:#b45309">${SUPPORT_EMAIL}</a> or call ${escapeHtml(PHONE_DISPLAY)}.</p>
       </div>
     </div>`,
     [order.customerEmail],
