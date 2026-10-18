@@ -55,7 +55,7 @@ function WorkAssistantChat() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Open AUAPW Work Assistant"
-          className="fixed bottom-5 right-5 z-[9980] flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-xl transition hover:scale-105"
+          className="fixed bottom-5 right-5 z-[9980] flex items-center gap-3 rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-xl transition hover:scale-105"
         >
           <Bot className="size-4" />
           Work Assistant
@@ -64,12 +64,12 @@ function WorkAssistantChat() {
       {open && (
         <section
           aria-label="AUAPW Work Assistant"
-          className="fixed bottom-5 right-5 z-[9990] flex h-[min(620px,calc(100vh-2rem))] w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+          className="fixed bottom-5 right-5 z-[9990] flex h-[min(680px,calc(100vh-2rem))] w-[min(460px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
         >
           <header className="flex items-center justify-between border-b border-border bg-primary px-4 py-3 text-primary-foreground">
             <div>
               <p className="font-semibold">AUAPW Work Assistant</p>
-              <p className="text-xs opacity-80">Authorized workspace help</p>
+              <p className="text-xs opacity-80">Portal team help · AI replies may take a little longer</p>
             </div>
             <button
               type="button"
@@ -83,7 +83,7 @@ function WorkAssistantChat() {
           <div className="flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite">
             {messages.length === 0 ? (
               <p className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">
-                Ask for help organizing your work, researching parts, drafting a customer reply, or understanding an AUAPW process.
+                Use this for portal work: organize tasks, research parts, draft customer replies, or understand an AUAPW process. For quick customer questions, use Chat with a parts specialist.
               </p>
             ) : (
               messages.map((message) => (
