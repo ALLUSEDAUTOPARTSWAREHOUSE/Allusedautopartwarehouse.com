@@ -13,6 +13,7 @@ import {
   type IssueCode,
 } from "@/lib/merchant"
 import { MerchantOverview } from "@/components/admin/merchant/merchant-overview"
+import { MerchantPreflightCenter } from "@/components/admin/merchant/merchant-preflight-center"
 import { ProductFixCard, type ProductFixCardProps } from "@/components/admin/merchant/product-fix-card"
 
 export const dynamic = "force-dynamic"
@@ -20,10 +21,6 @@ export const maxDuration = 60
 export const metadata = { title: "Google Shopping | AUAPW Admin", robots: { index: false } }
 
 const inputClass = "rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
-
-function toCardProps(brand: string, slug: string): ProductFixCardProps | null {
-  return null
-}
 
 export default async function AdminMerchantPage({
   searchParams,
@@ -91,6 +88,8 @@ export default async function AdminMerchantPage({
       </header>
 
       <MerchantOverview stats={stats} fetches={fetches} overrideCount={recentOverrides.length} />
+
+      <MerchantPreflightCenter stats={stats} />
 
       <section id="fix-pages" aria-labelledby="fix-heading" className="flex scroll-mt-24 flex-col gap-4">
         <div>
