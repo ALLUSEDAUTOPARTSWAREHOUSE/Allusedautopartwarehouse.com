@@ -1,13 +1,11 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
+
 export function PrintInvoiceButton() {
   return (
-    <button
-      type="button"
-      onClick={() => window.print()}
-      className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-semibold text-white"
-    >
+    <Button type="button" onClick={() => window.print()}>
       Print / Save PDF
-    </button>
+    </Button>
   )
 }

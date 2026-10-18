@@ -6,7 +6,7 @@ import {
   INVOICE_TERMS,
   brandLogoPath,
   money,
-  productHref,
+  productPagePath,
 } from "@/lib/invoice"
 import type { CustomerOrder } from "@/lib/followup"
 
@@ -20,7 +20,7 @@ function paymentLabel(order: CustomerOrder) {
   return "Due — processed after payment confirmation"
 }
 
-export function OrderInvoice({ order, siteUrl }: { order: CustomerOrder; siteUrl: string }) {
+export function OrderInvoice({ order }: { order: CustomerOrder }) {
   return (
     <article className="bg-white text-zinc-900 shadow-xl print:shadow-none">
       <header className="flex flex-col gap-6 border-b border-zinc-200 px-8 py-8 sm:flex-row sm:items-start sm:justify-between">
@@ -85,7 +85,7 @@ export function OrderInvoice({ order, siteUrl }: { order: CustomerOrder; siteUrl
           <tbody>
             {order.items.map((line) => {
               const logo = brandLogoPath(line.make)
-              const href = productHref(line, siteUrl)
+              const href = productPagePath(line)
               return (
                 <tr key={`${line.productId}-${line.name}`} className="border-b border-zinc-100">
                   <td className="px-3 py-3 align-middle">

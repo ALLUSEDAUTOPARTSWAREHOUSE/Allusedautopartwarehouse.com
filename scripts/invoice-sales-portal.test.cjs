@@ -40,6 +40,7 @@ test('branded invoices include AUAPW logo, product page links, brand images and 
   assert.match(invoice, /AUAPW LLC/)
   assert.match(invoice, /auapw-logo\.png/)
   assert.match(invoice, /productHref/)
+  assert.match(invoice, /productPagePath/)
   assert.match(invoice, /brandLogoPath/)
   assert.match(invoice, /25% handling and restocking fee/)
   assert.match(invoice, /90-day limited parts warranty/)

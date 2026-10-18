@@ -2,8 +2,9 @@ import Link from "next/link"
 import { Mail, Phone } from "lucide-react"
 import type { CustomerSummary } from "@/lib/admin-customers"
 import type { CustomerOrder, QuoteLead } from "@/lib/followup"
-import { invoiceUrl, money } from "@/lib/invoice"
+import { invoiceUrl, money, productPagePath } from "@/lib/invoice"
 import { StatusBadge } from "@/components/admin/status-badge"
+import { Button } from "@/components/ui/button"
 
 const when = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "—"
@@ -89,7 +90,9 @@ export function SalesWorkspace({
         }}
         className="mt-10"
       >
-        <button className="rounded-lg border border-border px-4 py-2 text-sm">Sign out</button>
+        <Button type="submit" variant="outline">
+          Sign out
+        </Button>
       </form>
     </main>
   )
@@ -194,7 +197,7 @@ function OrderList({ orders, query }: { orders: CustomerOrder[]; query?: string 
           <ul className="mt-4 space-y-2 text-sm">
             {order.items.map((line) => (
               <li key={`${order.id}-${line.productId}`} className="flex flex-wrap items-baseline justify-between gap-2">
-                <Link href={line.url} className="font-medium text-primary underline underline-offset-2" target="_blank">
+                <Link href={productPagePath(line)} className="font-medium text-primary underline underline-offset-2">
                   {line.name}
                 </Link>
                 <span>

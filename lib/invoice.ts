@@ -125,12 +125,20 @@ export function absoluteUrl(path: string, siteUrl: string) {
 
 export function brandLogoPath(make: string) {
   const label = getBrandLabel(make)
-  return getBrandLogoUrl(label) || getBrandLogoUrl(make) || ""
+  const mapped = getBrandLogoUrl(label) || getBrandLogoUrl(make)
+  if (mapped) return mapped
+  const slug = make.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+  return slug ? `/logos/${slug}.png` : ""
+}
+
+/** In-app product page path so invoices work on preview and production. */
+export function productPagePath(line: OrderLine) {
+  if (line.url?.startsWith("/")) return line.url
+  return "/parts"
 }
 
 export function productHref(line: OrderLine, siteUrl: string) {
-  if (!line.url) return siteUrl
-  return absoluteUrl(line.url, siteUrl)
+  return absoluteUrl(productPagePath(line), siteUrl)
 }
 
 export type InvoiceEmailKind = "verify" | "awaiting_payment" | "paid" | "reserved"

@@ -218,18 +218,23 @@ function makeOrderNumber() {
 let orderInvoiceColumnsReady: Promise<void> | null = null
 
 export async function ensureOrderInvoiceColumns(): Promise<void> {
-  orderInvoiceColumnsReady ??= pool
-    .query(
+  orderInvoiceColumnsReady ??= (async () => {
+    await pool.query(
       `ALTER TABLE public.orders
          ADD COLUMN IF NOT EXISTS email_verified_at timestamptz,
          ADD COLUMN IF NOT EXISTS email_verify_token text,
          ADD COLUMN IF NOT EXISTS invoice_token text`,
     )
-    .then(() => undefined)
-    .catch((error) => {
-      orderInvoiceColumnsReady = null
-      throw error
-    })
+    await pool.query(
+      `UPDATE public.orders
+          SET email_verify_token = coalesce(email_verify_token, replace(gen_random_uuid()::text, '-', '')),
+              invoice_token = coalesce(invoice_token, replace(gen_random_uuid()::text, '-', ''))
+        WHERE email_verify_token IS NULL OR invoice_token IS NULL`,
+    )
+  })().catch((error) => {
+    orderInvoiceColumnsReady = null
+    throw error
+  })
   return orderInvoiceColumnsReady
 }
 
@@ -307,6 +312,7 @@ export async function getOrderByStripeSession(sessionId: string): Promise<Custom
  * webhook and the daily reconcile can race without sending emails twice.
  */
 export async function markOrderPaid(orderId: string): Promise<CustomerOrder | null> {
+  await ensureOrderInvoiceColumns()
   const { rows } = await pool.query(
     `UPDATE public.orders
         SET status = 'paid',

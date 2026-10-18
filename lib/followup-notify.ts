@@ -5,7 +5,7 @@ import type { DashboardMetrics } from "@/lib/admin-metrics"
 import type { FeedAlert, FeedSnapshot } from "@/lib/merchant-health"
 import { PHONE_DISPLAY, SHIPPING, WARRANTY_SUMMARY } from "@/lib/site-policy"
 import { pool } from "@/lib/db"
-import { buildCustomerInvoiceEmail, type InvoiceEmailKind } from "@/lib/invoice"
+import { absoluteUrl, buildCustomerInvoiceEmail, invoiceUrl, type InvoiceEmailKind } from "@/lib/invoice"
 
 const STAFF_EMAIL = process.env.FOLLOWUP_EMAIL || "auapworld@gmail.com"
 const FROM =
@@ -193,7 +193,13 @@ export async function notifyNewQuote(lead: QuoteLead, siteUrl: string) {
 
 export async function notifyNewOrder(order: CustomerOrder, siteUrl: string) {
   const items = order.items
-    .map((l) => `<li>${escapeHtml(l.name)} × ${l.quantity} — ${money(l.lineTotal)}</li>`)
+    .map((l) => {
+      const href = l.url ? absoluteUrl(l.url, siteUrl) : ""
+      const name = href
+        ? `<a href="${escapeHtml(href)}">${escapeHtml(l.name)}</a>`
+        : escapeHtml(l.name)
+      return `<li>${name} × ${l.quantity} — ${money(l.lineTotal)}</li>`
+    })
     .join("")
   const body = `<table style="width:100%;border-collapse:collapse">${rows([
     ["Order #", order.orderNumber],
@@ -205,6 +211,7 @@ export async function notifyNewOrder(order: CustomerOrder, siteUrl: string) {
     ["Payment", order.paymentGateway ?? "phone"],
     ["Status", order.status],
     ["Total", money(order.totalAmount)],
+    ["Invoice", invoiceUrl(order, siteUrl)],
   ])}</table><h3>Items</h3><ul>${items}</ul>`
   return sendToOperations(
     `New order ${order.orderNumber} — ${money(order.totalAmount)}`,

@@ -5,6 +5,7 @@ import { verifyOrderEmail } from "@/lib/followup"
 import { invoiceUrl } from "@/lib/invoice"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { Button } from "@/components/ui/button"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Confirm your order | AUAPW LLC", robots: { index: false, follow: false } }
@@ -39,27 +40,25 @@ export default async function VerifyOrderPage({
                   : `Order ${result.order.orderNumber} is confirmed. Your order will be processed after payment confirmation.`}
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <Link
-                  href={invoiceUrl(result.order, "")}
-                  className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-                >
-                  View invoice
-                </Link>
-                <Link href="/" className="rounded-md border border-border px-4 py-2 text-sm">
-                  Back to store
-                </Link>
+                <Button asChild>
+                  <Link href={invoiceUrl(result.order, "")}>View invoice</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href="/">Back to store</Link>
+                </Button>
               </div>
             </>
           ) : (
             <>
-              <h1 className="text-3xl font-black">Link expired</h1>
+              <h1 className="text-3xl font-black">{token ? "Link expired" : "Confirm your order"}</h1>
               <p className="mt-4 text-pretty text-foreground/70">
-                This confirmation link is invalid or has already been used. If you just placed an order, call us at
-                1-888-887-4199 and we will resend it.
+                {token
+                  ? "This confirmation link is invalid or has already been used. If you just placed an order, call us at 1-888-887-4199 and we will resend it."
+                  : "Open the verification link in your order email to confirm this order. Your order will be processed after payment confirmation."}
               </p>
-              <Link href="/" className="mt-8 inline-block rounded-md border border-border px-4 py-2 text-sm">
-                Back to store
-              </Link>
+              <Button asChild variant="outline" className="mt-8">
+                <Link href="/">Back to store</Link>
+              </Button>
             </>
           )}
         </div>
