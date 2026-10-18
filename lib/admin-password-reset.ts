@@ -35,10 +35,21 @@ async function ensureResetTable() {
 }
 
 function resetFromAddress(): string | null {
-  const configured = process.env.ADMIN_RESET_FROM?.trim()
-  if (configured && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(configured.replace(/^.*<([^>]+)>$/, "$1"))) {
-    return configured
+  // Prefer an explicit admin reset sender, but accept a display-name form like
+  // "Name <email@domain.com>" or a bare address. Fall back to EMAIL_FROM for
+  // site-wide sender or to RESEND_EMAIL_DOMAIN to synthesize a no-reply address.
+  const configuredAdmin = process.env.ADMIN_RESET_FROM?.trim()
+  if (configuredAdmin) {
+    const candidate = configuredAdmin.replace(/^.*<([^>]+)>$/, "$1")
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) return configuredAdmin
   }
+
+  const configuredEmailFrom = process.env.EMAIL_FROM?.trim()
+  if (configuredEmailFrom) {
+    const candidate = configuredEmailFrom.replace(/^.*<([^>]+)>$/, "$1")
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) return configuredEmailFrom
+  }
+
   const domain = process.env.RESEND_EMAIL_DOMAIN?.trim()
   if (domain && /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
     return `AUAPW Admin <no-reply@${domain}>`
@@ -53,7 +64,7 @@ export async function requestAdminPasswordOtp(emailInput: string) {
   const from = resetFromAddress()
 
   if (!secret || !apiKey || !from) {
-    throw new Error("Password reset email is not configured. Set ADMIN_RESET_SECRET, RESEND_API_KEY, and a valid ADMIN_RESET_FROM or RESEND_EMAIL_DOMAIN in Vercel.")
+    throw new Error("Password reset email is not configured. Set ADMIN_RESET_SECRET, RESEND_API_KEY, and a valid ADMIN_RESET_FROM, EMAIL_FROM, or RESEND_EMAIL_DOMAIN in Vercel.")
   }
 
   await ensureResetTable()
