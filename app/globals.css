@@ -5022,10 +5022,19 @@ html:not(.hydrating) .cinematic-frame {
 }
 .live-dot { animation: live-dot-pulse 1.6s ease-in-out infinite; }
 
+@keyframes chat-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.chat-float {
+  animation: chat-float 3.2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cinematic-frame,
   .cinematic-frame .cinematic-img,
-  .live-dot { animation: none; }
+  .live-dot,
+  .chat-float { animation: none; }
   .cinematic-frame:nth-child(1) { opacity: 1; }
 }
 
