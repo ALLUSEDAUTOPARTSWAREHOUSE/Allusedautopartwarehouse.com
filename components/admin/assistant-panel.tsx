@@ -4,6 +4,7 @@ import { useState, type FormEvent, type KeyboardEvent } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from 'ai'
 import { Bot, Check, Loader2, Send, X } from 'lucide-react'
+import { BUSINESS_WORKFLOWS } from '@/lib/admin-workflows'
 import { cn } from '@/lib/utils'
 import type { AdminAssistantMessage } from '@/lib/admin-assistant'
 
@@ -20,6 +21,8 @@ const SUGGESTIONS = [
 ]
 
 const TOOL_LABELS: Record<string, string> = {
+  getWorkflowGuide: 'Loaded business workflow',
+  getBusinessMetrics: 'Reviewed recorded business metrics',
   getOperationsOverview: 'Prepared operations overview',
   getPriorityWorkQueue: 'Reviewed priority work queue',
   getGoogleFeedHistory: 'Reviewed Google feed history',
@@ -94,6 +97,9 @@ export function AssistantPanel({ layout = 'compact' }: { layout?: 'compact' | 'f
         </div>
       </header>
 
+      <nav aria-label="Business workflows" className="flex flex-wrap gap-2 border-b border-border p-3">
+        {BUSINESS_WORKFLOWS.map(workflow => <button key={workflow.id} type="button" disabled={busy} title={workflow.description} onClick={() => submit(workflow.prompt)} className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-muted disabled:opacity-50">{workflow.title}</button>)}
+      </nav>
       <div className={`flex ${layout === 'full' ? 'max-h-[65vh] min-h-[28rem]' : 'max-h-[28rem] min-h-40'} flex-col gap-3 overflow-y-auto p-4`} aria-live="polite">
         {messages.length === 0 ? (
           <div className="flex flex-wrap gap-2">

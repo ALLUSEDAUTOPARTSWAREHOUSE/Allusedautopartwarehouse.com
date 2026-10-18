@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { AssistantPanel } from '@/components/admin/assistant-panel'
 import { redirect } from 'next/navigation'
 import {
   Activity, ArrowRight, Bot, BrainCircuit, CheckCircle2,
@@ -76,6 +77,11 @@ export default async function AdminAiWorkflowsPage() {
         </div>
       </section>
 
+      <section aria-labelledby="business-workflows-heading" className="space-y-3">
+        <h2 id="business-workflows-heading" className="text-xl font-semibold">Marketing, audit, data, product & sales</h2>
+        <p className="text-sm text-muted-foreground">Select a workflow to start a guided conversation using existing record tools. Content and plans are drafts; sending messages, booking meetings, remote execution and deployment are not connected.</p>
+        <AssistantPanel layout="full" />
+      </section>
       <section>
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>

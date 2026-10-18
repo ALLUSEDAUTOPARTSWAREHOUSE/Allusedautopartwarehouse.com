@@ -7,7 +7,8 @@ import { PHONE_DISPLAY, SHIPPING, WARRANTY_SUMMARY } from "@/lib/site-policy"
 import { pool } from "@/lib/db"
 import { absoluteUrl, buildCustomerInvoiceEmail, invoiceUrl, type InvoiceEmailKind } from "@/lib/invoice"
 
-const STAFF_EMAIL = process.env.FOLLOWUP_EMAIL || "auapworld@gmail.com"
+const STAFF_EMAIL = process.env.FOLLOWUP_EMAIL || "support@auapw.com"
+const SUPPORT_EMAIL = "support@auapw.com"
 const FROM =
   process.env.EMAIL_FROM ||
   (process.env.RESEND_EMAIL_DOMAIN
@@ -139,9 +140,10 @@ export function customerEmailReady(): { ok: boolean; reason?: string } {
   return { ok: true }
 }
 
-function customerShell(title: string, body: string) {
+function customerShell(title: string, body: string, siteUrl = "https://allusedautopartwarehouse.com") {
   return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
     <div style="background:#0f1117;color:#fff;padding:20px;border-radius:8px 8px 0 0">
+      <img src="${escapeHtml(`${siteUrl}/auapw-logo.png`)}" alt="All Used Auto Parts Warehouse" width="180" style="display:block;max-width:180px;height:auto;margin-bottom:16px;background:#fff;padding:8px;border-radius:4px" />
       <h2 style="margin:0">${escapeHtml(title)}</h2>
     </div>
     <div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px">
