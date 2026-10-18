@@ -72,6 +72,24 @@ interface CartLine {
   quantity: number
 }
 
+interface CheckoutDetails {
+  addressType: "commercial" | "residential"
+  liftgateRequired: boolean
+  billingSameAsShipping: boolean
+  billingAddress?: {
+    name: string
+    address: string
+    city: string
+    state: string
+    zipCode: string
+    country: string
+  }
+  termsAccepted: boolean
+  shippingPolicyAccepted: boolean
+  returnsPolicyAccepted: boolean
+  approvedTotal: number
+}
+
 interface PaidResult {
   orderNumber: string
   totalAmount: number
@@ -84,6 +102,7 @@ interface PaidResult {
 
 interface StripeCardPaymentProps {
   customer: StripeCustomer
+  checkoutDetails: CheckoutDetails
   items: CartLine[]
   amountLabel: string
   onPaid: (result: PaidResult) => void
@@ -223,6 +242,7 @@ function AuapwCardForm({
 
 export function StripeCardPayment({
   customer,
+  checkoutDetails,
   items,
   amountLabel,
   onPaid,
@@ -233,10 +253,12 @@ export function StripeCardPayment({
   const started = useRef(false)
   const customerRef = useRef(customer)
   const itemsRef = useRef(items)
+  const checkoutDetailsRef = useRef(checkoutDetails)
   useEffect(() => {
     customerRef.current = customer
     itemsRef.current = items
-  }, [customer, items])
+    checkoutDetailsRef.current = checkoutDetails
+  }, [customer, checkoutDetails, items])
 
   useEffect(() => {
     if (started.current) return
@@ -245,7 +267,11 @@ export function StripeCardPayment({
     fetch("/api/checkout/stripe/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ customer: customerRef.current, items: itemsRef.current }),
+      body: JSON.stringify({
+        customer: customerRef.current,
+        checkoutDetails: checkoutDetailsRef.current,
+        items: itemsRef.current,
+      }),
     })
       .then(async (res) => {
         const data = await res.json().catch(() => ({}))

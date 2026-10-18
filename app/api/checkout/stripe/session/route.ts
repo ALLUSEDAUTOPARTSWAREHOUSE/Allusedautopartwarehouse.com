@@ -15,7 +15,33 @@ const CustomerSchema = z.object({
   notes: z.string().trim().max(1000).optional(),
 })
 
+const CheckoutDetailsSchema = z.object({
+  addressType: z.enum(["commercial", "residential"]),
+  liftgateRequired: z.boolean(),
+  billingSameAsShipping: z.boolean(),
+  billingAddress: z.object({
+    name: z.string().trim().max(120).optional().default(""),
+    address: z.string().trim().max(200).optional().default(""),
+    city: z.string().trim().max(80).optional().default(""),
+    state: z.string().trim().max(40).optional().default(""),
+    zipCode: z.string().trim().max(20).optional().default(""),
+    country: z.string().trim().max(60).optional().default("US"),
+  }).optional(),
+  termsAccepted: z.literal(true),
+  shippingPolicyAccepted: z.literal(true),
+  returnsPolicyAccepted: z.literal(true),
+  approvedTotal: z.number().finite().nonnegative(),
+}).superRefine((details, ctx) => {
+  if (!details.billingSameAsShipping) {
+    const billing = details.billingAddress
+    for (const key of ["name", "address", "city", "state", "zipCode", "country"] as const) {
+      if (!billing?.[key]?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["billingAddress", key], message: "Please complete the separate billing address." })
+    }
+  }
+})
+
 const BodySchema = z.object({
+  checkoutDetails: CheckoutDetailsSchema,
   customer: CustomerSchema,
   items: z
     .array(
@@ -50,7 +76,7 @@ export async function POST(request: Request) {
     // A valid guest checkout can still proceed without a customer-account association.
   }
   const customer = { ...parsed.data.customer, userId }
-  const result = await createStripeCheckoutSession(customer, parsed.data.items, new URL(request.url).origin)
+  const result = await createStripeCheckoutSession(customer, parsed.data.items, parsed.data.checkoutDetails, new URL(request.url).origin)
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 422 })
   }
