@@ -94,13 +94,13 @@ export function LiveChatWidget() {
     <div className="fixed bottom-24 right-4 z-[9995] flex flex-col items-end gap-3 sm:bottom-28 sm:right-6">
       {open ? (
         <section
-          aria-label="Live chat with AUAPW"
+          aria-label="Chat with AUAPW parts and portal support"
           className="flex h-[min(36rem,calc(100dvh-10rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl"
         >
           <header className="flex items-center justify-between gap-3 border-b border-border bg-primary px-4 py-3 text-primary-foreground">
             <div className="flex flex-col">
-              <h2 className="text-sm font-bold">Chat with a parts specialist</h2>
-              <p className="text-xs opacity-80">Fast help from our parts team — usually within a few minutes.</p>
+              <h2 className="text-sm font-bold">Chat with AUAPW</h2>
+              <p className="text-xs opacity-80">Fast parts and portal help — usually within a few minutes.</p>
             </div>
             <button
               type="button"
