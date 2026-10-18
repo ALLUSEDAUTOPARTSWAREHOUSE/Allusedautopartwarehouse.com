@@ -1,0 +1,37 @@
+- name: Code Engine GitHub Action
+  # You may pin to the exact commit or the version.
+  # uses: IBM/code-engine-github-action@397f52bce0731f3c134a3d6ad0d2d8c0f1867a01
+  uses: IBM/code-engine-github-action@v1.3.1
+  with:
+    # IAM API Key used to log into the IBM Cloud
+    api-key: 
+    # An IBM Cloud Resource Group is a logical container used to organize and manage related cloud resources
+    resource-group: # optional
+    # The Region refers to a geographical area where the project is are located
+    region: 
+    # A Code Engine Project Is the grouping of your Apps, Functions and Jobs
+    project: 
+    # The type of component that should be deployed [App, Function, Job, Build]
+    component: 
+    # Name of the App, Function, Job or build
+    name: 
+    # Runtime used for the Function only required for function
+    runtime: # optional
+    # Name of the image that is used for this application
+    image: # optional
+    # Name of the registry secret used to authenticate against the Container registry
+    registry-secret: # optional
+    # Port of the Application
+    port: # optional
+    # Enable trusted profiles
+    trusted-profiles: # optional
+    # path to the directory containing the source code
+    build-source: # optional, default is .
+    # strategy used for building the image ['dockerfile', 'buildpacks']
+    build-strategy: # optional, default is buildpacks
+    # The size to use for the build, which determines the amount of resources used. Valid values include small, medium, large, xlarge, and xxlarge.
+    build-size: # optional, default is medium
+    # CPU configuration set for the component. If not set default Code Engine values are used.
+    cpu: # optional
+    # Memory configuration set for the component. If not set default Code Engine values are used.
+    memory: # optional
