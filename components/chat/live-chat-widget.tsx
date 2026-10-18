@@ -95,12 +95,12 @@ export function LiveChatWidget() {
       {open ? (
         <section
           aria-label="Live chat with AUAPW"
-          className="flex h-[min(32rem,calc(100dvh-10rem))] w-[min(22rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl"
+          className="flex h-[min(36rem,calc(100dvh-10rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl"
         >
           <header className="flex items-center justify-between gap-3 border-b border-border bg-primary px-4 py-3 text-primary-foreground">
             <div className="flex flex-col">
               <h2 className="text-sm font-bold">Chat with a parts specialist</h2>
-              <p className="text-xs opacity-80">We usually reply within a few minutes.</p>
+              <p className="text-xs opacity-80">Fast help from our parts team — usually within a few minutes.</p>
             </div>
             <button
               type="button"
