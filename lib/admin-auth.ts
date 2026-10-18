@@ -1,4 +1,4 @@
-import { createHash, createHmac, timingSafeEqual } from 'crypto'
+import { createHmac, timingSafeEqual } from 'crypto'
 import { cookies } from 'next/headers'
 import { getAdminSecurityState, getAdminSessionVersion, verifyPassword } from '@/lib/admin-passwords'
 
@@ -36,12 +36,13 @@ function sign(payload: string, secret: string): string {
   return createHmac('sha256', secret).update(payload).digest('hex')
 }
 
-// Hash both sides first so the comparison takes the same time whatever the
-// input lengths are (timingSafeEqual itself requires equal-length buffers).
+// Compare using constant-time equality for equal-length byte sequences.
+// `timingSafeEqual` requires equal-length buffers.
 function safeEqual(a: string, b: string): boolean {
-  const hashA = createHash('sha256').update(a).digest()
-  const hashB = createHash('sha256').update(b).digest()
-  return timingSafeEqual(hashA, hashB)
+  const bufA = Buffer.from(a, 'utf8')
+  const bufB = Buffer.from(b, 'utf8')
+  if (bufA.length !== bufB.length) return false
+  return timingSafeEqual(bufA, bufB)
 }
 
 /** Validate admin login credentials against configured environment variables. */
