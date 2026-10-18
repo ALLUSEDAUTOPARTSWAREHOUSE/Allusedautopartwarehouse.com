@@ -18,7 +18,6 @@ import {
 } from "lucide-react"
 
 type Destination = "google" | "openai" | "facebook" | "instagram" | "tiktok" | "pinterest"
-
 const OBJECTIVE_LABELS: Record<string, string> = {
   product_sales: "Product sales",
   traffic: "Website traffic",
