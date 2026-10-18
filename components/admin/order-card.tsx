@@ -22,6 +22,13 @@ function productEditorPath(value: string): string | null {
 
 export function OrderCard({ order, statuses, staffOptions, assignment }: { order: CustomerOrder; statuses: readonly string[]; staffOptions: FollowupStaffOption[]; assignment: FollowupAssignment | null }) {
   const [state, action, pending] = useActionState(saveOrderFollowup, initial)
+  const checkoutDetails = order.checkoutDetails ?? {}
+  const billing = checkoutDetails.billingAddress && typeof checkoutDetails.billingAddress === "object"
+    ? checkoutDetails.billingAddress as Record<string, unknown>
+    : null
+  const billingSummary = billing
+    ? [billing.name, billing.address, billing.city, billing.state, billing.zipCode, billing.country].filter(Boolean).join(", ")
+    : null
 
   return (
     <article className="rounded-lg border border-border bg-card p-5">
@@ -79,6 +86,20 @@ export function OrderCard({ order, statuses, staffOptions, assignment }: { order
               <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {order.shippingAddress}
             </p>
+          )}
+          {Object.keys(checkoutDetails).length > 0 && (
+            <section className="mt-3 rounded-md border border-border bg-muted/20 p-3 text-xs">
+              <h3 className="mb-2 font-semibold text-foreground">Checkout & freight approvals</h3>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <p><span className="text-muted-foreground">Address type: </span><b className="capitalize">{String(checkoutDetails.addressType ?? "not recorded")}</b></p>
+                <p><span className="text-muted-foreground">Liftgate: </span><b>{checkoutDetails.liftgateRequired === true ? "Required" : "Not selected"}</b></p>
+                <p><span className="text-muted-foreground">Billing: </span><b>{checkoutDetails.billingSameAsShipping === true ? "Same as shipping" : "Separate address"}</b></p>
+                {billingSummary && <p className="sm:col-span-2"><span className="text-muted-foreground">Billing address: </span>{billingSummary}</p>}
+                <p><span className="text-muted-foreground">Approved total: </span><b>{typeof checkoutDetails.approvedTotal === "number" ? money(checkoutDetails.approvedTotal) : "Not recorded"}</b></p>
+                <p><span className="text-muted-foreground">Policy record: </span><b>{checkoutDetails.termsAccepted === true && checkoutDetails.shippingPolicyAccepted === true && checkoutDetails.returnsPolicyAccepted === true ? "All accepted" : "Incomplete"}</b></p>
+                {typeof checkoutDetails.policyAcceptedAt === "string" && <p className="sm:col-span-2"><span className="text-muted-foreground">Accepted at: </span>{checkoutDetails.policyAcceptedAt} · {String(checkoutDetails.policyVersion ?? "")}</p>}
+              </div>
+            </section>
           )}
 
           <div className="mt-3 overflow-hidden rounded-md border border-border">

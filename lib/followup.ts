@@ -70,6 +70,7 @@ export interface CustomerOrder {
   emailVerifiedAt: string | null
   emailVerifyToken: string | null
   invoiceToken: string | null
+  checkoutDetails: Record<string, unknown> | null
   createdAt: string
   updatedAt: string
 }
@@ -124,6 +125,7 @@ function mapOrder(r: Record<string, unknown>): CustomerOrder {
     emailVerifiedAt: r.email_verified_at ? toIso(r.email_verified_at) : null,
     emailVerifyToken: (r.email_verify_token as string) ?? null,
     invoiceToken: (r.invoice_token as string) ?? null,
+    checkoutDetails: (r.checkout_details as Record<string, unknown>) ?? null,
     createdAt: toIso(r.createdat),
     updatedAt: toIso(r.updatedat),
   }
@@ -207,6 +209,7 @@ export interface NewOrderInput {
   totalAmount: number
   paymentGateway?: string
   status?: OrderStatus
+  checkoutDetails?: Record<string, unknown>
 }
 
 function makeOrderNumber() {
@@ -223,7 +226,8 @@ export async function ensureOrderInvoiceColumns(): Promise<void> {
       `ALTER TABLE public.orders
          ADD COLUMN IF NOT EXISTS email_verified_at timestamptz,
          ADD COLUMN IF NOT EXISTS email_verify_token text,
-         ADD COLUMN IF NOT EXISTS invoice_token text`,
+         ADD COLUMN IF NOT EXISTS invoice_token text,
+         ADD COLUMN IF NOT EXISTS checkout_details jsonb`,
     )
     await pool.query(
       `UPDATE public.orders
@@ -250,8 +254,8 @@ export async function createOrder(input: NewOrderInput): Promise<CustomerOrder> 
       `INSERT INTO public.orders
          (id, userid, ordernumber, status, totalamount, subtotal, tax, shippingcost,
           shippingaddress, items, customer_name, customer_email, customer_phone, customer_notes, payment_gateway,
-          email_verify_token, invoice_token)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11,$12,$13,$14,$15,$16,$17)
+          email_verify_token, invoice_token, checkout_details)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11,$12,$13,$14,$15,$16,$17,$18::jsonb)
        RETURNING *`,
       [
         id,
@@ -271,6 +275,7 @@ export async function createOrder(input: NewOrderInput): Promise<CustomerOrder> 
         input.paymentGateway || null,
         emailVerifyToken,
         invoiceToken,
+        JSON.stringify(input.checkoutDetails ?? {}),
       ],
     )
     for (const line of input.items) {

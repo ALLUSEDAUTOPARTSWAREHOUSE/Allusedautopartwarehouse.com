@@ -29,12 +29,13 @@ interface CartLine {
 
 interface StripeCardPaymentProps {
   customer: StripeCustomer
+  checkoutDetails: { addressType: 'commercial' | 'residential'; liftgateRequired: boolean; billingSameAsShipping: boolean; billingAddress?: { name: string; address: string; city: string; state: string; zipCode: string; country: string }; termsAccepted: boolean; shippingPolicyAccepted: boolean; returnsPolicyAccepted: boolean; approvedTotal: number }
   items: CartLine[]
   onPaid: (result: { orderNumber: string; totalAmount: number; invoiceToken?: string | null; emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null }) => void
   onError: (message: string) => void
 }
 
-export function StripeCardPayment({ customer, items, onPaid, onError }: StripeCardPaymentProps) {
+export function StripeCardPayment({ customer, checkoutDetails, items, onPaid, onError }: StripeCardPaymentProps) {
   const sessionIdRef = useRef<string | null>(null)
 
   // EmbeddedCheckoutProvider throws if `options` changes identity after mount,
@@ -42,20 +43,22 @@ export function StripeCardPayment({ customer, items, onPaid, onError }: StripeCa
   // them read the latest props without being recreated on every parent render.
   const customerRef = useRef(customer)
   const itemsRef = useRef(items)
+  const checkoutDetailsRef = useRef(checkoutDetails)
   const onPaidRef = useRef(onPaid)
   const onErrorRef = useRef(onError)
   useEffect(() => {
     customerRef.current = customer
     itemsRef.current = items
+    checkoutDetailsRef.current = checkoutDetails
     onPaidRef.current = onPaid
     onErrorRef.current = onError
-  }, [customer, items, onPaid, onError])
+  }, [customer, checkoutDetails, items, onPaid, onError])
 
   const fetchClientSecret = useCallback(async () => {
     const res = await fetch("/api/checkout/stripe/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ customer: customerRef.current, items: itemsRef.current }),
+      body: JSON.stringify({ customer: customerRef.current, checkoutDetails: checkoutDetailsRef.current, items: itemsRef.current }),
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
