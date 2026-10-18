@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { WorkspaceOverview } from '@/components/admin/workspace-overview'
+import { AssistantPanel } from '@/components/admin/assistant-panel'
 import { getAdminSession } from '@/lib/admin-auth'
 import {
   ArrowUpRight, Boxes, ChartNoAxesCombined, CreditCard, Facebook, Gauge,
@@ -48,7 +50,7 @@ const workspaces = [
     icon: Headset,
     links: [
       { label: 'Sales & operations center', href: '/admin/operations', icon: ChartNoAxesCombined },
-      { label: 'Leads & quotes', href: '/admin/operations', icon: Workflow },
+      { label: 'Leads & quotes', href: '/admin/quotes', icon: Workflow },
       { label: 'Customer chats', href: '/admin/chats', icon: Headset },
       { label: 'Customers', href: '/admin/customers', icon: Users },
       { label: 'Team members', href: '/admin/team', icon: Users },
@@ -92,7 +94,7 @@ export default async function AdminWorkspacePage() {
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
               <Gauge className="size-3.5" /> ADMINISTRATOR WORKSPACE
             </div>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">One command center. Six workspaces.</h1>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Your live business command center</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
               Manage store and inventory, Google Merchant, social accounts, payment methods, sales support, API setup, security and AI-assisted development from one secure admin portal.
             </p>
@@ -107,7 +109,7 @@ export default async function AdminWorkspacePage() {
           </div>
           <div className="rounded-xl border border-border bg-muted/30 p-5">
             <p className="text-sm font-semibold">Operations at a glance</p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">Open each workspace to view its connected records and tools. Live totals are intentionally not fabricated on this landing page.</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">Open each workspace to view its connected records and tools. Live totals and follow-up risks appear below, with unavailable records clearly labeled.</p>
             <div className="mt-4 grid grid-cols-2 gap-3">
               {[
                 ['01', 'Store & inventory'],
@@ -127,6 +129,19 @@ export default async function AdminWorkspacePage() {
         </div>
       </section>
 
+      <WorkspaceOverview />
+      <section aria-labelledby="workspace-assistant-heading" className="space-y-3">
+        <h2 id="workspace-assistant-heading" className="text-xl font-semibold">Operations assistant</h2>
+        <p className="text-sm text-muted-foreground">Review connected sales, support and product records. Catalog writes require explicit approval; customer replies, product deletion, code deployment and dependency updates stay manual.</p>
+        <AssistantPanel layout="full" />
+      </section>
+      <section className="rounded-xl border border-border bg-card p-5 text-sm space-y-3" aria-labelledby="workspace-guide-heading">
+        <h2 id="workspace-guide-heading" className="text-xl font-semibold">Setup & operating guide</h2>
+        <p>Review pending messages in Customer chats, leads in Leads & quotes, and order follow-ups in Orders. Use the full dashboard for revenue history and business records.</p>
+        <p>Add, update or remove products using the inventory editor and its confirmation controls. Review pricing and visibility before publishing changes.</p>
+        <p>Revenue losses cannot be calculated from unpaid orders alone. Reconcile refunds, costs and accounting records before recording a loss. Dependency changes require a reviewed code change and passing checks, not automatic runtime updates.</p>
+        <Link href="/admin/development" className="inline-block text-primary underline">Integration setup & documentation →</Link>
+      </section>
       <section>
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>
