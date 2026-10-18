@@ -7,7 +7,6 @@ export const auth = betterAuth({
   baseURL:
     process.env.AUAPW_PUBLIC_URL ??
     process.env.BETTER_AUTH_URL ??
-    (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : undefined) ??
     (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined) ??
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ??
     process.env.URL ??
@@ -17,11 +16,6 @@ export const auth = betterAuth({
     autoSignIn: true,
   },
   trustedOrigins: [
-    ...(process.env.NODE_ENV === 'development' ? ['http://localhost:3000'] : []),
-    ...(process.env.V0_RUNTIME_URL ? [process.env.V0_RUNTIME_URL] : []),
-    ...(process.env.V0_DEV_APP_URL ? [process.env.V0_DEV_APP_URL] : []),
-    ...(process.env.V0_BUILD_URL ? [process.env.V0_BUILD_URL] : []),
-    ...(process.env.V0_SANDBOX_URL ? [process.env.V0_SANDBOX_URL] : []),
     ...(process.env.AUAPW_PUBLIC_URL ? [process.env.AUAPW_PUBLIC_URL] : []),
     ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
     ...(process.env.VERCEL_PROJECT_PRODUCTION_URL ? [`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`] : []),
