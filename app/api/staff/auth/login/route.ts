@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
 import { createStaffToken, ensureStaffCredentialsTable, STAFF_COOKIE, verifyStaffPassword } from '@/lib/staff-auth'
+import { authCookieOptions } from '@/lib/session-cookie'
 
 export const runtime = 'nodejs'
 export async function POST(request: NextRequest) {
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
     const session = createStaffToken({ id: row.id, name: row.name, email: row.email, role: row.role }, Number(row.session_version))
     const response = NextResponse.json({ success: true, role: row.role, redirectTo: row.role === 'sales_agent' ? '/staff/sales' : row.role === 'support_team' ? '/staff/support' : '/staff/developer' })
-    response.cookies.set(STAFF_COOKIE, session.token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: session.maxAge })
+    response.cookies.set(STAFF_COOKIE, session.token, authCookieOptions(session.maxAge))
     return response
   } catch (error) {
     console.error('[staff-auth] Login failed', error)
