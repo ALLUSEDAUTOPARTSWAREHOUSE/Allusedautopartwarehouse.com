@@ -127,6 +127,10 @@ export default function CheckoutPage() {
   const liftgateFee = Number(process.env.NEXT_PUBLIC_AUAPW_LIFTGATE_FEE ?? 0) || 0
   const checkoutFees = (addressType === 'residential' ? residentialFee : 0) + (liftgateRequired ? liftgateFee : 0)
   const finalTotal = Math.round((totalPrice + shipping + tax + checkoutFees) * 100) / 100
+  // All four acceptances are required before a Stripe session can be created — the
+  // server validates termsAccepted/shippingPolicyAccepted/returnsPolicyAccepted as
+  // literal `true`, so the embedded card form must not mount until every box is checked.
+  const allAcceptancesMet = agreedToTerms && shippingPolicyAccepted && returnsPolicyAccepted && priceApprovalAccepted
   useEffect(() => {
     setPriceApprovalAccepted(false)
   }, [finalTotal])
@@ -561,7 +565,7 @@ export default function CheckoutPage() {
                           maxLength={1000}
                           value={formData.notes}
                           onChange={handleInputChange}
-                          disabled={isStripeCard && agreedToTerms && !isReservationCart}
+                          disabled={isStripeCard && allAcceptancesMet && !isReservationCart}
                         />
                         <CheckoutTerms checked={agreedToTerms} onCheckedChange={setAgreedToTerms} />
                         <div className="space-y-3 rounded-lg border border-white/10 p-4">
@@ -571,11 +575,12 @@ export default function CheckoutPage() {
                           <label className="flex items-start gap-2 rounded-md bg-blue-500/10 p-3 text-sm"><input type="checkbox" checked={priceApprovalAccepted} onChange={(e) => setPriceApprovalAccepted(e.target.checked)} className="mt-1" /><span><b>I approve the displayed order total of ${finalTotal.toFixed(2)} USD, including selected shipping services and fees.</b> If the total changes, AUAPW must request approval again before charging. *</span></label>
                         </div>
 
-                        {!agreedToTerms ? (
+                        {isReservationCart ? (
+                          !agreedToTerms ? (
                           <p className="text-sm text-foreground/60 italic">
                             Check the box above to agree to the order terms before continuing to payment.
                           </p>
-                        ) : isReservationCart ? (
+                          ) : (
                           <div className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-2">
                             <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400">
                               <Truck className="w-4 h-4" />
@@ -587,6 +592,12 @@ export default function CheckoutPage() {
                               you approve it.
                             </p>
                           </div>
+                          )
+                        ) : !allAcceptancesMet ? (
+                          <p className="text-sm text-foreground/60 italic">
+                            Check all required boxes above — agree to the order terms, review the shipping and returns
+                            policies, and approve the displayed total — before continuing to payment.
+                          </p>
                         ) : (
                         (() => {
                           const active = gateways.find((g) => g.slug === selectedGateway)
@@ -764,12 +775,12 @@ export default function CheckoutPage() {
                             Edit Shipping
                           </Button>
                           {isReservationCart ? (
-                            <Button size="lg" className="flex-1" onClick={handlePlaceOrder} disabled={isProcessing || !agreedToTerms}>
+                            <Button size="lg" className="flex-1" onClick={handlePlaceOrder} disabled={isProcessing || !allAcceptancesMet}>
                               {isProcessing ? 'Reserving...' : 'Reserve & Place Order'}
                             </Button>
                           ) : (
                             !isStripeCard && (
-                              <Button size="lg" className="flex-1" onClick={handlePlaceOrder} disabled={isProcessing || !agreedToTerms}>
+                              <Button size="lg" className="flex-1" onClick={handlePlaceOrder} disabled={isProcessing || !allAcceptancesMet}>
                                 {isProcessing ? 'Placing order...' : 'Place Order'}
                               </Button>
                             )
