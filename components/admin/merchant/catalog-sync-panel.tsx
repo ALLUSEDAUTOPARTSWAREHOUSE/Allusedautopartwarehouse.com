@@ -122,7 +122,7 @@ function ManualProductForm({ brands }: { brands: { slug: string; label: string }
   )
 }
 
-function UploadSheetForm({ brands }: { brands: { slug: string; label: string }[] }) {
+export function UploadSheetForm({ brands }: { brands: { slug: string; label: string }[] }) {
   const [state, action, pending] = useActionState(uploadProductSheet, initial)
 
   return (
