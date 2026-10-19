@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { EnvCheck } from '@/lib/admin-health'
 
-const SETTINGS_URL = 'https://vercel.com/teamauapw/allusedautopartswarehouse.com/settings/environment-variables'
+const SETTINGS_URL = 'https://vercel.com/auapw/allusedautopartwarehouse-com/settings/environment-variables'
 const INTEGRATIONS = [
   { title: 'Email delivery', names: ['RESEND_API_KEY', 'EMAIL_FROM or RESEND_EMAIL_DOMAIN'], description: 'Existing notification service. Configure a verified sending domain; delivery still needs testing.' },
   { title: 'Payments', names: ['STRIPE_SECRET_KEY', 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', 'STRIPE_WEBHOOK_SECRET'], description: 'Existing checkout configuration. Verify webhook delivery and test payments before accepting orders.' },
