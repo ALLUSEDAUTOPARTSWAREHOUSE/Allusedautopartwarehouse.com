@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "start": "next start",
     "test": "node --test scripts/*.test.cjs",
-    "test:coverage": "c8 npm test"
+    "test:coverage": "c8 npm test",
+    "deploy:vercel": "vercel --prod",
+    "deploy:netlify": "netlify deploy --prod --build"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.23",
