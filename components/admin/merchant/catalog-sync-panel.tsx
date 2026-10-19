@@ -1,5 +1,6 @@
 "use client"
 
+import { LargeCatalogUpload } from "@/components/admin/merchant/large-catalog-upload"
 import { useActionState, useState, useRef } from "react"
 import { RefreshCw, Upload, PlusCircle, Trash2, ExternalLink } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -121,7 +122,7 @@ function ManualProductForm({ brands }: { brands: { slug: string; label: string }
   )
 }
 
-export function UploadSheetForm({ brands }: { brands: { slug: string; label: string }[] }) {
+function UploadSheetForm({ brands }: { brands: { slug: string; label: string }[] }) {
   const [state, action, pending] = useActionState(uploadProductSheet, initial)
 
   return (
@@ -300,9 +301,9 @@ export function CatalogSyncPanel({ brands, manualProducts }: CatalogSyncPanelPro
         <TabsContent value="manual" className="pt-4">
           <ManualProductForm brands={brands} />
         </TabsContent>
-        <TabsContent value="upload" className="pt-4">
-          <a href="/admin/uploads" className="inline-block rounded-lg border px-4 py-3 font-semibold text-primary">Open dedicated uploads workspace →</a>
-          <p className="mt-2 text-sm text-muted-foreground">Upload forms have moved to a separate page without the product list.</p>
+        <TabsContent value="upload" className="pt-4 space-y-4">
+          <LargeCatalogUpload brands={brands} />
+          <UploadSheetForm brands={brands} />
         </TabsContent>
       </Tabs>
 

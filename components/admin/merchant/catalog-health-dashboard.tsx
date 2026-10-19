@@ -39,7 +39,7 @@ export function CatalogHealthDashboard({ stats, checkedAt }: { stats: BrandFeedS
         <tbody>{filtered.map(brand => <tr key={brand.slug} className="border-t transition-colors hover:bg-muted/60 motion-reduce:transition-none">
           <th scope="row" className={cell}>{brand.label}</th>
           {[brand.total, brand.total - brand.issues.hidden, brand.eligible, brand.issues.no_price, brand.issues.hidden, brand.issues.illustrative_image].map((value, index) => <td key={index} className={cell}>{value.toLocaleString('en-US')}</td>)}
-          <td className={`${cell} min-w-52`}><div className="flex flex-wrap gap-2"><Link href={`/admin/products?brand=${brand.slug}#fix-pages`} className="underline">Edit products</Link><Link href={`/admin/uploads?brand=${brand.slug}`} className="underline">Upload</Link><Link href={`/admin/products?brand=${brand.slug}&issue=no_price#fix-pages`} className="underline">Fix prices</Link><Link href={`/admin/products?brand=${brand.slug}&issue=illustrative_image#fix-pages`} className="underline">Review images</Link></div></td>
+          <td className={`${cell} min-w-52`}><div className="flex flex-wrap gap-2"><Link href={`/admin/products?brand=${brand.slug}#fix-pages`} className="underline">Edit products</Link><Link href={`/admin/products?brand=${brand.slug}#catalog-upload`} className="underline">Upload</Link><Link href={`/admin/products?brand=${brand.slug}&issue=no_price#fix-pages`} className="underline">Fix prices</Link><Link href={`/admin/products?brand=${brand.slug}&issue=illustrative_image#fix-pages`} className="underline">Review images</Link></div></td>
         </tr>)}</tbody>
       </table>
       {!filtered.length && <p className="p-5 text-sm">No brands match these filters.</p>}
