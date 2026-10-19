@@ -39,13 +39,13 @@ export function AdminSidebar({ email }: { email: string }) {
   const pathname = usePathname()
   const exact = GROUPS.some(group => group.links.some(link => link.href === pathname))
   return <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-border/40 bg-card lg:flex">
-    <Link href="/admin/dashboard" className="border-b border-border/40 px-5 py-6 text-lg font-bold text-primary">AUAPW · Workspace</Link>
+    <Link prefetch={false} href="/admin/dashboard" className="border-b border-border/40 px-5 py-6 text-lg font-bold text-primary">AUAPW · Workspace</Link>
     <nav aria-label="Admin sidebar" className="flex-1 overflow-y-auto px-3 py-4">
       {GROUPS.map(group => <section key={group.title} className="mb-5">
         <h2 className="mb-2 px-3 text-[10px] font-semibold tracking-widest text-muted-foreground">{group.title}</h2>
         <ul className="space-y-1">{group.links.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (!exact && pathname?.startsWith(`${href}/`))
-          return <li key={href}><Link href={href} aria-current={active ? 'page' : undefined}
+          return <li key={href}><Link prefetch={false} href={href} aria-current={active ? 'page' : undefined}
             className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors focus-visible:outline focus-visible:outline-2 ${active ? 'border-blue-500/30 bg-blue-500/10 font-semibold text-blue-800 dark:text-blue-300' : 'border-transparent text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
             <Icon className="size-4 shrink-0" aria-hidden="true" />{label}
           </Link></li>

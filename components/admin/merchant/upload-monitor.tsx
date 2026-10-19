@@ -13,7 +13,7 @@ export function UploadMonitor() {
   try { const response=await fetch('/api/admin/upload-monitor',{cache:'no-store'}); if(!response.ok) throw Error(); setData(await response.json());setError('') }
   catch {setError('Monitor refresh failed. Previously shown counts may be stale. Check your session and database.')}
  },[])
- useEffect(()=>{void refresh();const timer=setInterval(()=>void refresh(),30_000);return()=>clearInterval(timer)},[refresh])
+ useEffect(()=>{void refresh();const timer=setInterval(()=>{if(document.visibilityState === 'visible')void refresh()},30_000);return()=>clearInterval(timer)},[refresh])
  const sum=(key:'records'|'missing_prices'|'missing_images'|'invalid_image_urls')=>data?.uploads?.reduce((n,row)=>n+Number(row[key]),0)
  function report(){
   if(!data?.uploads)return
