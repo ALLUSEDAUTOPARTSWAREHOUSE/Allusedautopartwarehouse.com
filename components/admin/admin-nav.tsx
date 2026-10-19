@@ -76,7 +76,7 @@ export function AdminNav() {
         {tabs.filter(tab => tab.visible || pathname === tab.href || pathname?.startsWith(`${tab.href}/`)).map(tab => {
           const active = pathname === tab.href || pathname?.startsWith(`${tab.href}/`)
           const tone = ADMIN_NAV[tab.palette]
-          return <li key={tab.href}><Link href={tab.href} aria-current={active ? 'page' : undefined}
+          return <li key={tab.href}><Link prefetch={false} href={tab.href} aria-current={active ? 'page' : undefined}
             className={`block whitespace-nowrap rounded-md border-b-2 px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 ${tone.color} ${active ? `${tone.selected} font-semibold underline underline-offset-4` : 'hover:bg-muted'}`}>
             {tab.label}
           </Link></li>

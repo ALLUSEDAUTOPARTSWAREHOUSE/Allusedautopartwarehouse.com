@@ -21,7 +21,7 @@ export function LargeCatalogUpload({ brands }: { brands: { slug: string; label: 
   }, [])
   useEffect(() => {
     void refresh()
-    const timer = setInterval(() => void refresh(), 10_000)
+    const timer = setInterval(() => { if (document.visibilityState === 'visible') void refresh() }, 30_000)
     return () => clearInterval(timer)
   }, [refresh])
   async function submit(event: FormEvent<HTMLFormElement>) {

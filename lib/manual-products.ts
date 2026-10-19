@@ -103,6 +103,17 @@ export async function listManualProducts(brand?: string): Promise<ManualProduct[
   return rows.map(mapRow)
 }
 
+/** Bounded admin-only listing; storefront overlay retains its full data load. */
+export async function listManualProductsPage(brand: string | undefined, page: number) {
+  const limit = 50
+  const offset = (Math.max(1, page) - 1) * limit
+  const { rows } = await pool.query<ManualProductRow>(
+    "SELECT * FROM manual_products WHERE ($1::text IS NULL OR brand = $1) ORDER BY created_at DESC, id DESC LIMIT $2 OFFSET $3",
+    [brand ?? null, limit + 1, offset],
+  )
+  return { products: rows.slice(0, limit).map(mapRow), hasMore: rows.length > limit }
+}
+
 export interface ManualProductInput {
   name: string
   description: string | null
