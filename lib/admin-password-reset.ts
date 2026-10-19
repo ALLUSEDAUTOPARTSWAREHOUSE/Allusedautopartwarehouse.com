@@ -1,9 +1,12 @@
 import "server-only"
 
 import { createHash, randomInt, timingSafeEqual } from "crypto"
+import { createElement } from "react"
+import PasswordResetEmail from "@/emails/password-reset"
 import { pool } from "@/lib/db"
 import { saveAdminPassword } from "@/lib/admin-passwords"
 import { isAllowedAdminEmail } from "@/lib/admin-auth"
+import { sendReactEmail } from "@/lib/mailer"
 const OTP_TTL_MINUTES = 10
 const MAX_ATTEMPTS = 5
 
@@ -83,25 +86,22 @@ export async function requestAdminPasswordOtp(emailInput: string) {
     [email, otpHash, String(OTP_TTL_MINUTES)],
   )
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from,
-      to: [email],
-      subject: "Your AUAPW admin password reset code",
-      text: `Your AUAPW admin password reset code is ${otp}. It expires in ${OTP_TTL_MINUTES} minutes. If you did not request this, ignore this email. Do not share this code with anyone.`,
+  const result = await sendReactEmail({
+    from,
+    to: [email],
+    subject: "Your AUAPW admin password reset code",
+    react: createElement(PasswordResetEmail, {
+      code: otp,
+      expiresMinutes: OTP_TTL_MINUTES,
     }),
-    cache: "no-store",
   })
 
-  if (!response.ok) {
+  if (!result.ok) {
     await pool.query(
       "UPDATE public.admin_password_reset_otps SET consumed_at = now() WHERE email = $1 AND consumed_at IS NULL",
       [email],
     )
-    const providerError = await response.text().catch(() => "")
-    console.error("[admin-password-reset] Email provider rejected reset email", response.status, providerError)
+    console.error("[admin-password-reset] Email provider rejected reset email", result.error)
     throw new Error("Unable to send the reset email. Check the email provider configuration.")
   }
 }
