@@ -243,7 +243,18 @@ export async function importProductSheet(brand: string, buffer: Buffer, mode: "a
 export async function primeManualOverlay(brand: string): Promise<void> {
   try {
     const rows = await listManualProducts(brand)
-    setManualOverlay(brand, rows.filter(row => !UPLOADED_ONLY_CATALOG || isReplacementUpload(row)).map(toBrandProduct))
+    // Hide markers preserve source rows, so exclude them from listings and search too.
+    const { rows: hiddenRows } = await pool.query<{ slug: string }>(
+      "SELECT slug FROM product_overrides WHERE brand = $1 AND hidden = true",
+      [brand],
+    )
+    const hidden = new Set(hiddenRows.map(row => row.slug))
+    setManualOverlay(
+      brand,
+      rows
+        .filter(row => (!UPLOADED_ONLY_CATALOG || isReplacementUpload(row)) && !hidden.has(row.slug))
+        .map(toBrandProduct),
+    )
   } catch (error) {
     setManualOverlay(brand, [])
     console.error("[manual-products] overlay priming failed:", (error as Error).message)
