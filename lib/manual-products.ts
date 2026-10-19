@@ -1,3 +1,4 @@
+import { UPLOADED_ONLY_CATALOG, isReplacementUpload } from "@/lib/catalog-reset-policy"
 import "server-only"
 import { read, utils } from "xlsx"
 import { pool } from "@/lib/db"
@@ -242,8 +243,9 @@ export async function importProductSheet(brand: string, buffer: Buffer, mode: "a
 export async function primeManualOverlay(brand: string): Promise<void> {
   try {
     const rows = await listManualProducts(brand)
-    setManualOverlay(brand, rows.map(toBrandProduct))
+    setManualOverlay(brand, rows.filter(row => !UPLOADED_ONLY_CATALOG || isReplacementUpload(row)).map(toBrandProduct))
   } catch (error) {
+    setManualOverlay(brand, [])
     console.error("[manual-products] overlay priming failed:", (error as Error).message)
   }
 }

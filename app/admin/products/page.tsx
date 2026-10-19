@@ -1,3 +1,4 @@
+import { CATALOG_RESET_AT } from "@/lib/catalog-reset-policy"
 import { CatalogHealthDashboard } from "@/components/admin/merchant/catalog-health-dashboard"
 import { getBrandLogoUrl } from "@/lib/data"
 import Link from "next/link"
@@ -95,6 +96,11 @@ export default async function AdminMerchantPage({
 
       <CatalogHealthDashboard stats={brand ? brandStats.filter(item => item.slug === brand) : brandStats} checkedAt={new Date().toISOString()} />
 
+      <section className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-5" aria-label="Catalog replacement mode">
+        <h2 className="font-semibold">All brands: replacement uploads only</h2>
+        <p className="mt-2 text-sm">Old bundled products and earlier uploads are preserved but no longer served by the brand catalog. Only spreadsheet records uploaded or re-imported after {CATALOG_RESET_AT} appear. Brands without replacement uploads are empty.</p>
+        <p className="mt-2 text-sm">The uploaded/manual editor below also lists preserved records; its row count is not the live catalog count. Preview each brand sheet before saving. Large-file staging alone does not import products. Google account removal remains separate.</p>
+      </section>
       <section aria-labelledby="brand-heading" className="space-y-3">
         <h2 id="brand-heading" className="text-xl font-semibold">Choose a brand</h2>
         <p className="text-sm text-muted-foreground">Tap a brand to open its product workspace. These controls affect admin navigation only.</p>
