@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Menu, X, Zap, ShoppingCart, Heart, Home, ChevronDown, Globe, MessageSquare, Phone, Sparkles } from "lucide-react"
+import { Menu, X, Zap, ShoppingCart, Heart, Home, ChevronDown, Globe, MessageSquare, Phone, Sparkles, User } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { BrandWordmark } from "@/components/brand-wordmark"
 import { Logo } from "@/components/logo"
@@ -73,6 +73,7 @@ export function Navbar() {
     { label: "Inventory", href: "/inventory" },
     { label: "Search", href: "/ai-search" },
     { label: "Get a Quote", href: "/quote" },
+    { label: "My Account", href: "/customer/dashboard" },
     { label: "Contact", href: "/contact" },
     { label: "Blog", href: "/blog" },
     { label: "Cart", href: "/cart" },
@@ -236,6 +237,11 @@ export function Navbar() {
               <ThemeToggle />
             </div>
 
+            <Link href="/customer/dashboard" className="relative hidden sm:flex items-center justify-center w-9 h-9 rounded-lg hover:bg-white/10 transition-colors" title="My account">
+              <User className="w-5 h-5 text-foreground" />
+              <span className="sr-only">My account</span>
+            </Link>
+
             {/* Cart indicator — desktop only */}
             <Link href="/cart" className="relative hidden sm:flex items-center justify-center w-9 h-9 rounded-lg hover:bg-white/10 transition-colors" title="Cart">
               <ShoppingCart className="w-5 h-5 text-foreground" />
@@ -395,6 +401,15 @@ export function Navbar() {
 
               {/* ── Divider ── */}
               <div className="h-px bg-white/8" />
+
+              <Link
+                href="/customer/dashboard"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 active:scale-95 transition-all"
+              >
+                <User className="w-4 h-4 text-white/80" />
+                <span className="text-[10px] font-bold text-white/80">My Account</span>
+              </Link>
 
               {/* ── Cart / Wishlist / Theme ── */}
               <div className="grid grid-cols-3 gap-1.5 pb-1">

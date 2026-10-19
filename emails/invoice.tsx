@@ -35,6 +35,13 @@ export interface InvoiceEmailProps {
   siteUrl?: string
 }
 
+function statusCopy(kind: InvoiceEmailKind) {
+  if (kind === "paid") return "Paid in full"
+  if (kind === "verify") return "Verify email"
+  if (kind === "reserved") return "Reserved — due after fitment"
+  return "Due after confirmation"
+}
+
 export default function InvoiceEmail({
   kind,
   title,
@@ -67,118 +74,130 @@ export default function InvoiceEmail({
       preview={preview}
       eyebrow={`Invoice ${orderNumber}`}
       title={title}
+      documentLabel="Invoice"
       siteUrl={siteUrl}
       cta={{ href: ctaUrl, label: ctaLabel }}
     >
-      <Text className="m-0 mb-4 text-base leading-6 text-gray-800">{intro}</Text>
+      <Text className="m-0 mb-5 text-[15px] leading-6 text-brand-ink">{intro}</Text>
 
-      <Section className="mb-4">
+      <Section className="mb-5 border border-solid border-brand-line">
         <Row>
-          <Column className="w-[140px] align-top">
-            <Text className="m-0 py-1 text-sm text-gray-500">Invoice #</Text>
+          <Column className="w-1/2 border-r border-solid border-brand-line bg-brand-mist px-3 py-3 align-top">
+            <Text className="m-0 text-[10px] font-bold uppercase tracking-[1.4px] text-brand-mute">Invoice #</Text>
+            <Text className="m-0 mt-1 text-sm font-bold text-brand-ink">{orderNumber}</Text>
+            <Text className="m-0 mt-3 text-[10px] font-bold uppercase tracking-[1.4px] text-brand-mute">Date</Text>
+            <Text className="m-0 mt-1 text-sm font-bold text-brand-ink">{formatDate(createdAt)}</Text>
           </Column>
-          <Column className="align-top">
-            <Text className="m-0 py-1 text-sm font-bold text-gray-900">{orderNumber}</Text>
-          </Column>
-        </Row>
-        <Row>
-          <Column className="w-[140px] align-top">
-            <Text className="m-0 py-1 text-sm text-gray-500">Date</Text>
-          </Column>
-          <Column className="align-top">
-            <Text className="m-0 py-1 text-sm font-bold text-gray-900">{formatDate(createdAt)}</Text>
-          </Column>
-        </Row>
-        <Row>
-          <Column className="w-[140px] align-top">
-            <Text className="m-0 py-1 text-sm text-gray-500">Bill / ship to</Text>
-          </Column>
-          <Column className="align-top">
-            <Text className="m-0 py-1 text-sm font-bold text-gray-900">{customerName}</Text>
-            <Text className="m-0 text-sm text-gray-700">{shippingAddress}</Text>
-            <Text className="m-0 text-sm text-gray-700">
-              {customerPhone} · {customerEmail}
-            </Text>
+          <Column className="w-1/2 px-3 py-3 align-top">
+            <Text className="m-0 text-[10px] font-bold uppercase tracking-[1.4px] text-brand-mute">Status</Text>
+            <Text className="m-0 mt-1 text-sm font-bold text-brand-ink">{statusCopy(kind)}</Text>
+            <Text className="m-0 mt-3 text-[10px] font-bold uppercase tracking-[1.4px] text-brand-mute">Amount due</Text>
+            <Text className="m-0 mt-1 text-lg font-bold text-brand-ink">{formatMoney(totalAmount)}</Text>
           </Column>
         </Row>
       </Section>
 
-      <Hr className="border-solid border-gray-200" />
-      <Heading as="h2" className="mb-3 mt-4 text-base font-bold text-gray-900">
-        Items
-      </Heading>
+      <Section className="mb-5">
+        <Row>
+          <Column className="w-1/2 pr-3 align-top">
+            <Text className="m-0 text-[10px] font-bold uppercase tracking-[1.4px] text-brand-gold">Bill to</Text>
+            <Text className="m-0 mt-2 text-sm font-bold text-brand-ink">{customerName}</Text>
+            <Text className="m-0 mt-1 whitespace-pre-wrap text-[13px] leading-5 text-brand-mute">{shippingAddress}</Text>
+            <Text className="m-0 mt-1 text-[13px] text-brand-mute">{customerPhone}</Text>
+            <Text className="m-0 text-[13px] text-brand-mute">{customerEmail}</Text>
+          </Column>
+          <Column className="w-1/2 pl-3 align-top">
+            <Text className="m-0 text-[10px] font-bold uppercase tracking-[1.4px] text-brand-gold">Ship to</Text>
+            <Text className="m-0 mt-2 text-sm font-bold text-brand-ink">{customerName}</Text>
+            <Text className="m-0 mt-1 whitespace-pre-wrap text-[13px] leading-5 text-brand-mute">{shippingAddress}</Text>
+          </Column>
+        </Row>
+      </Section>
+
+      <Section className="bg-brand-ink px-3 py-2">
+        <Row>
+          <Column>
+            <Text className="m-0 text-[10px] font-bold uppercase tracking-[1.6px] text-brand-gold">Line items</Text>
+          </Column>
+          <Column className="text-right">
+            <Text className="m-0 text-[10px] font-bold uppercase tracking-[1.6px] text-brand-gold">Amount</Text>
+          </Column>
+        </Row>
+      </Section>
       {items.map((item) => (
-        <Section key={`${item.name}-${item.href}`} className="mb-3">
+        <Section key={`${item.name}-${item.href}`} className="border-b border-solid border-brand-line px-1 py-3">
           <Row>
-            <Column className="w-[48px] align-top">
+            <Column className="w-[44px] align-top">
               {item.logoUrl ? (
-                <Img src={item.logoUrl} alt={item.brand} width="36" height="36" className="rounded" />
+                <Img src={item.logoUrl} alt={item.brand} width="36" height="36" />
               ) : (
-                <Text className="m-0 text-xs text-gray-400"> </Text>
+                <Text className="m-0 text-xs text-brand-mute">{item.brand}</Text>
               )}
             </Column>
             <Column className="align-top pl-2">
-              <Link href={item.href} className="text-sm font-bold text-gray-900">
+              <Link href={item.href} className="text-sm font-bold text-brand-ink no-underline">
                 {item.name}
               </Link>
-              <Text className="m-0 mt-1 text-xs text-gray-500">{item.brand}</Text>
-              <Text className="m-0 text-xs text-gray-500">
-                Qty {item.quantity} × {formatMoney(item.unitPrice)}
+              <Text className="m-0 mt-1 text-[12px] text-brand-mute">
+                {item.brand} · Qty {item.quantity} × {formatMoney(item.unitPrice)}
               </Text>
             </Column>
             <Column className="w-[88px] align-top text-right">
-              <Text className="m-0 text-sm font-bold text-gray-900">{formatMoney(item.lineTotal)}</Text>
+              <Text className="m-0 text-sm font-bold text-brand-ink">{formatMoney(item.lineTotal)}</Text>
             </Column>
           </Row>
         </Section>
       ))}
 
-      <Hr className="border-solid border-gray-200" />
-      <Section className="mt-3">
+      <Section className="mt-4">
         <Row>
           <Column>
-            <Text className="m-0 py-1 text-sm text-gray-500">Subtotal</Text>
+            <Text className="m-0 py-1 text-[13px] text-brand-mute">Subtotal</Text>
           </Column>
           <Column className="text-right">
-            <Text className="m-0 py-1 text-sm text-gray-900">{formatMoney(subtotal)}</Text>
+            <Text className="m-0 py-1 text-[13px] text-brand-ink">{formatMoney(subtotal)}</Text>
           </Column>
         </Row>
         <Row>
           <Column>
-            <Text className="m-0 py-1 text-sm text-gray-500">Shipping</Text>
+            <Text className="m-0 py-1 text-[13px] text-brand-mute">Shipping</Text>
           </Column>
           <Column className="text-right">
-            <Text className="m-0 py-1 text-sm text-gray-900">{formatMoney(shippingCost)}</Text>
+            <Text className="m-0 py-1 text-[13px] text-brand-ink">{formatMoney(shippingCost)}</Text>
           </Column>
         </Row>
         <Row>
           <Column>
-            <Text className="m-0 py-1 text-sm text-gray-500">Tax</Text>
+            <Text className="m-0 py-1 text-[13px] text-brand-mute">Tax</Text>
           </Column>
           <Column className="text-right">
-            <Text className="m-0 py-1 text-sm text-gray-900">{formatMoney(tax)}</Text>
-          </Column>
-        </Row>
-        <Row>
-          <Column>
-            <Text className="m-0 py-2 text-base font-bold text-gray-900">Amount due</Text>
-          </Column>
-          <Column className="text-right">
-            <Text className="m-0 py-2 text-base font-bold text-gray-900">{formatMoney(totalAmount)}</Text>
+            <Text className="m-0 py-1 text-[13px] text-brand-ink">{formatMoney(tax)}</Text>
           </Column>
         </Row>
       </Section>
 
-      <Heading as="h2" className="mb-2 mt-6 text-base font-bold text-gray-900">
+      <Section className="mt-3 bg-brand-ink px-4 py-3">
+        <Row>
+          <Column>
+            <Text className="m-0 text-[11px] font-bold uppercase tracking-[1.6px] text-brand-gold">Amount due</Text>
+          </Column>
+          <Column className="text-right">
+            <Text className="m-0 text-xl font-bold text-brand-gold">{formatMoney(totalAmount)}</Text>
+          </Column>
+        </Row>
+      </Section>
+
+      <Heading as="h2" className="mb-2 mt-6 text-sm font-bold uppercase tracking-[1.4px] text-brand-ink">
         Notes / Terms
       </Heading>
       {terms.map((section) => (
         <Section key={section.title} className="mb-3">
-          <Text className="m-0 mb-1 text-sm font-bold text-gray-900">{section.title}</Text>
-          <Text className="m-0 text-xs leading-5 text-gray-600">{section.body}</Text>
+          <Text className="m-0 mb-1 text-sm font-bold text-brand-ink">{section.title}</Text>
+          <Text className="m-0 text-[12px] leading-5 text-brand-mute">{section.body}</Text>
         </Section>
       ))}
-      <Text className="m-0 mt-2 text-xs leading-5 text-gray-500">The full sale terms are on your invoice.</Text>
+      <Text className="m-0 mt-2 text-[12px] leading-5 text-brand-mute">The full sale terms are on your invoice.</Text>
+      <Hr className="border-solid border-brand-line" />
     </BrandLayout>
   )
 }

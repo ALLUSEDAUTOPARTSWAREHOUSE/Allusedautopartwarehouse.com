@@ -31,17 +31,27 @@ export interface DetailRow {
 
 export function DetailsTable({ rows }: { rows: DetailRow[] }) {
   return (
-    <Section>
-      {rows.map((row) => (
+    <Section className="my-5 border border-solid border-brand-line">
+      {rows.map((row, index) => (
         <Row key={row.label}>
-          <Column className="w-[140px] align-top">
-            <Text className="m-0 py-1.5 text-sm text-gray-500">{row.label}</Text>
+          <Column className="w-[150px] bg-brand-mist px-3 py-2.5 align-top">
+            <Text className="m-0 text-[10px] font-bold uppercase tracking-[1.4px] text-brand-mute">{row.label}</Text>
           </Column>
-          <Column className="align-top">
-            <Text className="m-0 py-1.5 text-sm font-bold text-gray-900">{row.value || "—"}</Text>
+          <Column
+            className={`px-3 py-2.5 align-top ${index === 0 ? "" : "border-t border-solid border-brand-line"}`}
+          >
+            <Text className="m-0 text-sm font-bold text-brand-ink">{row.value || "—"}</Text>
           </Column>
         </Row>
       ))}
+    </Section>
+  )
+}
+
+export function NotePanel({ children }: { children: ReactNode }) {
+  return (
+    <Section className="my-4 border-l-4 border-solid border-brand-gold bg-brand-mist px-4 py-3">
+      {children}
     </Section>
   )
 }
@@ -50,6 +60,7 @@ export function BrandLayout({
   preview,
   eyebrow,
   title,
+  documentLabel,
   children,
   cta,
   siteUrl = EMAIL_BRAND.siteUrl,
@@ -57,6 +68,7 @@ export function BrandLayout({
   preview: string
   eyebrow?: string
   title: string
+  documentLabel?: string
   children: ReactNode
   cta?: EmailCta
   siteUrl?: string
@@ -68,32 +80,43 @@ export function BrandLayout({
     <Html lang="en" dir="ltr">
       <Tailwind config={tailwindConfig}>
         <Head />
-        <Body className="bg-brand-paper font-sans text-gray-900">
+        <Body className="bg-brand-paper font-sans text-brand-ink">
           <Preview>{preview}</Preview>
-          <Container className="mx-auto my-8 max-w-xl overflow-hidden rounded bg-white">
+          <Container className="mx-auto my-8 max-w-[600px] overflow-hidden bg-brand-cream">
+            <Section className="h-[4px] bg-brand-gold" />
             <Section className="bg-brand-ink px-6 py-5">
               <Row>
-                <Column className="w-[72px] align-middle">
+                <Column className="w-[64px] align-middle">
                   <Img
                     src={logo}
                     alt="All Used Auto Parts Warehouse"
-                    width="56"
-                    height="56"
-                    className="rounded bg-white"
+                    width="52"
+                    height="52"
+                    className="border border-solid border-brand-gold bg-white"
                   />
                 </Column>
                 <Column className="align-middle pl-3">
-                  <Text className="m-0 text-lg font-bold tracking-wide text-white">{EMAIL_BRAND.legalName}</Text>
-                  <Text className="m-0 mt-1 text-xs text-gray-300">{EMAIL_BRAND.tradeName}</Text>
+                  <Text className="m-0 text-[10px] font-bold uppercase tracking-[2px] text-brand-gold">
+                    {EMAIL_BRAND.tradeName}
+                  </Text>
+                  <Text className="m-0 mt-1 text-xl font-bold tracking-wide text-white">{EMAIL_BRAND.legalName}</Text>
+                  <Text className="m-0 mt-1 text-[11px] text-gray-400">Denton, TX · {EMAIL_BRAND.phone}</Text>
                 </Column>
+                {documentLabel ? (
+                  <Column className="w-[110px] align-middle text-right">
+                    <Text className="m-0 text-[10px] font-bold uppercase tracking-[2px] text-brand-gold">
+                      {documentLabel}
+                    </Text>
+                  </Column>
+                ) : null}
               </Row>
             </Section>
 
-            <Section className="px-6 py-6">
+            <Section className="px-6 py-7">
               {eyebrow ? (
-                <Text className="m-0 mb-2 text-xs font-bold uppercase tracking-wide text-brand-amber">{eyebrow}</Text>
+                <Text className="m-0 mb-2 text-[11px] font-bold uppercase tracking-[2px] text-brand-gold">{eyebrow}</Text>
               ) : null}
-              <Heading as="h1" className="m-0 mb-4 text-xl font-bold text-gray-900">
+              <Heading as="h1" className="m-0 mb-5 text-[22px] font-bold leading-7 text-brand-ink">
                 {title}
               </Heading>
               {children}
@@ -101,7 +124,7 @@ export function BrandLayout({
                 <Section className="mt-6">
                   <Button
                     href={cta.href}
-                    className="box-border rounded bg-brand-amber px-5 py-3 text-center font-bold text-brand-ink no-underline"
+                    className="box-border inline-block w-full bg-brand-gold px-5 py-3.5 text-center text-[13px] font-bold uppercase tracking-[1.6px] text-brand-ink no-underline"
                   >
                     {cta.label}
                   </Button>
@@ -109,24 +132,26 @@ export function BrandLayout({
               ) : null}
             </Section>
 
-            <Hr className="m-0 border-solid border-gray-200" />
-            <Section className="px-6 py-5">
-              <Text className="m-0 text-sm text-gray-500">
-                Questions? Call{" "}
-                <Link href={`tel:+18888874199`} className="font-bold text-gray-900 no-underline">
+            <Hr className="m-0 border-solid border-brand-line" />
+            <Section className="bg-brand-ink px-6 py-5">
+              <Text className="m-0 text-[11px] font-bold uppercase tracking-[1.6px] text-brand-gold">Need a specialist?</Text>
+              <Text className="m-0 mt-2 text-sm text-gray-300">
+                Call{" "}
+                <Link href="tel:+18888874199" className="font-bold text-white no-underline">
                   {EMAIL_BRAND.phone}
-                </Link>{" "}
-                or email{" "}
-                <Link href={`mailto:${EMAIL_BRAND.email}`} className="text-gray-900 no-underline">
+                </Link>
+                {" · "}
+                <Link href={`mailto:${EMAIL_BRAND.email}`} className="text-white no-underline">
                   {EMAIL_BRAND.email}
                 </Link>
-                .
               </Text>
-              <Text className="m-0 mt-3 text-xs text-gray-400">
-                {EMAIL_BRAND.legalName} · {EMAIL_BRAND.addressLines.join(", ")}
+              <Text className="m-0 mt-3 text-[11px] leading-5 text-gray-500">
+                {EMAIL_BRAND.legalName}
+                <br />
+                {EMAIL_BRAND.addressLines.join(" · ")}
               </Text>
-              <Text className="m-0 mt-1 text-xs text-gray-400">
-                <Link href={siteUrl} className="text-gray-500 no-underline">
+              <Text className="m-0 mt-2 text-[11px] text-gray-500">
+                <Link href={siteUrl} className="text-gray-400 no-underline">
                   {EMAIL_BRAND.website}
                 </Link>
                 {` · © ${year}`}

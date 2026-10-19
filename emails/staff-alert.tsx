@@ -1,6 +1,6 @@
 import { Heading, Section, Text } from "react-email"
 import { EMAIL_BRAND } from "./brand"
-import { BrandLayout, DetailsTable, type DetailRow } from "./brand-layout"
+import { BrandLayout, DetailsTable, NotePanel, type DetailRow } from "./brand-layout"
 
 export interface StaffAlertSection {
   heading: string
@@ -39,13 +39,13 @@ export default function StaffAlertEmail({
   siteUrl = EMAIL_BRAND.siteUrl,
 }: StaffAlertEmailProps) {
   return (
-    <BrandLayout preview={preview} eyebrow="AUAPW operations" title={title} siteUrl={siteUrl} cta={{ href: ctaUrl, label: ctaLabel }}>
-      {greeting ? <Text className="m-0 mb-4 text-base leading-6 text-gray-800">{greeting}</Text> : null}
-      {intro ? <Text className="m-0 mb-4 text-base leading-6 text-gray-800">{intro}</Text> : null}
+    <BrandLayout preview={preview} eyebrow="AUAPW operations" title={title} documentLabel="Internal" siteUrl={siteUrl} cta={{ href: ctaUrl, label: ctaLabel }}>
+      {greeting ? <Text className="m-0 mb-4 text-[15px] leading-6 text-brand-ink">{greeting}</Text> : null}
+      {intro ? <Text className="m-0 mb-4 text-[15px] leading-6 text-brand-ink">{intro}</Text> : null}
       {rows.length > 0 ? <DetailsTable rows={rows} /> : null}
       {sections.map((section) => (
         <Section key={section.heading} className="mt-5">
-          <Heading as="h2" className="m-0 mb-2 text-base font-bold text-gray-900">
+          <Heading as="h2" className="m-0 mb-2 text-sm font-bold uppercase tracking-[1.4px] text-brand-ink">
             {section.heading}
           </Heading>
           <DetailsTable rows={section.rows} />
@@ -53,11 +53,11 @@ export default function StaffAlertEmail({
       ))}
       {items.length > 0 ? (
         <Section className="mt-5">
-          <Heading as="h2" className="m-0 mb-2 text-base font-bold text-gray-900">
+          <Heading as="h2" className="m-0 mb-2 text-sm font-bold uppercase tracking-[1.4px] text-brand-ink">
             {itemsHeading}
           </Heading>
           {items.map((item) => (
-            <Text key={item} className="m-0 text-sm leading-6 text-gray-800">
+            <Text key={item} className="m-0 text-sm leading-6 text-brand-ink">
               {item}
             </Text>
           ))}
@@ -65,13 +65,13 @@ export default function StaffAlertEmail({
       ) : null}
       {alerts.length > 0 ? (
         <Section className="mt-5">
-          <Heading as="h2" className="m-0 mb-2 text-base font-bold text-gray-900">
+          <Heading as="h2" className="m-0 mb-2 text-sm font-bold uppercase tracking-[1.4px] text-brand-ink">
             Needs attention
           </Heading>
           {alerts.map((alert) => (
             <Text
               key={alert.message}
-              className={`m-0 text-sm leading-6 ${alert.level === "critical" ? "text-red-700" : "text-amber-800"}`}
+              className={`m-0 text-sm leading-6 ${alert.level === "critical" ? "font-bold text-red-700" : "text-brand-ink"}`}
             >
               {alert.message}
             </Text>
@@ -79,9 +79,9 @@ export default function StaffAlertEmail({
         </Section>
       ) : null}
       {note ? (
-        <Section className="mt-4 rounded bg-brand-paper px-4 py-3">
-          <Text className="m-0 whitespace-pre-wrap text-sm leading-6 text-gray-800">{note}</Text>
-        </Section>
+        <NotePanel>
+          <Text className="m-0 whitespace-pre-wrap text-sm leading-6 text-brand-ink">{note}</Text>
+        </NotePanel>
       ) : null}
     </BrandLayout>
   )

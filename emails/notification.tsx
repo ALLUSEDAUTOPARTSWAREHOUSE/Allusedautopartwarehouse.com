@@ -28,7 +28,7 @@ export default function NotificationEmail({
       siteUrl={siteUrl}
       cta={ctaUrl && ctaLabel ? { href: ctaUrl, label: ctaLabel } : undefined}
     >
-      <Text className="m-0 mb-4 text-base leading-6 text-gray-800">{intro}</Text>
+      <Text className="m-0 mb-4 text-[15px] leading-6 text-brand-ink">{intro}</Text>
       {rows.length > 0 ? <DetailsTable rows={rows} /> : null}
     </BrandLayout>
   )

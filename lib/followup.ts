@@ -1,6 +1,7 @@
 import "server-only"
 import { randomUUID } from "crypto"
 import { pool } from "@/lib/db"
+import { parseStatusHistory, type StatusHistoryEntry } from "@/lib/order-status"
 
 export const QUOTE_STATUSES = ["new", "contacted", "quoted", "won", "lost"] as const
 export const ORDER_STATUSES = [
@@ -71,6 +72,8 @@ export interface CustomerOrder {
   emailVerifyToken: string | null
   invoiceToken: string | null
   checkoutDetails: Record<string, unknown> | null
+  customerStatusNote: string | null
+  statusHistory: StatusHistoryEntry[]
   createdAt: string
   updatedAt: string
 }
@@ -126,6 +129,8 @@ function mapOrder(r: Record<string, unknown>): CustomerOrder {
     emailVerifyToken: (r.email_verify_token as string) ?? null,
     invoiceToken: (r.invoice_token as string) ?? null,
     checkoutDetails: (r.checkout_details as Record<string, unknown>) ?? null,
+    customerStatusNote: (r.customer_status_note as string) ?? null,
+    statusHistory: parseStatusHistory(r.status_history),
     createdAt: toIso(r.createdat),
     updatedAt: toIso(r.updatedat),
   }
@@ -227,7 +232,9 @@ export async function ensureOrderInvoiceColumns(): Promise<void> {
          ADD COLUMN IF NOT EXISTS email_verified_at timestamptz,
          ADD COLUMN IF NOT EXISTS email_verify_token text,
          ADD COLUMN IF NOT EXISTS invoice_token text,
-         ADD COLUMN IF NOT EXISTS checkout_details jsonb`,
+         ADD COLUMN IF NOT EXISTS checkout_details jsonb,
+         ADD COLUMN IF NOT EXISTS customer_status_note text,
+         ADD COLUMN IF NOT EXISTS status_history jsonb DEFAULT '[]'::jsonb`,
     )
     await pool.query(
       `UPDATE public.orders
@@ -433,9 +440,43 @@ export async function updateQuoteLead(
   )
 }
 
-export async function updateOrder(id: string, patch: { status: OrderStatus; internalNotes: string }) {
+export async function updateOrder(
+  id: string,
+  patch: { status: OrderStatus; internalNotes: string; customerNote?: string },
+) {
+  await ensureOrderInvoiceColumns()
+  const customerNote = patch.customerNote?.trim().slice(0, 1000) || null
+  const historyEntry = JSON.stringify({
+    status: patch.status,
+    note: customerNote,
+    at: new Date().toISOString(),
+  })
+  const { rows } = await pool.query(
+    `SELECT status, customer_status_note FROM public.orders WHERE id = $1 LIMIT 1`,
+    [id],
+  )
+  const previousStatus = rows[0] ? String(rows[0].status) : null
+  const previousNote = rows[0]?.customer_status_note ? String(rows[0].customer_status_note) : null
+  const recordHistory = previousStatus !== patch.status || (customerNote !== null && customerNote !== previousNote)
+
+  if (recordHistory) {
+    await pool.query(
+      `UPDATE public.orders
+          SET status = $2,
+              internal_notes = $3,
+              customer_status_note = coalesce($4, customer_status_note),
+              status_history = coalesce(status_history, '[]'::jsonb) || jsonb_build_array($5::jsonb),
+              updatedat = now()
+        WHERE id = $1`,
+      [id, patch.status, patch.internalNotes || null, customerNote, historyEntry],
+    )
+    return
+  }
+
   await pool.query(
-    `UPDATE public.orders SET status = $2, internal_notes = $3, updatedat = now() WHERE id = $1`,
+    `UPDATE public.orders
+        SET status = $2, internal_notes = $3, updatedat = now()
+      WHERE id = $1`,
     [id, patch.status, patch.internalNotes || null],
   )
 }

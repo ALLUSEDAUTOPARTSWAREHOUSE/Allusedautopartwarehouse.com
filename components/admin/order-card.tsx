@@ -168,7 +168,7 @@ export function OrderCard({ order, statuses, staffOptions, assignment }: { order
             </select>
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
-            Follow-up notes
+            Internal notes
             <textarea
               name="internalNotes"
               rows={4}
@@ -177,32 +177,31 @@ export function OrderCard({ order, statuses, staffOptions, assignment }: { order
               className="resize-y rounded-md border border-border bg-background px-2 py-2 text-sm text-foreground"
             />
           </label>
-          <details className="rounded-md border border-border px-3 py-2 text-xs text-muted-foreground">
-            <summary className="cursor-pointer font-medium text-foreground">Email the customer</summary>
-            <label className="mt-2 flex items-start gap-2">
-              <input
-                type="checkbox"
-                name="emailCustomer"
-                disabled={!order.customerEmail}
-                className="mt-0.5 h-3.5 w-3.5 accent-primary"
-              />
-              <span>
-                {order.customerEmail
-                  ? `Send ${order.customerEmail} an update for the status above when I save`
-                  : "No email on this order"}
-              </span>
-            </label>
-            <label className="mt-2 flex flex-col gap-1">
-              Message (optional — e.g. tracking number)
-              <textarea
-                name="customerMessage"
-                rows={2}
-                maxLength={1000}
-                placeholder="Tracking #1Z… via R+L Carriers"
-                className="resize-y rounded-md border border-border bg-background px-2 py-2 text-sm text-foreground"
-              />
-            </label>
-          </details>
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+            Customer-visible update
+            <textarea
+              name="customerMessage"
+              rows={2}
+              maxLength={1000}
+              defaultValue={order.customerStatusNote ?? ""}
+              placeholder="Tracking #1Z… via R+L Carriers. Shown on the customer portal immediately."
+              className="resize-y rounded-md border border-border bg-background px-2 py-2 text-sm text-foreground"
+            />
+          </label>
+          <label className="flex items-start gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              name="emailCustomer"
+              defaultChecked={Boolean(order.customerEmail)}
+              disabled={!order.customerEmail}
+              className="mt-0.5 h-3.5 w-3.5 accent-primary"
+            />
+            <span>
+              {order.customerEmail
+                ? `Email ${order.customerEmail}. Status changes are emailed automatically and always appear in the customer portal.`
+                : "No email on this order — status still appears in the customer portal if they have an account."}
+            </span>
+          </label>
           <div className="flex items-center justify-between gap-3">
             <p role="status" className={`text-xs ${state.ok ? "text-green-500" : "text-destructive"}`}>
               {pending ? "" : state.message}

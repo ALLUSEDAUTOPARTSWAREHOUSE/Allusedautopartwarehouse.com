@@ -9,7 +9,7 @@ export const EMAIL_BRAND = {
   logoPath: "/auapw-logo.png",
 } as const
 
-export function emailLogoUrl(siteUrl = EMAIL_BRAND.siteUrl) {
+export function emailLogoUrl(siteUrl: string = EMAIL_BRAND.siteUrl) {
   return `${siteUrl.replace(/\/$/, "")}${EMAIL_BRAND.logoPath}`
 }
 

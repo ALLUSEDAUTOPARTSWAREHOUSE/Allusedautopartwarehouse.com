@@ -367,7 +367,7 @@ export async function sendDailyReport(
         },
       ],
       alerts: alerts.map((alert) => ({
-        level: alert.level === "critical" ? "critical" : "warning",
+        level: (alert.level === "critical" ? "critical" : "warning") as "warning" | "critical",
         message: alert.message,
       })),
       ctaUrl: `${siteUrl}/admin/dashboard`,

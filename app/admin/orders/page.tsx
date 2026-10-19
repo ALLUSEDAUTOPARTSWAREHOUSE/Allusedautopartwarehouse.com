@@ -29,8 +29,8 @@ export default async function AdminOrdersPage({
         <div>
           <h1 className="text-2xl font-bold text-foreground">Orders</h1>
           <p className="text-sm text-muted-foreground">
-            Orders from checkout. Card orders arrive paid; phone and reservation orders wait for your call. Update the
-            status as you go and tick “Email the customer” to send them the update.
+            Orders from checkout. Card orders arrive paid; phone and reservation orders wait for your call. Saving a
+            status publishes it to the customer portal immediately and emails the customer when the status changes.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

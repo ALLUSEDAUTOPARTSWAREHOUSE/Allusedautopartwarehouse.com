@@ -20,15 +20,16 @@ export default function StaffInviteEmail({
       preview="You are invited to the AUAPW team portal"
       eyebrow="Team access"
       title="You are invited to the team portal"
+      documentLabel="Invite"
       siteUrl={siteUrl}
       cta={{ href: inviteUrl, label: "Set your password" }}
     >
-      <Text className="m-0 mb-4 text-base leading-6 text-gray-800">Hi {name},</Text>
-      <Text className="m-0 mb-4 text-base leading-6 text-gray-800">
+      <Text className="m-0 mb-4 text-[15px] leading-6 text-brand-ink">Hi {name},</Text>
+      <Text className="m-0 mb-4 text-[15px] leading-6 text-brand-ink">
         You have been invited to the All Used Auto Parts Warehouse team portal. Set your password to activate your
         account. This link expires in {expiresHours} hours.
       </Text>
-      <Text className="m-0 text-sm leading-6 text-gray-500">
+      <Text className="m-0 text-sm leading-6 text-brand-mute">
         After setting your password, sign in at the staff login page. If you were not expecting this invitation, ignore
         this email.
       </Text>

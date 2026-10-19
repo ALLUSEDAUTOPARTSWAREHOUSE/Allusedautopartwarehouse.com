@@ -133,15 +133,35 @@ export async function saveOrderFollowup(
   if (!/^[\w-]{1,64}$/.test(id)) return { ok: false, message: "Invalid order." }
   if (!ORDER_STATUSES.includes(status)) return { ok: false, message: "Invalid status." }
 
-  await updateOrder(id, { status, internalNotes: notes(formData.get("internalNotes")) })
+  const existing = await getOrderById(id)
+  if (!existing) return { ok: false, message: "Invalid order." }
+  const customerMessage = notes(formData.get("customerMessage")).slice(0, 1000)
+  const statusChanged = existing.status !== status
+
+  await updateOrder(id, {
+    status,
+    internalNotes: notes(formData.get("internalNotes")),
+    customerNote: customerMessage || undefined,
+  })
   revalidatePath("/admin/orders")
   revalidatePath("/admin/dashboard")
+  revalidatePath("/customer/dashboard")
+  revalidatePath("/dashboard")
 
-  if (!emailCustomer) return { ok: true, message: "Saved" }
+  const shouldEmail = Boolean(existing.customerEmail) && (statusChanged || emailCustomer)
+  if (!shouldEmail) {
+    return {
+      ok: true,
+      message: statusChanged
+        ? "Saved · live on the customer portal"
+        : "Saved",
+    }
+  }
+
   const order = await getOrderById(id)
-  if (!order) return { ok: false, message: "Saved, but the order could not be reloaded to email the customer." }
-  const sent = await sendOrderStatusEmail(order, notes(formData.get("customerMessage")).slice(0, 1000), SITE_URL)
+  if (!order) return { ok: false, message: "Saved to the customer portal, but the order could not be reloaded to email." }
+  const sent = await sendOrderStatusEmail(order, customerMessage, SITE_URL)
   return sent.ok
-    ? { ok: true, message: `Saved · customer emailed at ${order.customerEmail}` }
-    : { ok: false, message: `Saved, but the email was not sent: ${sent.error}` }
+    ? { ok: true, message: `Saved · live on the customer portal · emailed ${order.customerEmail}` }
+    : { ok: false, message: `Saved · live on the customer portal, but the email was not sent: ${sent.error}` }
 }

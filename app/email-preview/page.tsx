@@ -62,38 +62,43 @@ export default async function EmailPreviewPage() {
   )
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100">
-      <header className="border-b border-zinc-800 px-6 py-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400">AUAPW LLC</p>
-        <h1 className="mt-2 text-balance text-3xl font-semibold">Branded email templates</h1>
-        <p className="mt-2 max-w-2xl text-pretty text-sm text-zinc-400">
-          These are the live React Email templates sent for quotes, invoices, order updates, and account mail. Sample
-          data only — nothing is sent from this page.
+    <main className="min-h-screen bg-[#0c0d10] text-[#fbf7ef]">
+      <header className="border-b border-[#2a2c33] px-6 py-10">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#e0b429]">AUAPW LLC · Denton, TX</p>
+        <h1 className="mt-3 text-balance text-4xl font-semibold tracking-tight">Warehouse email suite</h1>
+        <p className="mt-3 max-w-2xl text-pretty text-sm leading-6 text-[#b7b1a4]">
+          Black header, brass rule, cream paper. These are the live quote, invoice, and account templates — sample data
+          only.
         </p>
-        <nav className="mt-6 flex flex-wrap gap-2" aria-label="Email templates">
+        <nav className="mt-7 flex flex-wrap gap-2" aria-label="Email templates">
           {rendered.map((template) => (
             <a
               key={template.id}
               href={`#${template.id}`}
-              className="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300 no-underline hover:border-amber-400 hover:text-amber-300"
+              className="border border-[#3a3c44] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d8d2c4] no-underline hover:border-[#e0b429] hover:text-[#e0b429]"
             >
               {template.name}
             </a>
           ))}
         </nav>
       </header>
-      <div className="mx-auto flex max-w-5xl flex-col gap-10 px-6 py-10">
+      <div className="mx-auto flex max-w-5xl flex-col gap-12 px-6 py-12">
         {rendered.map((template) => (
           <section key={template.id} id={template.id} className="scroll-mt-8">
-            <div className="mb-3 flex items-baseline justify-between gap-4">
-              <h2 className="text-lg font-semibold">{template.name}</h2>
-              <p className="text-xs uppercase tracking-wide text-zinc-500">{template.audience}</p>
+            <div className="mb-4 flex items-end justify-between gap-4 border-b border-[#2a2c33] pb-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#e0b429]">{template.audience}</p>
+                <h2 className="mt-1 text-xl font-semibold">{template.name}</h2>
+              </div>
             </div>
-            <iframe
-              title={template.name}
-              srcDoc={template.html}
-              className="h-[820px] w-full rounded-lg border border-zinc-800 bg-white"
-            />
+            <div className="overflow-hidden border border-[#2a2c33] bg-[#1a1c22]">
+              <div className="h-1 bg-[#e0b429]" />
+              <iframe
+                title={template.name}
+                srcDoc={template.html}
+                className="h-[900px] w-full bg-[#1a1c22]"
+              />
+            </div>
           </section>
         ))}
       </div>

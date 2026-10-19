@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { AuthForm } from '@/components/auth-form'
 
 function safeRedirect(value: string | undefined) {
-  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes(String.fromCharCode(92))) return '/'
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes(String.fromCharCode(92))) return '/customer/dashboard'
   const path = value.split(/[?#]/, 1)[0]
   if (path.split('/').some((part) => part === '.' || part === '..')) return '/'
   return value

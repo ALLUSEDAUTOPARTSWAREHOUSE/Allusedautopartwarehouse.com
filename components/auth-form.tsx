@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-export function AuthForm({ mode, redirectTo = '/', inviteToken, googleEnabled = false }: { mode: 'sign-in' | 'sign-up'; redirectTo?: string; inviteToken?: string; googleEnabled?: boolean }) {
+export function AuthForm({ mode, redirectTo = '/customer/dashboard', inviteToken, googleEnabled = false }: { mode: 'sign-in' | 'sign-up'; redirectTo?: string; inviteToken?: string; googleEnabled?: boolean }) {
   const router = useRouter()
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -20,7 +20,7 @@ export function AuthForm({ mode, redirectTo = '/', inviteToken, googleEnabled = 
   const [loading, setLoading] = useState(false)
 
   const isSignUp = mode === 'sign-up'
-  const target = redirectTo.startsWith('/') && !redirectTo.startsWith('//') && !redirectTo.includes(String.fromCharCode(92)) && !redirectTo.split(/[?#]/, 1)[0].split('/').some((part) => part === '.' || part === '..') ? redirectTo : '/'
+  const target = redirectTo.startsWith('/') && !redirectTo.startsWith('//') && !redirectTo.includes(String.fromCharCode(92)) && !redirectTo.split(/[?#]/, 1)[0].split('/').some((part) => part === '.' || part === '..') ? redirectTo : '/customer/dashboard'
   const switchHref = `${isSignUp ? '/sign-in' : '/sign-up'}?redirectTo=${encodeURIComponent(target)}`
 
   const handleSocialAuth = async (provider: 'google') => {
@@ -37,7 +37,6 @@ export function AuthForm({ mode, redirectTo = '/', inviteToken, googleEnabled = 
       const result = await authClient.signIn.social({
         provider,
         callbackURL: target,
-        disableImplicitSignUp: !isSignUp,
         errorCallbackURL: isSignUp ? `/sign-up?invite=${encodeURIComponent(inviteToken || '')}` : '/sign-in',
       })
       if (result.error) setError(result.error.message ?? 'Unable to continue with Google. Please try again.')

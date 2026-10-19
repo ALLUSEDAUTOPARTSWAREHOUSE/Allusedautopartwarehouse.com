@@ -30,10 +30,11 @@ export default function QuoteReceivedEmail({
       preview={`We received your quote request #${quoteId}. A parts specialist will follow up.`}
       eyebrow={`Quote #${quoteId}`}
       title="Quote request received"
+      documentLabel="Quote"
       siteUrl={siteUrl}
     >
-      <Text className="m-0 mb-4 text-base leading-6 text-gray-800">Hello {customerName || "there"},</Text>
-      <Text className="m-0 mb-4 text-base leading-6 text-gray-800">
+      <Text className="m-0 mb-4 text-[15px] leading-6 text-brand-ink">Hello {customerName || "there"},</Text>
+      <Text className="m-0 mb-4 text-[15px] leading-6 text-brand-ink">
         We saved your request as reference <strong>#{quoteId}</strong>. A parts specialist will review fitment and
         contact you — this email is not a price quote or a fitment confirmation.
       </Text>
@@ -46,13 +47,13 @@ export default function QuoteReceivedEmail({
         ]}
       />
       {productName ? (
-        <Text className="m-0 mt-4 text-base leading-6 text-gray-800">
+        <Text className="m-0 mt-4 text-[15px] leading-6 text-brand-ink">
           Product of interest: <strong>{productName}</strong>
         </Text>
       ) : null}
       {productUrl ? (
-        <Text className="m-0 mt-2 text-base leading-6 text-gray-800">
-          <Link href={productUrl} className="font-bold text-gray-900">
+        <Text className="m-0 mt-2 text-[15px] leading-6 text-brand-ink">
+          <Link href={productUrl} className="font-bold text-brand-ink underline">
             View the product page
           </Link>
         </Text>

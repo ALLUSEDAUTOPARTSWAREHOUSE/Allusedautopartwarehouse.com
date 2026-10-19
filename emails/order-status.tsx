@@ -1,6 +1,6 @@
 import { Section, Text } from "react-email"
 import { EMAIL_BRAND, formatMoney } from "./brand"
-import { BrandLayout, DetailsTable } from "./brand-layout"
+import { BrandLayout, DetailsTable, NotePanel } from "./brand-layout"
 
 export interface OrderStatusEmailProps {
   customerName: string
@@ -26,13 +26,20 @@ export default function OrderStatusEmail({
   siteUrl = EMAIL_BRAND.siteUrl,
 }: OrderStatusEmailProps) {
   return (
-    <BrandLayout preview={preview} eyebrow={orderNumber} title={title} siteUrl={siteUrl}>
-      <Text className="m-0 mb-4 text-base leading-6 text-gray-800">Hi {customerName || "there"},</Text>
-      <Text className="m-0 mb-4 text-base leading-6 text-gray-800">{body}</Text>
+    <BrandLayout
+      preview={preview}
+      eyebrow={orderNumber}
+      title={title}
+      documentLabel="Order"
+      siteUrl={siteUrl}
+      cta={{ href: `${siteUrl}/customer/dashboard`, label: "View your order status" }}
+    >
+      <Text className="m-0 mb-4 text-[15px] leading-6 text-brand-ink">Hi {customerName || "there"},</Text>
+      <Text className="m-0 mb-4 text-[15px] leading-6 text-brand-ink">{body}</Text>
       {note ? (
-        <Section className="mb-4 rounded bg-brand-paper px-4 py-3">
-          <Text className="m-0 whitespace-pre-wrap text-sm leading-6 text-gray-800">{note}</Text>
-        </Section>
+        <NotePanel>
+          <Text className="m-0 whitespace-pre-wrap text-sm leading-6 text-brand-ink">{note}</Text>
+        </NotePanel>
       ) : null}
       <DetailsTable
         rows={[
@@ -42,9 +49,9 @@ export default function OrderStatusEmail({
       />
       {items.length > 0 ? (
         <Section className="mt-4">
-          <Text className="m-0 mb-2 text-sm font-bold text-gray-900">Items</Text>
+          <Text className="m-0 mb-2 text-[10px] font-bold uppercase tracking-[1.6px] text-brand-gold">Items</Text>
           {items.map((item) => (
-            <Text key={item} className="m-0 text-sm leading-6 text-gray-800">
+            <Text key={item} className="m-0 text-sm leading-6 text-brand-ink">
               {item}
             </Text>
           ))}

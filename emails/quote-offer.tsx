@@ -1,6 +1,6 @@
 import { Heading, Section, Text } from "react-email"
 import { EMAIL_BRAND, formatMoney } from "./brand"
-import { BrandLayout, DetailsTable } from "./brand-layout"
+import { BrandLayout, DetailsTable, NotePanel } from "./brand-layout"
 
 export interface QuoteOfferEmailProps {
   customerName: string
@@ -28,18 +28,20 @@ export default function QuoteOfferEmail({
       preview={`Your AUAPW quote for ${part}: ${formatMoney(amount)}`}
       eyebrow="Written quote"
       title="Your parts quote"
+      documentLabel="Quote"
       siteUrl={siteUrl}
       cta={{ href: `tel:+18888874199`, label: `Call ${EMAIL_BRAND.phone} to order` }}
     >
-      <Text className="m-0 mb-4 text-base leading-6 text-gray-800">Hi {customerName || "there"},</Text>
-      <Text className="m-0 mb-4 text-base leading-6 text-gray-800">
+      <Text className="m-0 mb-4 text-[15px] leading-6 text-brand-ink">Hi {customerName || "there"},</Text>
+      <Text className="m-0 mb-5 text-[15px] leading-6 text-brand-ink">
         Thanks for your request. Here is your quote. We confirm fitment with your VIN before anything ships.
       </Text>
-      <Section className="mb-4 rounded bg-brand-paper px-4 py-4">
-        <Text className="m-0 text-xs font-bold uppercase tracking-wide text-gray-500">Quoted price</Text>
-        <Heading as="h2" className="m-0 mt-1 text-3xl font-bold text-gray-900">
+      <Section className="mb-5 bg-brand-ink px-5 py-5">
+        <Text className="m-0 text-[10px] font-bold uppercase tracking-[2px] text-brand-gold">Quoted price</Text>
+        <Heading as="h2" className="m-0 mt-1 text-[36px] font-bold leading-10 text-brand-gold">
           {formatMoney(amount)}
         </Heading>
+        <Text className="m-0 mt-2 text-[12px] text-gray-400">USD · fitment confirmed before payment</Text>
       </Section>
       <DetailsTable
         rows={[
@@ -50,11 +52,11 @@ export default function QuoteOfferEmail({
         ]}
       />
       {note ? (
-        <Section className="mt-4 rounded bg-brand-paper px-4 py-3">
-          <Text className="m-0 whitespace-pre-wrap text-sm leading-6 text-gray-800">{note}</Text>
-        </Section>
+        <NotePanel>
+          <Text className="m-0 whitespace-pre-wrap text-sm leading-6 text-brand-ink">{note}</Text>
+        </NotePanel>
       ) : null}
-      <Text className="m-0 mt-4 text-base leading-6 text-gray-800">
+      <Text className="m-0 mt-4 text-[15px] leading-6 text-brand-ink">
         To order, call <strong>{EMAIL_BRAND.phone}</strong> or reply to this email.
       </Text>
     </BrandLayout>
