@@ -9,7 +9,7 @@ const GROUPS = [
     { href: '/admin/workspace', label: 'Unified workspace', icon: PanelsTopLeft },
     { href: '/admin/dashboard', label: 'Control center', icon: LayoutDashboard },
   ] },
-  { title: 'Products', links: [{ href: '/admin/products', label: 'Brands & products', icon: Package }] },
+  { title: 'Products', links: [{ href: '/admin/products', label: 'Brands & products', icon: Package }, { href: '/admin/uploads', label: 'Upload monitor', icon: Package }] },
   { title: 'Sales & support', links: [
     { href: '/admin/sales', label: 'Sales dashboard', icon: ShoppingCart },
     { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
