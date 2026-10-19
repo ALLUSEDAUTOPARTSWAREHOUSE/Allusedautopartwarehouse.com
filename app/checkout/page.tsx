@@ -29,6 +29,22 @@ interface PaymentGateway {
   instructions?: string | null
 }
 
+const STRIPE_CARD_GATEWAY: PaymentGateway = {
+  id: 'stripe-card',
+  name: 'Credit or Debit Card',
+  slug: 'stripe',
+  type: 'card',
+  description: 'Pay now with Visa, Mastercard, American Express, or Discover. Card details stay with Stripe.',
+  isEnabled: true,
+  isDefault: true,
+}
+
+function withStripeCardGateway(gateways: PaymentGateway[]): PaymentGateway[] {
+  const others = gateways.filter((g) => g.isEnabled && g.slug !== 'stripe')
+  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) return others
+  return [STRIPE_CARD_GATEWAY, ...others]
+}
+
 export default function CheckoutPage() {
   const router = useRouter()
   const items = useCartStore((state) => state.items)
@@ -52,19 +68,44 @@ export default function CheckoutPage() {
     // After secure sign-in, resume at shipping details instead of showing the account chooser again.
     if (new URLSearchParams(window.location.search).get('resume') === '1') setStep('shipping')
   }, [])
+  useEffect(() => {
+    const sessionId = new URLSearchParams(window.location.search).get('session_id')
+    if (!sessionId?.startsWith('cs_')) return
+    let cancelled = false
+    fetch(`/api/checkout/stripe/session/${encodeURIComponent(sessionId)}`)
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}))
+        if (cancelled || !res.ok || !data.paid) return
+        setPaymentConfirmed(true)
+        setPlacedOrder({
+          orderNumber: data.orderNumber,
+          totalAmount: data.totalAmount,
+          invoiceToken: data.invoiceToken,
+          emailStatus: data.emailStatus ?? null,
+        })
+        clearCart()
+        setStep('confirmation')
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [clearCart])
 
   useEffect(() => {
     fetch('/api/payment-gateways')
       .then((res) => (res.ok ? res.json() : { gateways: [] }))
       .then((data) => {
-        const enabled: PaymentGateway[] = (data.gateways ?? []).filter(
-          (g: PaymentGateway) => g.isEnabled
-        )
+        const enabled = withStripeCardGateway(data.gateways ?? [])
         setGateways(enabled)
         const def = enabled.find((g) => g.isDefault) ?? enabled[0]
         if (def) setSelectedGateway(def.slug)
       })
-      .catch(() => {})
+      .catch(() => {
+        const enabled = withStripeCardGateway([])
+        setGateways(enabled)
+        if (enabled[0]) setSelectedGateway(enabled[0].slug)
+      })
   }, [])
 
   // Supports Google Merchant Center's "Checkout URL" deep link
@@ -100,11 +141,19 @@ export default function CheckoutPage() {
   })
   const [isProcessing, setIsProcessing] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [shippingPolicyAccepted, setShippingPolicyAccepted] = useState(false)
+  const [returnsPolicyAccepted, setReturnsPolicyAccepted] = useState(false)
+  const [priceApprovalAccepted, setPriceApprovalAccepted] = useState(false)
+  const [addressType, setAddressType] = useState<'commercial' | 'residential'>('residential')
+  const [liftgateRequired, setLiftgateRequired] = useState(false)
+  const [billingSameAsShipping, setBillingSameAsShipping] = useState(true)
+  const [billingAddress, setBillingAddress] = useState({ name: '', address: '', city: '', state: '', zipCode: '', country: 'US' })
   const [error, setError] = useState<string | null>(null)
   const [placedOrder, setPlacedOrder] = useState<{
     orderNumber: string
     totalAmount: number
     reserved?: boolean
+    invoiceToken?: string | null
     emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null
   } | null>(null)
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
@@ -113,8 +162,19 @@ export default function CheckoutPage() {
   const shipping = isReservationCart
     ? RESERVE_SHIPPING[deliveryMethod].price
     : items.reduce((total, item) => total + SHIPPING.price * item.quantity, 0)
-  const tax = isReservationCart ? 0 : totalPrice * 0.08
-  const finalTotal = totalPrice + shipping + tax
+  const tax = isReservationCart ? 0 : Math.round(totalPrice * 0.08 * 100) / 100
+  // Configure these values in both server and public environment variables after carrier approval.
+  const residentialFee = Number(process.env.NEXT_PUBLIC_AUAPW_RESIDENTIAL_DELIVERY_FEE ?? 0) || 0
+  const liftgateFee = Number(process.env.NEXT_PUBLIC_AUAPW_LIFTGATE_FEE ?? 0) || 0
+  const checkoutFees = (addressType === 'residential' ? residentialFee : 0) + (liftgateRequired ? liftgateFee : 0)
+  const finalTotal = Math.round((totalPrice + shipping + tax + checkoutFees) * 100) / 100
+  // All four acceptances are required before a Stripe session can be created — the
+  // server validates termsAccepted/shippingPolicyAccepted/returnsPolicyAccepted as
+  // literal `true`, so the embedded card form must not mount until every box is checked.
+  const allAcceptancesMet = agreedToTerms && shippingPolicyAccepted && returnsPolicyAccepted && priceApprovalAccepted
+  useEffect(() => {
+    setPriceApprovalAccepted(false)
+  }, [finalTotal])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -127,6 +187,10 @@ export default function CheckoutPage() {
       setError('Please fill in all shipping fields.')
       return
     }
+    if (!billingSameAsShipping && (!billingAddress.name || !billingAddress.address || !billingAddress.city || !billingAddress.state || !billingAddress.zipCode || !billingAddress.country)) {
+      setError('Please complete all required billing address fields or select that billing matches shipping.')
+      return
+    }
     if (phone.replace(/\D/g, '').length < 10) {
       setError('Please enter a valid phone number so we can confirm your order.')
       return
@@ -136,8 +200,8 @@ export default function CheckoutPage() {
   }
 
   const handlePlaceOrder = async () => {
-    if (!agreedToTerms) {
-      setError('Please agree to the order terms and conditions before placing your order.')
+    if (!agreedToTerms || !shippingPolicyAccepted || !returnsPolicyAccepted || !priceApprovalAccepted) {
+      setError('Please accept all three policies and explicitly approve the displayed total before placing your order.')
       return
     }
     setIsProcessing(true)
@@ -152,10 +216,12 @@ export default function CheckoutPage() {
                 mode: 'reserve',
                 customer: formData,
                 deliveryMethod,
+                checkoutDetails: { addressType, liftgateRequired, billingSameAsShipping, billingAddress: billingSameAsShipping ? undefined : billingAddress, termsAccepted: agreedToTerms, shippingPolicyAccepted, returnsPolicyAccepted, approvedTotal: finalTotal },
                 items: items.map(({ id, make, quantity }) => ({ id, make, quantity })),
               }
             : {
                 customer: formData,
+                checkoutDetails: { addressType, liftgateRequired, billingSameAsShipping, billingAddress: billingSameAsShipping ? undefined : billingAddress, termsAccepted: agreedToTerms, shippingPolicyAccepted, returnsPolicyAccepted, approvedTotal: finalTotal },
                 paymentGateway: selectedGateway ?? undefined,
                 items: items.map(({ id, make, price, quantity }) => ({ id, make, price, quantity })),
               },
@@ -166,7 +232,13 @@ export default function CheckoutPage() {
         setError(data.error ?? 'We could not place your order. Please call 1-888-887-4199.')
         return
       }
-      setPlacedOrder({ orderNumber: data.orderNumber, totalAmount: data.totalAmount, reserved: isReservationCart, emailStatus: data.emailStatus })
+      setPlacedOrder({
+        orderNumber: data.orderNumber,
+        totalAmount: data.totalAmount,
+        reserved: isReservationCart,
+        invoiceToken: data.invoiceToken,
+        emailStatus: data.emailStatus,
+      })
       clearCart()
       setStep('confirmation')
     } catch {
@@ -176,7 +248,7 @@ export default function CheckoutPage() {
     }
   }
 
-  const handleStripePaid = (result: { orderNumber: string; totalAmount: number; emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null }) => {
+  const handleStripePaid = (result: { orderNumber: string; totalAmount: number; invoiceToken?: string | null; emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null }) => {
     setPaymentConfirmed(true)
     setPlacedOrder(result)
     clearCart()
@@ -300,10 +372,10 @@ export default function CheckoutPage() {
               </h2>
               <p className="text-foreground/60 mb-8 text-pretty">
                 {paymentConfirmed
-                  ? 'Your payment was received securely through Stripe. A parts specialist will call you within one business day to confirm fitment and delivery details. No additional payment is needed for this order.'
+                  ? 'Your payment was received securely through Stripe. Your order will now be processed. A parts specialist will call you within one business day to confirm fitment and delivery details. No additional payment is needed for this order.'
                   : placedOrder?.reserved
-                    ? 'This part is reserved for you — no payment has been taken. A parts specialist will call you within one business day to confirm fitment, give you the final price and warranty terms in writing, and take payment only once you approve it.'
-                    : 'A parts specialist will call you within one business day to confirm fitment and take payment securely by phone. Nothing has been charged yet.'}
+                    ? 'This part is reserved for you — no payment has been taken. Check your email and verify the address to confirm this reservation. Your order will be processed after payment confirmation.'
+                    : 'Check your email and click the verification link to confirm this order. Your order will be processed after payment confirmation. A parts specialist will also call you within one business day to confirm fitment and take payment.'}
               </p>
               {placedOrder?.emailStatus ? (
                 <p role="status" className="mx-auto mb-5 max-w-xl text-sm text-foreground/70">
@@ -321,8 +393,13 @@ export default function CheckoutPage() {
                 <p className="text-2xl font-bold text-blue-400">${(placedOrder?.totalAmount ?? 0).toFixed(2)}</p>
               </div>
               <div className="flex gap-4 justify-center">
+                {placedOrder?.invoiceToken ? (
+                  <Link href={`/invoice/${encodeURIComponent(placedOrder.orderNumber)}?t=${encodeURIComponent(placedOrder.invoiceToken)}`}>
+                    <Button size="lg">View invoice</Button>
+                  </Link>
+                ) : null}
                 <Link href="/parts">
-                  <Button size="lg">Continue Shopping</Button>
+                  <Button size="lg" variant={placedOrder?.invoiceToken ? 'outline' : 'default'}>Continue Shopping</Button>
                 </Link>
                 <Link href="/">
                   <Button size="lg" variant="outline">
@@ -399,12 +476,29 @@ export default function CheckoutPage() {
                             onChange={handleInputChange}
                           />
                         </div>
+                        <div className="space-y-3 rounded-lg border border-white/10 bg-white/5 p-4">
+                          <p className="text-sm font-semibold">Delivery address type</p>
+                          <div className="grid sm:grid-cols-2 gap-3">
+                            <label className="flex items-start gap-2 rounded-md border border-white/10 p-3 text-sm"><input type="radio" name="addressType" checked={addressType === 'commercial'} onChange={() => setAddressType('commercial')} className="mt-1" /><span><b>Commercial</b><span className="block text-xs text-foreground/60">Business receiving address with appropriate freight access.</span></span></label>
+                            <label className="flex items-start gap-2 rounded-md border border-white/10 p-3 text-sm"><input type="radio" name="addressType" checked={addressType === 'residential'} onChange={() => setAddressType('residential')} className="mt-1" /><span><b>Residential</b><span className="block text-xs text-foreground/60">Home or non-commercial delivery location.</span></span></label>
+                          </div>
+                          {addressType === 'residential' && <p className="text-xs text-amber-300">Residential freight surcharge: ${residentialFee.toFixed(2)}{residentialFee === 0 ? ' (fee not configured; verify before production)' : ''}</p>}
+                          <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={liftgateRequired} onChange={(e) => setLiftgateRequired(e.target.checked)} className="mt-1" /><span><b>Liftgate service required</b><span className="block text-xs text-foreground/60">Select if the delivery location has no suitable dock or forklift and freight must be lowered to ground level.</span><span className="block text-xs text-amber-300">Liftgate fee: ${liftgateFee.toFixed(2)}{liftgateFee === 0 ? ' (fee not configured; verify before production)' : ''}</span></span></label>
+                        </div>
                         <Input
                           placeholder="ZIP Code"
                           name="zipCode"
                           value={formData.zipCode}
                           onChange={handleInputChange}
                         />
+                        <label className="flex items-start gap-2 rounded-md border border-white/10 p-3 text-sm"><input type="checkbox" checked={billingSameAsShipping} onChange={(e) => setBillingSameAsShipping(e.target.checked)} className="mt-1" /><span><b>Billing address is the same as shipping address</b></span></label>
+                        {!billingSameAsShipping && <div className="space-y-3 rounded-lg border border-white/10 p-4">
+                          <p className="text-sm font-semibold">Billing address</p>
+                          <Input placeholder="Billing name / business" value={billingAddress.name} onChange={(e) => setBillingAddress((p) => ({ ...p, name: e.target.value }))} />
+                          <Input placeholder="Billing street address" value={billingAddress.address} onChange={(e) => setBillingAddress((p) => ({ ...p, address: e.target.value }))} />
+                          <div className="grid sm:grid-cols-2 gap-3"><Input placeholder="Billing city" value={billingAddress.city} onChange={(e) => setBillingAddress((p) => ({ ...p, city: e.target.value }))} /><Input placeholder="Billing state" value={billingAddress.state} onChange={(e) => setBillingAddress((p) => ({ ...p, state: e.target.value }))} /></div>
+                          <div className="grid sm:grid-cols-2 gap-3"><Input placeholder="Billing ZIP / postal code" value={billingAddress.zipCode} onChange={(e) => setBillingAddress((p) => ({ ...p, zipCode: e.target.value }))} /><Input placeholder="Country code (e.g. US)" value={billingAddress.country} onChange={(e) => setBillingAddress((p) => ({ ...p, country: e.target.value }))} /></div>
+                        </div>}
                         <Button size="lg" className="w-full" onClick={handleShippingSubmit}>
                           Continue to Payment
                         </Button>
@@ -426,7 +520,7 @@ export default function CheckoutPage() {
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step !== 'shipping' ? 'bg-blue-500 text-white' : 'bg-white/10 text-foreground/60'}`}>
                         2
                       </div>
-                      <h2 className="text-xl font-bold">Review &amp; Place Order</h2>
+                      <h2 className="text-xl font-bold">{isReservationCart ? 'Review & Place Order' : 'Payment'}</h2>
                     </div>
 
                     {step === 'payment' && (
@@ -512,15 +606,22 @@ export default function CheckoutPage() {
                           maxLength={1000}
                           value={formData.notes}
                           onChange={handleInputChange}
-                          disabled={isStripeCard && agreedToTerms && !isReservationCart}
+                          disabled={isStripeCard && allAcceptancesMet && !isReservationCart}
                         />
                         <CheckoutTerms checked={agreedToTerms} onCheckedChange={setAgreedToTerms} />
+                        <div className="space-y-3 rounded-lg border border-white/10 p-4">
+                          <p className="font-semibold text-sm">Required policy review</p>
+                          <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={shippingPolicyAccepted} onChange={(e) => setShippingPolicyAccepted(e.target.checked)} className="mt-1" /><span>I have reviewed the <Link href="/shipping-policy" target="_blank" className="text-blue-400 underline">Shipping Policy</Link>, including residential and liftgate freight requirements. *</span></label>
+                          <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={returnsPolicyAccepted} onChange={(e) => setReturnsPolicyAccepted(e.target.checked)} className="mt-1" /><span>I have reviewed the <Link href="/return-policy" target="_blank" className="text-blue-400 underline">Returns & Warranty Policy</Link>. *</span></label>
+                          <label className="flex items-start gap-2 rounded-md bg-blue-500/10 p-3 text-sm"><input type="checkbox" checked={priceApprovalAccepted} onChange={(e) => setPriceApprovalAccepted(e.target.checked)} className="mt-1" /><span><b>I approve the displayed order total of ${finalTotal.toFixed(2)} USD, including selected shipping services and fees.</b> If the total changes, AUAPW must request approval again before charging. *</span></label>
+                        </div>
 
-                        {!agreedToTerms ? (
+                        {isReservationCart ? (
+                          !agreedToTerms ? (
                           <p className="text-sm text-foreground/60 italic">
                             Check the box above to agree to the order terms before continuing to payment.
                           </p>
-                        ) : isReservationCart ? (
+                          ) : (
                           <div className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-2">
                             <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400">
                               <Truck className="w-4 h-4" />
@@ -532,6 +633,12 @@ export default function CheckoutPage() {
                               you approve it.
                             </p>
                           </div>
+                          )
+                        ) : !allAcceptancesMet ? (
+                          <p className="text-sm text-foreground/60 italic">
+                            Check all required boxes above — agree to the order terms, review the shipping and returns
+                            policies, and approve the displayed total — before continuing to payment.
+                          </p>
                         ) : (
                         (() => {
                           const active = gateways.find((g) => g.slug === selectedGateway)
@@ -558,13 +665,15 @@ export default function CheckoutPage() {
                                 </div>
                                 <StripeCardPayment
                                   customer={formData}
+                                  checkoutDetails={{ addressType, liftgateRequired, billingSameAsShipping, billingAddress: billingSameAsShipping ? undefined : billingAddress, termsAccepted: agreedToTerms, shippingPolicyAccepted, returnsPolicyAccepted, approvedTotal: finalTotal }}
                                   items={items.map(({ id, make, price, quantity }) => ({ id, make, price, quantity }))}
+                                  amountLabel={`$${finalTotal.toFixed(2)}`}
                                   onPaid={handleStripePaid}
                                   onError={handleStripeError}
                                 />
                                 <p className="flex items-center gap-1.5 text-xs text-foreground/50">
                                   <Lock className="w-3 h-3" />
-                                  Enter your card details above. Your card is charged securely by Stripe.
+                                  Enter your credit or debit card details above. Stripe charges the card securely — we never see the full number.
                                 </p>
                               </div>
                             )
@@ -708,12 +817,12 @@ export default function CheckoutPage() {
                             Edit Shipping
                           </Button>
                           {isReservationCart ? (
-                            <Button size="lg" className="flex-1" onClick={handlePlaceOrder} disabled={isProcessing || !agreedToTerms}>
+                            <Button size="lg" className="flex-1" onClick={handlePlaceOrder} disabled={isProcessing || !allAcceptancesMet}>
                               {isProcessing ? 'Reserving...' : 'Reserve & Place Order'}
                             </Button>
                           ) : (
                             !isStripeCard && (
-                              <Button size="lg" className="flex-1" onClick={handlePlaceOrder} disabled={isProcessing || !agreedToTerms}>
+                              <Button size="lg" className="flex-1" onClick={handlePlaceOrder} disabled={isProcessing || !allAcceptancesMet}>
                                 {isProcessing ? 'Placing order...' : 'Place Order'}
                               </Button>
                             )
@@ -776,6 +885,8 @@ export default function CheckoutPage() {
 
                   <div className="h-px bg-white/10" />
 
+                  {addressType === 'residential' && <div className="flex justify-between text-sm text-foreground/60"><span>Residential delivery</span><span>${residentialFee.toFixed(2)}</span></div>}
+                  {liftgateRequired && <div className="flex justify-between text-sm text-foreground/60"><span>Liftgate service</span><span>${liftgateFee.toFixed(2)}</span></div>}
                   <div className="flex justify-between text-lg font-bold">
                     <span>{isReservationCart ? 'Due Today' : 'Total'}</span>
                     <span className="text-blue-400">${finalTotal.toFixed(2)}</span>

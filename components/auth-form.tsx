@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-up'; redirectTo?: string }) {
+export function AuthForm({ mode, redirectTo = '/', inviteToken }: { mode: 'sign-in' | 'sign-up'; redirectTo?: string; inviteToken?: string }) {
   const router = useRouter()
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -42,7 +42,7 @@ export function AuthForm({ mode, redirectTo = '/' }: { mode: 'sign-in' | 'sign-u
     setLoading(true)
     try {
       const result = isSignUp
-        ? await authClient.signUp.email({ email, password, name: `${firstName} ${lastName}`.trim() })
+        ? await authClient.signUp.email({ email, password, name: `${firstName} ${lastName}`.trim() }, { headers: { 'x-auapw-invite': inviteToken || '' } })
         : await authClient.signIn.email({ email, password })
       if (result.error) {
         setError(result.error.message ?? 'Unable to authenticate. Please try again.')

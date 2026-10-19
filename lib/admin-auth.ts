@@ -25,9 +25,27 @@ function getSecret(): string | null {
   return process.env.NODE_ENV === 'production' ? null : 'auapw-dev-only-secret-change-me'
 }
 
+const ADMIN_EMAIL_ALIASES = [
+  'info@allusedautopartswarehouse.com',
+  'info@auapw.com',
+]
+
+function getConfiguredAdminEmail() {
+  return (process.env.ADMIN_EMAIL || 'Info@Allusedautopartswarehouse.com').trim().toLowerCase()
+}
+
+function getAllowedAdminEmails() {
+  return Array.from(new Set([getConfiguredAdminEmail(), ...ADMIN_EMAIL_ALIASES]))
+}
+
+export function isAllowedAdminEmail(email: string) {
+  const candidate = email.trim().toLowerCase()
+  return getAllowedAdminEmails().some((allowed) => safeEqual(candidate, allowed))
+}
+
 function getAdminCredentials() {
   return {
-    email: process.env.ADMIN_EMAIL || 'Info@Allusedautopartswarehouse.com',
+    email: getConfiguredAdminEmail(),
     password: process.env.ADMIN_PASSWORD || '',
   }
 }
@@ -64,7 +82,7 @@ export async function validateAdminCredentials(
     }
   }
 
-  const emailOk = safeEqual(email.trim().toLowerCase(), creds.email.toLowerCase())
+  const emailOk = isAllowedAdminEmail(email)
   const passwordOk = security.passwordHash
     ? await verifyPassword(password, security.passwordHash)
     : safeEqual(password, creds.password)

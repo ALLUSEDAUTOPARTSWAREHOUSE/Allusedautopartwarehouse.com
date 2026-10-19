@@ -1,12 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight, LockKeyhole, Mail, Eye, EyeOff, ShieldCheck, Boxes, Users, Code2, ShoppingBag, Github } from 'lucide-react'
 
 export default function AdminLoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -43,8 +41,7 @@ export default function AdminLoginPage() {
         setError(data.message || 'Unable to sign in. Check your credentials and try again.')
         return
       }
-      router.replace(data.redirectTo || '/admin/workspace')
-      router.refresh()
+      window.location.assign(data.redirectTo || '/admin/workspace')
     } catch {
       setError('We could not connect securely. Please try again.')
     } finally {

@@ -1,3 +1,4 @@
+import { CustomerInviteForm } from '@/components/admin/customer-invite-form'
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { Mail, Phone, Search } from "lucide-react"
@@ -37,6 +38,8 @@ export default async function AdminCustomersPage({ searchParams }: { searchParam
         </div>
         <ExportLink kind="customers" query={query} />
       </header>
+
+      <CustomerInviteForm />
 
       <form action="/admin/customers" className="relative max-w-md">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />

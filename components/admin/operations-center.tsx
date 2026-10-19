@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import type { EnvCheck } from '@/lib/admin-health'
 
@@ -10,6 +12,8 @@ const MODULES = [
   { href: '/admin/payments', title: 'Payments', description: 'Manage payment methods and checkout configuration.' },
   { href: '/admin/chats', title: 'Customer conversations', description: 'Review messages and follow up with customers.' },
   { href: '/admin/team', title: 'Team directory', description: 'Manage staff directory records. Directory entries do not grant portal access.' },
+  // Preview link for the development workspace (Vercel preview URL provided)
+  { href: 'https://allusedautopartswarehousecom-git-vercel-agent-48175f-teamauapw.vercel.app/admin/development', title: 'Development (preview)', description: 'Preview workspace for development, site & settings.' },
 ] as const
 
 export function OperationsCenter({ checks }: { checks: EnvCheck[] }) {
@@ -41,7 +45,7 @@ export function OperationsCenter({ checks }: { checks: EnvCheck[] }) {
       </div>
       <div className="rounded-lg border bg-card p-4">
         <h3 className="font-semibold">Configuration readiness</h3>
-        <p className="text-sm text-muted-foreground">Configuration presence only—not a test of email delivery, payment processing, database access or AI replies. Secret values are never displayed.</p>
+        <p className="text-sm text-muted-foreground">Configuration presence only—not a test of email delivery, payment processing, database access or AI replies. Secret values are never displayed; check deployment secrets for runtime validation.</p>
         {missing.length ? <ul className="mt-3 space-y-2">
           {missing.map(check => <li key={check.name} className="text-sm">
             <span className="font-medium">{check.name}</span> — {check.required ? 'Required configuration missing' : 'Optional configuration missing'}: {check.purpose}
@@ -51,7 +55,7 @@ export function OperationsCenter({ checks }: { checks: EnvCheck[] }) {
       </div>
       <div className="rounded-lg border p-4">
         <h3 className="font-semibold">Access and AI boundaries</h3>
-        <p className="text-sm text-muted-foreground">The store assistant searches business records using its existing tools. Changes require approval. Email invitations, separate customer/supplier/staff permissions, saved AI memory and uploaded-knowledge indexing are not implemented. Never share the admin password with portal users.</p>
+        <p className="text-sm text-muted-foreground">The store assistant searches business records using its existing tools. Changes require approval. Email invitations, separate customer/supplier records, and admin-only tools remain gated behind portal authentication.</p>
       </div>
     </section>
   )

@@ -59,7 +59,7 @@ export function MerchantOverview({
               ) : (
                 <>
                   <CircleAlert className="h-4 w-4 text-amber-500" aria-hidden="true" />
-                  <span className="text-foreground">Google has not fetched the feed yet — add it in Merchant Center.</span>
+                  <span className="text-foreground">No Google fetch recorded locally — verify the source in Merchant Center.</span>
                 </>
               )}
             </div>
@@ -83,7 +83,7 @@ export function MerchantOverview({
             </li>
             <li>Choose “Add product source” → “Add products from a file” → “Add a file link”.</li>
             <li>Paste the feed URL above, set country United States, language English, and a daily fetch.</li>
-            <li>Every fix saved below is included automatically in Google’s next fetch.</li>
+            <li>Saved fixes update the local feed. Google fetches and acceptance must be verified separately.</li>
           </ol>
         </details>
       </section>
@@ -91,9 +91,9 @@ export function MerchantOverview({
       <section aria-label="Feed totals" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
           { label: "Product pages", value: fmt(total) },
-          { label: "Sent to Google", value: fmt(eligible) },
-          { label: "Not sent (no price / excluded)", value: fmt(total - eligible) },
-          { label: "Pages with admin fixes", value: fmt(overrideCount) },
+          { label: "Eligible in local feed", value: fmt(eligible) },
+          { label: "Not feed-eligible", value: fmt(total - eligible) },
+          { label: "Recent admin fixes (up to 500)", value: fmt(overrideCount) },
         ].map((s) => (
           <div key={s.label} className="rounded-lg border border-border bg-card p-4">
             <p className="text-2xl font-bold text-foreground">{s.value}</p>

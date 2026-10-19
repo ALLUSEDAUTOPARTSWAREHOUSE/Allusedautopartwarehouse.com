@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateAdminToken, ADMIN_COOKIE, ADMIN_SESSION_MAX_AGE } from '@/lib/admin-auth'
 import { getAdminSessionVersion } from '@/lib/admin-passwords'
 import { getAllowedGitHubAdminIds, getGitHubOAuthCredentials, getPublicAppOrigin } from '@/lib/github-admin-oauth'
+import { authCookieOptions } from '@/lib/session-cookie'
 
 export const runtime = 'nodejs'
 const STATE_COOKIE = 'auapw_github_oauth_state'
@@ -85,13 +86,7 @@ export async function GET(request: NextRequest) {
     const adminEmail = process.env.ADMIN_EMAIL || 'Info@Allusedautopartswarehouse.com'
     const token = generateAdminToken(adminEmail, await getAdminSessionVersion())
     const response = NextResponse.redirect(new URL('/admin/workspace', origin))
-    response.cookies.set(ADMIN_COOKIE, token, {
-      httpOnly: true,
-      secure: origin.startsWith('https://'),
-      sameSite: 'lax',
-      path: '/',
-      maxAge: ADMIN_SESSION_MAX_AGE,
-    })
+    response.cookies.set(ADMIN_COOKIE, token, authCookieOptions(ADMIN_SESSION_MAX_AGE))
     response.cookies.set(STATE_COOKIE, '', {
       httpOnly: true,
       secure: origin.startsWith('https://'),
