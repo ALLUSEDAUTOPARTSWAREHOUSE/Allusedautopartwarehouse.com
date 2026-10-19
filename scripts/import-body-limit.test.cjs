@@ -1,0 +1,11 @@
+const { test } = require('node:test')
+const assert = require('node:assert/strict')
+const { readFileSync } = require('node:fs')
+test('direct imports have matching safe server and browser limits below function cap', () => {
+ assert.match(readFileSync('next.config.ts','utf8'), /bodySizeLimit: "4mb"/)
+ assert.match(readFileSync('app/admin/catalog-actions.ts','utf8'), /file.size > 3_500_000/)
+ const form = readFileSync('components/admin/merchant/catalog-sync-panel.tsx','utf8')
+ assert.match(form,/file.size > 3_500_000/)
+ assert.match(form,/event.preventDefault\(\)/)
+ assert.match(form,/role="alert"/)
+})
