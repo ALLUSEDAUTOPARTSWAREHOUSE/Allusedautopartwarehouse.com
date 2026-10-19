@@ -26,7 +26,7 @@ export function CatalogCommandCenter() {
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {[
         { label: 'Brands & product editor', detail: 'Prices, images and visibility', href: '/admin/products', icon: Boxes },
-        { label: 'Upload replacements', detail: 'Preview small imports; stage large files', href: '/admin/uploads', icon: Upload },
+        { label: 'Upload replacements', detail: 'Preview small imports; stage large files', href: '/admin/products#catalog-upload', icon: Upload },
         { label: 'Catalog health', detail: 'Missing prices and image review', href: '/admin/merchant', icon: Activity },
         { label: 'Configuration checks', detail: 'Database and integration readiness', href: '/admin/settings', icon: ShieldCheck },
       ].map(({ label, detail, href, icon: Icon }) => <Link key={href} href={href} className="group rounded-2xl border bg-card p-5 transition-shadow hover:shadow-lg motion-reduce:transition-none"><Icon className="size-6 text-primary" /><h3 className="mt-4 font-semibold">{label} <ArrowUpRight className="inline size-4" /></h3><p className="mt-2 text-xs text-muted-foreground">{detail}</p></Link>)}
