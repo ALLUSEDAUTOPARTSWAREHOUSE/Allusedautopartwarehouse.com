@@ -124,10 +124,14 @@ export function QuoteForm({ defaultPart = "", compact = false, source }: QuoteFo
     >
       <div className={compact ? "p-4 flex flex-col h-full" : "p-5 sm:p-7 flex flex-col h-full"}>
 
-        {/* Header */}
-        <h3 className="text-xs font-black tracking-[0.25em] uppercase text-primary mb-5">
-          Fill Form to Get Quote
-        </h3>
+        <div className="mb-5 flex flex-col gap-1">
+          <h3 className="text-xs font-black tracking-[0.25em] uppercase text-primary">
+            Request a free quote
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Tell us the vehicle and part. A specialist will call you within one business day — this is not a price until we confirm fitment.
+          </p>
+        </div>
 
         {error && (
           <div className="mb-4 flex items-center gap-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5" role="alert">
@@ -259,20 +263,17 @@ export function QuoteForm({ defaultPart = "", compact = false, source }: QuoteFo
             </div>
           </div>
 
-          {/* Row 6: Message (hidden in compact) */}
-          {!compact && (
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="qf-msg" className="text-[0.6rem] font-black tracking-[0.2em] uppercase text-muted-foreground">
-                Additional Details
-              </label>
-              <textarea
-                id="qf-msg" className={`${field} resize-none min-h-[70px]`}
-                placeholder="Any additional details about the part you need..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-              />
-            </div>
-          )}
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="qf-msg" className="text-[0.6rem] font-black tracking-[0.2em] uppercase text-muted-foreground">
+              Additional Details
+            </label>
+            <textarea
+              id="qf-msg" className={`${field} resize-none min-h-[70px]`}
+              placeholder="VIN, engine size, trim, or anything that helps us find the right part..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+            />
+          </div>
 
           {/* Submit */}
           <div className="mt-auto pt-1">
