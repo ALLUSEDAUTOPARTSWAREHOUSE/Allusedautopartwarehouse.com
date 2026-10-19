@@ -128,7 +128,7 @@ export default async function AdminMerchantPage({
                 <div><dt>Social / other platforms</dt><dd className="text-muted-foreground">Not connected</dd></div>
               </dl>
               <div className="flex flex-wrap gap-2 text-xs">
-                <Link href={`/admin/products?brand=${b.slug}#catalog-upload`} className="rounded border px-2 py-1">Upload / update</Link>
+                <Link href={`/admin/uploads?brand=${b.slug}`} className="rounded border px-2 py-1">Upload / update</Link>
                 <Link href={`/admin/products?brand=${b.slug}#fix-pages`} className="rounded border px-2 py-1">Edit / visibility</Link>
               </div>
             </article>
@@ -147,7 +147,7 @@ export default async function AdminMerchantPage({
           ].map(metric => <div key={metric.label} className="rounded-xl border bg-background p-4"><p className="text-xs text-muted-foreground">{metric.label}</p><p className="mt-2 text-2xl font-bold">{metric.value.toLocaleString()}</p></div>)}
         </div>}
         <nav aria-label="Brand operations" className="my-4 flex flex-wrap gap-2">
-          <Link href={`/admin/products?brand=${brand}#catalog-upload`} className="rounded-lg border px-3 py-2 text-sm">Upload / preview / save</Link>
+          <Link href={`/admin/uploads?brand=${brand}`} className="rounded-lg border px-3 py-2 text-sm">Upload / preview / save</Link>
           <Link href={`/admin/products?brand=${brand}&issue=no_price#fix-pages`} className="rounded-lg border px-3 py-2 text-sm">Review missing prices</Link>
           <Link href={`/admin/products?brand=${brand}&issue=hidden#fix-pages`} className="rounded-lg border px-3 py-2 text-sm">Review hidden products</Link>
           <Link href="/admin/merchant" className="rounded-lg border px-3 py-2 text-sm">Feed health</Link>
