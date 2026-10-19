@@ -1,5 +1,11 @@
 [build]
-  command = "pnpm build"
+  # The app lives at the repository root. This overrides any stale
+  # "Base directory" value set in the Netlify UI.
+  base = "/"
+  # Fetch the pinned pnpm via npx and install the locked dependencies, so
+  # the build also works in environments without pnpm preinstalled or
+  # without an automatic dependency install step.
+  command = "npx --yes pnpm@9.15.9 install --frozen-lockfile && npx --yes pnpm@9.15.9 build"
 
 [build.environment]
   NODE_VERSION = "22"
