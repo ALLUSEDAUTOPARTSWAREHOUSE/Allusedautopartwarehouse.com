@@ -50,6 +50,16 @@ export async function POST(request: Request) {
     if (!blob || blob.statusCode !== 200 || !blob.stream) {
       return Response.json({ error: 'The staged file could not be read from private storage. No products were changed.' }, { status: 404 })
     }
+    // The expected_bytes gate above uses the client-reported size; enforce the cap against the
+    // authoritative stored blob size BEFORE buffering the stream, so a falsely small expected_bytes
+    // cannot trick the importer into materializing a multi-hundred-MB blob in memory.
+    const storedBytes = blob.blob.size
+    if (!Number.isSafeInteger(storedBytes) || storedBytes < 1 || storedBytes > MAX_IMPORT_BYTES) {
+      return Response.json({ error: 'This synchronous importer supports files up to 20 MB. Split this workbook into smaller files; the staged original is preserved.' }, { status: 413 })
+    }
+    if (storedBytes !== size) {
+      return Response.json({ error: 'The stored file size does not match its upload record. No products were changed.' }, { status: 409 })
+    }
     const bytes = Buffer.from(await new Response(blob.stream).arrayBuffer())
     if (bytes.length !== size) {
       return Response.json({ error: 'The stored file size does not match its upload record. No products were changed.' }, { status: 409 })
