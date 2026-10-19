@@ -1,3 +1,4 @@
+import { CatalogCommandCenter } from '@/components/admin/catalog-command-center'
 import { CATALOG_RESET_AT } from "@/lib/catalog-reset-policy"
 import { CatalogHealthDashboard } from "@/components/admin/merchant/catalog-health-dashboard"
 import { getBrandLogoUrl } from "@/lib/data"
@@ -94,6 +95,7 @@ export default async function AdminMerchantPage({
         </p>
       </header>
 
+      <CatalogCommandCenter />
       <CatalogHealthDashboard stats={brand ? brandStats.filter(item => item.slug === brand) : brandStats} checkedAt={new Date().toISOString()} />
 
       <section className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-5" aria-label="Catalog replacement mode">

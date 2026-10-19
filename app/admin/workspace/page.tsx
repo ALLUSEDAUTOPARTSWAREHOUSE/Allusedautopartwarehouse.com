@@ -1,3 +1,4 @@
+import { CatalogCommandCenter } from '@/components/admin/catalog-command-center'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getAdminSession } from '@/lib/admin-auth'
@@ -86,6 +87,7 @@ export default async function AdminWorkspacePage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-7">
+      <CatalogCommandCenter />
       <section className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
           <div>
