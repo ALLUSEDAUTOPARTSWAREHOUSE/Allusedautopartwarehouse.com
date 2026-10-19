@@ -122,10 +122,19 @@ function ManualProductForm({ brands }: { brands: { slug: string; label: string }
 }
 
 export function UploadSheetForm({ brands }: { brands: { slug: string; label: string }[] }) {
+  const [sizeError, setSizeError] = useState("")
   const [state, action, pending] = useActionState(uploadProductSheet, initial)
 
   return (
-    <form key={state.ok ? state.message : "idle"} action={action} className="flex flex-col gap-3">
+    <form key={state.ok ? state.message : "idle"} action={action} onSubmit={(event) => {
+      const file = new FormData(event.currentTarget).get('file')
+      if (file instanceof File && file.size > 3_500_000) {
+        event.preventDefault()
+        setSizeError('File exceeds the 3.5 MB direct-import limit. Use large-file staging; importing staged files requires separate processing.')
+      } else setSizeError('')
+    }} className="flex flex-col gap-3">
+      {sizeError && <p role="alert" className="text-sm text-destructive">{sizeError}</p>}
+      <p className="text-xs text-muted-foreground">Direct import: maximum 3.5 MB per workbook.</p>
       <p className="text-xs text-muted-foreground">
         Upload an .xlsx sheet with <code className="rounded bg-muted px-1 py-0.5">Product Name</code> and{" "}
         <code className="rounded bg-muted px-1 py-0.5">Price</code> columns (optionally{" "}
