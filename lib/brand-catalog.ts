@@ -1,3 +1,4 @@
+import { UPLOADED_ONLY_CATALOG } from "@/lib/catalog-reset-policy"
 import "server-only"
 import fs from "node:fs"
 import path from "node:path"
@@ -94,6 +95,10 @@ export function loadBrandCatalog(brand: string): BrandCatalog | null {
     if (!fs.existsSync(filePath)) return null
     catalog = JSON.parse(fs.readFileSync(filePath, "utf8")) as BrandCatalog
     catalogCache.set(brand, catalog)
+  }
+  if (UPLOADED_ONLY_CATALOG) {
+    const products = manualOverlay.get(brand) ?? []
+    return { ...catalog, products, count: products.length }
   }
   const manual = manualOverlay.get(brand)
   if (!manual || manual.length === 0) return catalog
