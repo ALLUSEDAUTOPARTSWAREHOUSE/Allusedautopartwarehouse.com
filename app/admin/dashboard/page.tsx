@@ -1,3 +1,4 @@
+import { CatalogCommandCenter } from '@/components/admin/catalog-command-center'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getAdminSession } from '@/lib/admin-auth'
@@ -16,6 +17,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <CatalogCommandCenter />
       <OperationsCenter checks={checkEnvironment()} />
       <AdminDashboardClient />
       <Link href="/admin/ai-chat" className="mx-auto w-full max-w-7xl rounded-lg border border-border bg-card p-5">

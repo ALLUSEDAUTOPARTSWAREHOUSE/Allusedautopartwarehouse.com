@@ -29,6 +29,7 @@ const GROUPS = [
   { title: 'Marketing', links: [
     { href: '/admin/marketing', label: 'Marketing dashboard', icon: Megaphone },
     { href: '/admin/merchant', label: 'Google Merchant', icon: Package },
+    { href: '/admin/ads', label: 'OpenAI Ads & feeds', icon: Megaphone },
     { href: '/admin/marketing/reviews', label: 'Google Reviews', icon: Star },
     { href: '/admin/marketing/social', label: 'Social accounts', icon: Share2 },
   ] },

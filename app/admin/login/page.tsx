@@ -1,12 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight, LockKeyhole, Mail, Eye, EyeOff, ShieldCheck, Boxes, Users, Code2, ShoppingBag, Github } from 'lucide-react'
 
 export default function AdminLoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -43,8 +41,7 @@ export default function AdminLoginPage() {
         setError(data.message || 'Unable to sign in. Check your credentials and try again.')
         return
       }
-      router.replace(data.redirectTo || '/admin/workspace')
-      router.refresh()
+      window.location.assign(data.redirectTo || '/admin/workspace')
     } catch {
       setError('We could not connect securely. Please try again.')
     } finally {
@@ -53,9 +50,9 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-6xl items-center px-3 py-8 sm:px-6">
-      <section className="grid w-full overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950 text-white shadow-2xl lg:min-h-[620px] lg:grid-cols-2">
-        <div className="relative flex flex-col justify-between overflow-hidden p-7 sm:p-10 lg:p-12 animate-in fade-in slide-in-from-bottom-2 duration-700 motion-reduce:animate-none">
+    <div className="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-7xl items-center px-3 py-8 sm:px-6">
+      <section className="grid w-full overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950 text-white shadow-2xl lg:min-h-[660px] lg:grid-cols-2">
+        <div className="relative flex flex-col justify-between overflow-hidden p-7 sm:p-10 lg:p-12 animate-in fade-in slide-in-from-left-4 duration-700 motion-reduce:animate-none">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(249,115,22,.25),transparent_50%),radial-gradient(ellipse_at_bottom_right,rgba(14,165,233,.16),transparent_50%)]" />
           <div className="relative">
             <Link href="/" className="inline-flex items-center gap-3"><span className="flex size-11 items-center justify-center rounded-2xl bg-orange-500 text-slate-950"><Boxes className="size-6" /></span><span><b className="block text-sm">AUAPW</b><span className="text-xs text-slate-400">ALL USED AUTO PARTS WAREHOUSE</span></span></Link>
@@ -73,12 +70,12 @@ export default function AdminLoginPage() {
           </div>
           <p className="relative mt-8 text-xs text-slate-500">Authorized access only · Secure session</p>
         </div>
-        <div className="relative flex items-center justify-center overflow-hidden bg-slate-50 p-5 text-slate-900 sm:p-9 lg:p-12">
+        <div className="relative flex items-center justify-center overflow-hidden bg-slate-50 p-5 text-slate-900 sm:p-9 lg:p-12 animate-in fade-in slide-in-from-right-4 duration-700 motion-reduce:animate-none">
           <div className="absolute -right-20 -top-20 size-64 rounded-full bg-orange-100 blur-3xl" />
           <div className="relative w-full max-w-md">
             <div className="mb-7 flex size-12 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 text-orange-600"><ShieldCheck className="size-6" /></div>
-            <h2 className="text-3xl font-semibold tracking-tight">Welcome back</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">Sign in with your authorized work account. We’ll open the workspace assigned to your role.</p>
+            <h2 className="text-3xl font-semibold tracking-tight">Sign in to your workspace</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">Use your authorized work account to securely access the AUAPW workspace assigned to your role.</p>
             {error && <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
             <form onSubmit={handleLogin} className="mt-7 space-y-5">
               <div><label htmlFor="portal-email" className="mb-2 block text-sm font-semibold text-slate-700">Email address</label><div className="relative"><Mail className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400" /><input id="portal-email" type="email" autoComplete="username" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@yourcompany.com" required className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-400/15" /></div></div>

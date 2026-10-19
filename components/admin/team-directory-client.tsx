@@ -73,6 +73,27 @@ export function TeamDirectoryClient() {
   const [isSaving, setIsSaving] = useState(false)
   const [loginPassword, setLoginPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [invitingId, setInvitingId] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  const sendInvite = async (member: StaffMember) => {
+    setInvitingId(member.id)
+    setError(null)
+    setNotice(null)
+    try {
+      const res = await fetch(`/api/admin/staff/${member.id}/invite`, { method: 'POST', credentials: 'include' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data.error ?? 'Failed to send the invitation.')
+        return
+      }
+      setNotice(data.message ?? `Invitation sent to ${member.email}.`)
+    } catch {
+      setError('Network error. Please try again.')
+    } finally {
+      setInvitingId(null)
+    }
+  }
 
   const loadStaff = async () => {
     try {
@@ -214,7 +235,7 @@ export function TeamDirectoryClient() {
         <h2 className="font-semibold text-foreground">Sales, support &amp; email routing</h2>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
           Active Sales Agent and Support Team members are included in new quote, order and reservation email alerts. When an order or quote is assigned from Sales &amp; Support, the selected owner also receives an assignment email. Developer Team members are kept out of customer-work alerts.
-          Adding someone here creates a directory contact, not a separate login account or invitation.
+          To give someone portal access, add them here and click &quot;Invite&quot; on their card — they receive an email link to set their own password, then sign in at the staff login page.
         </p>
         <a href="/admin/settings" className="mt-2 inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline">
           Check email sender and system health settings →
@@ -224,6 +245,11 @@ export function TeamDirectoryClient() {
       {error && (
         <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
+        </div>
+      )}
+      {notice && (
+        <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+          {notice}
         </div>
       )}
 
@@ -314,6 +340,16 @@ export function TeamDirectoryClient() {
                 </div>
 
                 <div className="flex gap-2 mt-auto pt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 gap-1.5"
+                    onClick={() => sendInvite(member)}
+                    disabled={invitingId === member.id || member.status !== 'active'}
+                  >
+                    {invitingId === member.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                    Invite
+                  </Button>
                   <Button
                     size="sm"
                     variant="outline"

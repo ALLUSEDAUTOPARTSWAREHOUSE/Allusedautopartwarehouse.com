@@ -116,7 +116,10 @@ const REPAIR_SQL = `
     ADD COLUMN IF NOT EXISTS customer_notes text,
     ADD COLUMN IF NOT EXISTS internal_notes text,
     ADD COLUMN IF NOT EXISTS payment_gateway text,
-    ADD COLUMN IF NOT EXISTS stripe_session_id text;
+    ADD COLUMN IF NOT EXISTS stripe_session_id text,
+    ADD COLUMN IF NOT EXISTS email_verified_at timestamptz,
+    ADD COLUMN IF NOT EXISTS email_verify_token text,
+    ADD COLUMN IF NOT EXISTS invoice_token text;
 
   CREATE TABLE IF NOT EXISTS public.chat_conversations (
     id text PRIMARY KEY,

@@ -14,7 +14,7 @@ interface AuthContextType {
   user: User | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
-  signup: (email: string, password: string, name: string) => Promise<void>
+  signup: (email: string, password: string, name: string, inviteToken?: string) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -39,8 +39,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (result.error) throw new Error(result.error.message || 'Sign in failed')
     await refetch()
   }
-  async function signup(email: string, password: string, name: string) {
-    const result = await authClient.signUp.email({ email, password, name })
+  async function signup(email: string, password: string, name: string, inviteToken?: string) {
+    const result = await authClient.signUp.email({ email, password, name }, { headers: { 'x-auapw-invite': inviteToken || '' } })
     if (result.error) throw new Error(result.error.message || 'Account creation failed')
     await refetch()
   }

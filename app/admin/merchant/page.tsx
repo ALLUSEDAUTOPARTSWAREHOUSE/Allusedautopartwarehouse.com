@@ -1,3 +1,4 @@
+import { CatalogHealthDashboard } from "@/components/admin/merchant/catalog-health-dashboard"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getAdminSession } from "@/lib/admin-auth"
@@ -5,6 +6,7 @@ import { getFeedStats, listFeedFetches, listRecentOverrides } from "@/lib/mercha
 import { buildFeedAlerts, listFeedSnapshots } from "@/lib/merchant-health"
 import { MerchantOverview } from "@/components/admin/merchant/merchant-overview"
 import { FeedHealthPanel } from "@/components/admin/merchant/feed-health-panel"
+import { MerchantPreflightCenter } from "@/components/admin/merchant/merchant-preflight-center"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -22,6 +24,8 @@ export default async function GoogleFeedDashboard() {
       <p className="text-sm text-muted-foreground">Monitor Google Shopping feed health, errors and fetch history.</p>
       <Link href="/admin/products" className="text-primary underline">Manage products, uploads, prices and images</Link>
     </header>
+    <CatalogHealthDashboard stats={stats} checkedAt={new Date().toISOString()} />
+    <MerchantPreflightCenter stats={stats} />
     <MerchantOverview stats={stats} fetches={fetches} overrideCount={overrides.length} />
     <FeedHealthPanel alerts={alerts} snapshots={snapshots} />
   </div>

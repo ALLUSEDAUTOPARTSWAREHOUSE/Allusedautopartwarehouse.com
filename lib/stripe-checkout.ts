@@ -9,7 +9,18 @@ import {
   listUnconfirmedStripeSessions,
   type CustomerOrder,
 } from "@/lib/followup"
-import { notifyNewOrder, sendCustomerOrderInvoice } from "@/lib/followup-notify"
+import { notifyNewOrder, sendCustomerOrderInvoice, sendCustomerOrderVerification } from "@/lib/followup-notify"
+
+export interface StripeCheckoutDetails {
+  addressType: "commercial" | "residential"
+  liftgateRequired: boolean
+  billingSameAsShipping: boolean
+  billingAddress?: { name?: string; address?: string; city?: string; state?: string; zipCode?: string; country?: string }
+  termsAccepted: true
+  shippingPolicyAccepted: true
+  returnsPolicyAccepted: true
+  approvedTotal: number
+}
 
 export interface StripeCheckoutCustomer {
   userId?: string
@@ -26,16 +37,33 @@ export interface StripeCheckoutCustomer {
 
 /**
  * Re-prices the cart server-side, creates a pending order, and starts a
- * Stripe embedded Checkout Session for the exact validated total. The
- * customer enters real card details inside Stripe's own secure iframe.
+ * Checkout Session in `elements` mode so AUAPW can render its own card form
+ * (Payment Element) while Stripe still tokenizes the card.
  */
-export async function createStripeCheckoutSession(customer: StripeCheckoutCustomer, items: CartLineInput[]) {
+export async function createStripeCheckoutSession(
+  customer: StripeCheckoutCustomer,
+  items: CartLineInput[],
+  checkoutDetails: StripeCheckoutDetails,
+  siteUrl?: string,
+) {
   if (!stripe) {
     return { ok: false as const, error: "Card payments are not configured. Please choose another payment method." }
   }
 
   const pricing = await priceCart(items)
   if (!pricing.ok) return { ok: false as const, error: pricing.error }
+  const fee = (name: string) => {
+    const n = Number(process.env[name] ?? "0")
+    return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : 0
+  }
+  const checkoutFees =
+    (checkoutDetails.addressType === "residential" ? fee("AUAPW_RESIDENTIAL_DELIVERY_FEE") : 0) +
+    (checkoutDetails.liftgateRequired ? fee("AUAPW_LIFTGATE_FEE") : 0)
+  const shippingCost = Math.round((pricing.shippingCost + checkoutFees) * 100) / 100
+  const totalAmount = Math.round((pricing.subtotal + pricing.tax + shippingCost) * 100) / 100
+  if (Math.abs(totalAmount - checkoutDetails.approvedTotal) > 0.02) {
+    return { ok: false as const, error: "The order total changed. Please review the updated total and approve it again." }
+  }
 
   const order = await createOrder({
     userId: customer.userId,
@@ -47,8 +75,9 @@ export async function createStripeCheckoutSession(customer: StripeCheckoutCustom
     items: pricing.lines,
     subtotal: pricing.subtotal,
     tax: pricing.tax,
-    shippingCost: pricing.shippingCost,
-    totalAmount: pricing.totalAmount,
+    shippingCost,
+    totalAmount,
+    checkoutDetails: { ...checkoutDetails, policyAcceptedAt: new Date().toISOString(), policyVersion: "checkout-v1" },
     paymentGateway: "stripe",
     status: "pending",
   })
@@ -62,12 +91,12 @@ export async function createStripeCheckoutSession(customer: StripeCheckoutCustom
     quantity: line.quantity,
   }))
 
-  if (pricing.shippingCost > 0) {
+  if (shippingCost > 0) {
     lineItems.push({
       price_data: {
         currency: "usd",
-        product_data: { name: "Shipping" },
-        unit_amount: Math.round(pricing.shippingCost * 100),
+        product_data: { name: "Shipping and selected freight services" },
+        unit_amount: Math.round(shippingCost * 100),
       },
       quantity: 1,
     })
@@ -84,21 +113,30 @@ export async function createStripeCheckoutSession(customer: StripeCheckoutCustom
 
   try {
     const session = await stripe.checkout.sessions.create({
-      ui_mode: "embedded_page",
-      redirect_on_completion: "never",
+      ui_mode: "elements",
       mode: "payment",
       customer_email: customer.email,
       line_items: lineItems,
+      return_url: `${siteUrl ?? "https://allusedautopartwarehouse.com"}/checkout?session_id={CHECKOUT_SESSION_ID}`,
       metadata: { orderId: order.id, orderNumber: order.orderNumber },
+      integration_identifier: `auapw-checkout-${Array.from(crypto.getRandomValues(new Uint8Array(8)), (n) =>
+        "abcdefghijklmnopqrstuvwxyz"[n % 26],
+      ).join("")}`,
     }, { idempotencyKey: `checkout-${order.id}` })
 
     await attachStripeSession(order.id, session.id)
+    if (siteUrl) {
+      sendCustomerOrderVerification(order, siteUrl).catch((err) => {
+        console.error("[v0] Stripe order verification email failed:", err)
+      })
+    }
 
     return {
       ok: true as const,
       clientSecret: session.client_secret,
       orderNumber: order.orderNumber,
       totalAmount: order.totalAmount,
+      invoiceToken: order.invoiceToken,
     }
   } catch (error) {
     console.error("[v0] Stripe checkout session error:", error)

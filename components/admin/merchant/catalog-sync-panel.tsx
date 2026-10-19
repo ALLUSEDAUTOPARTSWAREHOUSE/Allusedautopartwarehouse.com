@@ -1,5 +1,6 @@
 "use client"
 
+import { LargeCatalogUpload } from "@/components/admin/merchant/large-catalog-upload"
 import { useActionState, useState, useRef } from "react"
 import { RefreshCw, Upload, PlusCircle, Trash2, ExternalLink } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -300,7 +301,8 @@ export function CatalogSyncPanel({ brands, manualProducts }: CatalogSyncPanelPro
         <TabsContent value="manual" className="pt-4">
           <ManualProductForm brands={brands} />
         </TabsContent>
-        <TabsContent value="upload" className="pt-4">
+        <TabsContent value="upload" className="pt-4 space-y-4">
+          <LargeCatalogUpload brands={brands} />
           <UploadSheetForm brands={brands} />
         </TabsContent>
       </Tabs>

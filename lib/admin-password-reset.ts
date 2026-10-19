@@ -3,8 +3,7 @@ import "server-only"
 import { createHash, randomInt, timingSafeEqual } from "crypto"
 import { pool } from "@/lib/db"
 import { saveAdminPassword } from "@/lib/admin-passwords"
-
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "Info@Allusedautopartswarehouse.com").trim().toLowerCase()
+import { isAllowedAdminEmail } from "@/lib/admin-auth"
 const OTP_TTL_MINUTES = 10
 const MAX_ATTEMPTS = 5
 
@@ -34,20 +33,43 @@ async function ensureResetTable() {
   `)
 }
 
+function resetFromAddress(): string | null {
+  // Prefer an explicit admin reset sender, but accept a display-name form like
+  // "Name <email@domain.com>" or a bare address. Fall back to EMAIL_FROM for
+  // site-wide sender or to RESEND_EMAIL_DOMAIN to synthesize a no-reply address.
+  const configuredAdmin = process.env.ADMIN_RESET_FROM?.trim()
+  if (configuredAdmin) {
+    const candidate = configuredAdmin.replace(/^.*<([^>]+)>$/, "$1")
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) return configuredAdmin
+  }
+
+  const configuredEmailFrom = process.env.EMAIL_FROM?.trim()
+  if (configuredEmailFrom) {
+    const candidate = configuredEmailFrom.replace(/^.*<([^>]+)>$/, "$1")
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) return configuredEmailFrom
+  }
+
+  const domain = process.env.RESEND_EMAIL_DOMAIN?.trim()
+  if (domain && /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
+    return `AUAPW Admin <no-reply@${domain}>`
+  }
+  return null
+}
+
 export async function requestAdminPasswordOtp(emailInput: string) {
   const email = emailInput.trim().toLowerCase()
   const secret = resetSecret()
   const apiKey = process.env.RESEND_API_KEY
-  const from = process.env.ADMIN_RESET_FROM
+  const from = resetFromAddress()
 
   if (!secret || !apiKey || !from) {
-    throw new Error("Password reset email is not configured. Set ADMIN_RESET_SECRET, RESEND_API_KEY, and ADMIN_RESET_FROM in Vercel.")
+    throw new Error("Password reset email is not configured. Set ADMIN_RESET_SECRET, RESEND_API_KEY, and a valid ADMIN_RESET_FROM, EMAIL_FROM, or RESEND_EMAIL_DOMAIN in Vercel.")
   }
 
   await ensureResetTable()
 
   // Always return the same public result for unknown addresses.
-  if (email !== ADMIN_EMAIL) return
+  if (!isAllowedAdminEmail(email)) return
 
   const otp = String(randomInt(0, 1_000_000)).padStart(6, "0")
   const otpHash = otpDigest(email, otp, secret)
@@ -78,7 +100,8 @@ export async function requestAdminPasswordOtp(emailInput: string) {
       "UPDATE public.admin_password_reset_otps SET consumed_at = now() WHERE email = $1 AND consumed_at IS NULL",
       [email],
     )
-    console.error("[admin-password-reset] Email provider rejected reset email", response.status)
+    const providerError = await response.text().catch(() => "")
+    console.error("[admin-password-reset] Email provider rejected reset email", response.status, providerError)
     throw new Error("Unable to send the reset email. Check the email provider configuration.")
   }
 }
@@ -88,7 +111,7 @@ export async function verifyAdminPasswordOtpAndReset(emailInput: string, otpInpu
   const otp = otpInput.trim()
   const secret = resetSecret()
   if (!secret) throw new Error("Password reset is not configured.")
-  if (email !== ADMIN_EMAIL || !/^\d{6}$/.test(otp)) return false
+  if (!isAllowedAdminEmail(email) || !/^\d{6}$/.test(otp)) return false
 
   await ensureResetTable()
   const result = await pool.query(
