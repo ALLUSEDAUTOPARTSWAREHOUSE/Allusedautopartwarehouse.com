@@ -35,6 +35,7 @@ export default async function AdminSettingsPage() {
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <header>
         <h1 className="text-2xl font-bold text-foreground">Settings &amp; system health</h1>
+        <p className="mt-2 text-sm"><a className="font-semibold text-primary underline" href="/admin/operations-center">Open AI Operations Center →</a></p>
         <p className="text-sm text-muted-foreground">
           Live health checks plus safe editing links. Secret values stay in provider dashboards and are never displayed here.
         </p>
@@ -69,7 +70,7 @@ export default async function AdminSettingsPage() {
 
       <section aria-labelledby="env-heading" className="rounded-lg border border-border bg-card">
         <h2 id="env-heading" className="border-b border-border px-5 py-3 text-lg font-semibold text-foreground">
-          Settings in Vercel
+          Deployment environment settings
         </h2>
         <ul className="divide-y divide-border">
           {env.map((e) => (

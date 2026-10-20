@@ -9,12 +9,14 @@ import { pool } from '@/lib/db'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+export const maxDuration = 300
 
 // Keep synchronous imports bounded. Larger staged files must be split into smaller workbooks.
 const MAX_IMPORT_BYTES = 20 * 1024 * 1024
 
 export async function POST(request: Request) {
   if (!(await getAdminSession())) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  if (request.headers.get('origin') !== new URL(request.url).origin) return Response.json({ error: 'Invalid origin' }, { status: 403 })
   const body = await request.json().catch(() => null) as { pathname?: unknown; action?: unknown; confirm?: unknown } | null
   const pathname = typeof body?.pathname === 'string' ? body.pathname : ''
   const action = body?.action
@@ -78,7 +80,7 @@ export async function POST(request: Request) {
       : reason.message === 'BRAND_MISMATCH' ? 'The workbook contains rows for another brand. Nothing was saved.'
       : reason.message === 'DUPLICATE_PRODUCTS' ? 'Duplicate product identities found. Give each product a unique Product URL or name; nothing was saved.'
       : reason.code === '42P01' ? 'A catalog database table is missing. No products were saved.'
-      : 'Import failed. The database transaction was rolled back; refresh the upload list and retry.'
+      : 'Could not confirm the import result. Check the product counts and upload status before retrying; products may already have been saved.'
     return Response.json({ error: message }, { status: 422 })
   }
 }

@@ -44,12 +44,12 @@ export function checkEnvironment(): EnvCheck[] {
       purpose: "Shows the card form at checkout",
     },
     { name: "STRIPE_WEBHOOK_SECRET", set: anySet("STRIPE_WEBHOOK_SECRET"), required: false, purpose: "Confirms card payments within seconds" },
-    { name: "CRON_SECRET", set: anySet("CRON_SECRET"), required: false, purpose: "Locks the daily job to Vercel's scheduler" },
+    { name: "CRON_SECRET", set: anySet("CRON_SECRET"), required: false, purpose: "Protects scheduled jobs and automated reports" },
     {
-      name: "AI_GATEWAY_API_KEY (or Vercel OIDC)",
-      set: anySet("AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"),
+      name: "AI_GATEWAY_API_KEY",
+      set: anySet("AI_GATEWAY_API_KEY"),
       required: false,
-      purpose: "Store assistant across admin pages",
+      purpose: "AI assistant model access (Netlify-compatible API key)",
     },
   ]
 }
