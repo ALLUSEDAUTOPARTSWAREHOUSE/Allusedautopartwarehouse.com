@@ -22,3 +22,12 @@ test('sheet monitor keeps cancellation scoped to transfers and marks preview as 
   assert.match(source, /Preview ready · not imported/)
   assert.match(source, /Refresh sheet status/)
 })
+
+test('AI context sharing is explicit and excludes automatic private-data transfer', () => {
+  const source = readFileSync('components/admin/merchant/sheet-dashboard-actions.tsx', 'utf8')
+  assert.match(source, /navigator.clipboard.writeText\(PROJECT_CONTEXT\)/)
+  assert.match(source, /href="https:\/\/chatgpt.com\/"/)
+  assert.match(source, /href="\/admin\/ai-chat"/)
+  assert.match(source, /not live sheet status, customer data, or credentials/)
+  assert.match(source, /Review project context before sharing/)
+})
