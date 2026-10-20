@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { withEve } from "eve/next";
 
 const nextConfig: NextConfig = {
+  experimental: { serverActions: { bodySizeLimit: "4mb" } },
   images: {
     // The image optimizer endpoint (/_next/image) is unavailable in this
     // environment and returns 404, which breaks every <Image>. Serving the

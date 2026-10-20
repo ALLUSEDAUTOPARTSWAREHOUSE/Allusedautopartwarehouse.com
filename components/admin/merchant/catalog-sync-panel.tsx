@@ -1,5 +1,6 @@
 "use client"
 
+import { validFormUploadSize } from "@/lib/catalog-upload-policy"
 import { LargeCatalogUpload } from "@/components/admin/merchant/large-catalog-upload"
 import { useActionState, useState, useRef } from "react"
 import { RefreshCw, Upload, PlusCircle, Trash2, ExternalLink } from "lucide-react"
@@ -124,9 +125,16 @@ function ManualProductForm({ brands }: { brands: { slug: string; label: string }
 
 export function UploadSheetForm({ brands }: { brands: { slug: string; label: string }[] }) {
   const [state, action, pending] = useActionState(uploadProductSheet, initial)
+  const [fileError, setFileError] = useState("")
 
   return (
-    <form key={state.ok ? state.message : "idle"} action={action} className="flex flex-col gap-3">
+    <form key={state.ok ? state.message : "idle"} action={action} onSubmit={event => {
+      const file = new FormData(event.currentTarget).get("file")
+      if (!(file instanceof File) || !validFormUploadSize(file.size)) {
+        event.preventDefault()
+        setFileError("This form accepts files up to 3.5 MB. Use the direct-to-storage uploader above, then Preview rows and Confirm import. No request was sent.")
+      } else { setFileError("") }
+    }} className="flex flex-col gap-3">
       <p className="text-xs text-muted-foreground">
         Upload an .xlsx sheet with <code className="rounded bg-muted px-1 py-0.5">Product Name</code> and{" "}
         <code className="rounded bg-muted px-1 py-0.5">Price</code> columns (optionally{" "}
@@ -161,6 +169,8 @@ export function UploadSheetForm({ brands }: { brands: { slug: string; label: str
           <input name="file" type="file" accept=".xlsx,.xls" required className={`${inputClass} py-1.5`} />
         </label>
       </div>
+      <p className="text-xs text-muted-foreground">Small-file form: up to 3.5 MB. Larger files must use the direct-to-storage uploader above.</p>
+      {fileError && <p role="alert" className="text-sm text-destructive">{fileError}</p>}
       <label className="flex items-center gap-2 text-xs"><input name="confirmImport" type="checkbox" value="yes" />Confirm saving these updates; missing prices become quote-only. Unmatched old products stay unchanged.</label>
       <button type="submit" name="intent" value="preview" disabled={pending} className={inputClass}>Preview import — no changes</button>
       <div className="flex items-center justify-between gap-3">

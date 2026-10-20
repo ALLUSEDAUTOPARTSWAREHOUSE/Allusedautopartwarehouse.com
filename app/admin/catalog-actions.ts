@@ -1,5 +1,6 @@
 "use server"
 
+import { validFormUploadSize } from "@/lib/catalog-upload-policy"
 import { pool } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { getAdminSession } from "@/lib/admin-auth"
@@ -93,7 +94,7 @@ export async function uploadProductSheet(_prev: CatalogActionState, formData: Fo
   const file = formData.get("file")
   if (!(file instanceof File) || file.size === 0) return { ok: false, message: "Choose a spreadsheet file (.xlsx)." }
   if (!/\.xlsx?$/i.test(file.name)) return { ok: false, message: "Only .xlsx or .xls files are supported." }
-  if (file.size > 20 * 1024 * 1024) return { ok: false, message: "File is too large (max 20MB)." }
+  if (!validFormUploadSize(file.size)) return { ok: false, message: "Use the direct-to-storage uploader above for files larger than 3.5 MB, then preview and import the staged file." }
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer())
