@@ -44,7 +44,8 @@ export function LargeCatalogUpload({ brands }: { brands: { slug: string; label: 
     let stalled = setTimeout(() => abort.abort(), 120_000)
     try {
       const extension = file.name.split('.').pop()!.toLowerCase()
-      await upload(`catalog-staging/${brand}/${crypto.randomUUID()}.${extension}`, file, {
+      const pathname = `catalog-staging/${brand}/${crypto.randomUUID()}.${extension}`
+      await upload(pathname, file, {
         access: 'private', multipart: true, handleUploadUrl: '/api/admin/catalog-upload',
         clientPayload: JSON.stringify({ name: file.name, size: file.size }),
         abortSignal: abort.signal,
@@ -54,7 +55,12 @@ export function LargeCatalogUpload({ brands }: { brands: { slug: string; label: 
           setProgress(Math.floor(event.percentage))
         },
       })
-      setMessage('File transferred and staged. Next, preview the rows and explicitly import them into the catalog.')
+      const confirmation = await fetch('/api/admin/catalog-upload/reconcile', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pathname }),
+      })
+      const result = await confirmation.json()
+      if (!confirmation.ok) throw new Error('Storage confirmation failed')
+      setMessage(result.message || 'File stored. Preview before confirming import.')
       await refresh()
     } catch {
       setMessage('Upload stopped or failed. No import was requested. Use Check stored file below before retrying to avoid duplicates.')
@@ -90,8 +96,8 @@ export function LargeCatalogUpload({ brands }: { brands: { slug: string; label: 
   }
   return <section className="space-y-4 rounded-xl border border-border p-4">
     <div>
-      <h3 className="font-semibold">Large catalog upload · up to 500 MB staged</h3>
-      <p className="mt-1 text-sm text-muted-foreground">Upload, preview, then import are separate steps. The importer currently accepts workbooks up to 20 MB per import; split larger workbooks into smaller files. Imports update saved catalog products and refresh website/feed caches. They do not submit products to Google Merchant or OpenAI Ads.</p>
+      <h3 className="font-semibold">Product sheet upload & status</h3>
+      <p className="mt-1 text-sm text-muted-foreground">Upload, preview, then import are separate steps. Files up to 500 MB can be stored. Preview/import currently processes workbooks up to 20 MB; larger files remain stored, not imported. Imports update saved catalog products and refresh website/feed caches. They do not submit products to Google Merchant or OpenAI Ads.</p>
     </div>
     <form onSubmit={submit} className="flex flex-col gap-3">
       <label>Brand<select name="brand" required disabled={busy} className="ml-2 rounded border bg-background p-2"><option value="">Choose a brand</option>{brands.map(brand => <option key={brand.slug} value={brand.slug}>{brand.label}</option>)}</select></label>

@@ -94,7 +94,7 @@ export async function uploadProductSheet(_prev: CatalogActionState, formData: Fo
   const file = formData.get("file")
   if (!(file instanceof File) || file.size === 0) return { ok: false, message: "Choose a spreadsheet file (.xlsx)." }
   if (!/\.xlsx?$/i.test(file.name)) return { ok: false, message: "Only .xlsx or .xls files are supported." }
-  if (!validFormUploadSize(file.size)) return { ok: false, message: "Use direct storage upload for files over 3.5 MB, then preview and import." }
+  if (!validFormUploadSize(file.size)) return { ok: false, message: "Maximum 3.5 MB per workbook. Split larger workbooks into smaller files." }
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer())

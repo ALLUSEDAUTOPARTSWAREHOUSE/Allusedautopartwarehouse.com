@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   if (action === 'import' && body?.confirm !== true) {
     return Response.json({ error: 'Confirm the import before saving products.' }, { status: 400 })
   }
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  if (!(process.env.CATALOG_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN)) {
     return Response.json({ error: 'Private file storage is not configured. No products were changed.' }, { status: 503 })
   }
 
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       return Response.json({ error: 'This synchronous importer supports files up to 20 MB. Split this workbook into smaller files; the staged original is preserved.' }, { status: 413 })
     }
 
-    const blob = await get(pathname, { access: 'private' })
+    const blob = await get(pathname, { access: 'private', token: process.env.CATALOG_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN })
     if (!blob || blob.statusCode !== 200 || !blob.stream) {
       return Response.json({ error: 'The staged file could not be read from private storage. No products were changed.' }, { status: 404 })
     }

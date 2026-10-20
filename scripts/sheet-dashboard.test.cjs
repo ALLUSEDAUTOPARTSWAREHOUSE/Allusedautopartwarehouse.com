@@ -4,9 +4,9 @@ const { readFileSync } = require('node:fs')
 
 test('upload workspace leads with preview before staged transfers and publishing', () => {
   const page = readFileSync('app/admin/uploads/page.tsx', 'utf8')
-  assert.ok(page.indexOf('<UploadSheetForm') < page.indexOf('<LargeCatalogUpload'))
   assert.ok(page.indexOf('<LargeCatalogUpload') < page.indexOf('<SheetDashboardActions'))
-  assert.match(page, /an import already submitted may still finish/)
+  assert.doesNotMatch(page, /<UploadSheetForm/)
+  assert.match(page, /One upload workflow/)
 })
 test('publishing buttons distinguish cache refresh, account setup and external development', () => {
   const source = readFileSync('components/admin/merchant/sheet-dashboard-actions.tsx', 'utf8')

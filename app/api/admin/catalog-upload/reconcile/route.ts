@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
   const pathname = typeof body?.pathname === 'string' ? body.pathname : ''
   if (!validCatalogUploadPath(pathname)) return Response.json({ error: 'Invalid staged file.' }, { status: 400 })
-  if (!process.env.BLOB_READ_WRITE_TOKEN) return Response.json({ error: 'Private file storage is not configured.' }, { status: 503 })
+  if (!(process.env.CATALOG_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN)) return Response.json({ error: 'Private file storage is not configured.' }, { status: 503 })
   try {
     const { rows } = await pool.query<{ brand: string; expected_bytes: string; status: string }>(
       'SELECT brand, expected_bytes, status FROM catalog_staged_uploads WHERE pathname = $1', [pathname],
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const staged = rows[0]
     if (!staged || staged.brand !== pathname.split('/')[1]) return Response.json({ error: 'Staged file not found.' }, { status: 404 })
     if (staged.status !== 'uploading') return Response.json({ ok: true, message: 'File status is already confirmed. Refresh the list.' })
-    const blob = await head(pathname)
+    const blob = await head(pathname, { token: process.env.CATALOG_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN })
     if (blob.pathname !== pathname || blob.size !== Number(staged.expected_bytes)) {
       return Response.json({ error: 'Storage has not confirmed a complete matching file. Nothing was imported.' }, { status: 409 })
     }

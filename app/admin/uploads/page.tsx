@@ -6,7 +6,6 @@ import { BRAND_DIRECTORY } from '@/lib/brand-catalog'
 import { SITE_URL, FEED_PATH, MERCHANT_CENTER_ID } from '@/lib/merchant'
 import { UploadMonitor } from '@/components/admin/merchant/upload-monitor'
 import { LargeCatalogUpload } from '@/components/admin/merchant/large-catalog-upload'
-import { UploadSheetForm } from '@/components/admin/merchant/catalog-sync-panel'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +28,7 @@ export default async function UploadWorkspace() {
  const feedUrl = SITE_URL + FEED_PATH
  return <div className="mx-auto max-w-7xl space-y-7 px-1">
   <header className="flex flex-col justify-between gap-3 border-b pb-5 sm:flex-row sm:items-end">
-   <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">AUAPW operations</p><h1 className="mt-2 text-3xl font-bold tracking-tight">Catalog & Feed Control Center</h1><p className="mt-2 max-w-2xl text-sm text-muted-foreground">Import spreadsheet data into the saved catalog, review feed readiness, then verify delivery in each external platform.</p></div>
+   <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">AUAPW operations</p><h1 className="mt-2 text-3xl font-bold tracking-tight">Product Upload Dashboard</h1><p className="mt-2 max-w-2xl text-sm text-muted-foreground">Import spreadsheet data into the saved catalog, review feed readiness, then verify delivery in each external platform.</p></div>
    <Link href="/admin/merchant" className="rounded-lg border px-4 py-2 text-sm font-medium">Open Merchant dashboard →</Link>
   </header>
   <section className="space-y-3">
@@ -41,8 +40,8 @@ export default async function UploadWorkspace() {
    <p className="text-xs text-muted-foreground">These cards are transparent status links, not proof of successful external delivery. Do not paste API secrets into this page. A real connection requires authorized credentials and a server-side integration.</p>
   </section>
   <section className="space-y-3"><h2 className="text-lg font-semibold">Catalog health</h2><UploadMonitor/></section>
-  <section id="sheet-preview" className="space-y-4 rounded-2xl border bg-card p-5"><h2 className="text-lg font-semibold">1 · Preview import — no changes</h2><p className="text-sm text-muted-foreground">Choose a brand and sheet, preview the rows, then explicitly confirm saving. Preview does not publish products.</p><UploadSheetForm brands={brands}/></section>
-  <section className="space-y-3"><h2 className="text-lg font-semibold">2 · Sheet status & large uploads</h2><p className="text-sm text-muted-foreground">Track stored files, validation and imports here. Cancel stops the file transfer only; an import already submitted may still finish.</p><LargeCatalogUpload brands={brands}/></section>
+  <section id="sheet-preview" className="space-y-4 rounded-2xl border bg-card p-5"><h2 className="text-lg font-semibold">Upload → preview → confirm import</h2><p className="text-sm text-muted-foreground">One upload workflow for all sheet sizes. Files transfer directly to private storage, not through the small form request limit. Uploading alone never imports products.</p><LargeCatalogUpload brands={brands}/></section>
+
   <SheetDashboardActions/>
 
  </div>

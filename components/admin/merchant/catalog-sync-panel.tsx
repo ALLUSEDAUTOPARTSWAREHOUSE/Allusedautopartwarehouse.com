@@ -133,7 +133,7 @@ export function UploadSheetForm({ brands }: { brands: { slug: string; label: str
       const file = new FormData(event.currentTarget).get("file")
       if (!(file instanceof File) || !validFormUploadSize(file.size)) {
         event.preventDefault()
-        setFileError("Small form: maximum 3.5 MB. Use the large-upload panel for bigger files. Nothing submitted.")
+        setFileError("Maximum 3.5 MB per workbook. Split larger workbooks into smaller files. Nothing submitted.")
       } else { setFileError("") }
     }} className="flex flex-col gap-3">
       <p className="text-xs text-muted-foreground">
