@@ -9,3 +9,9 @@ export function validCatalogUpload(name: string, size: number) {
 export function validCatalogUploadPath(path: string) {
   return /^catalog-staging\/[a-z0-9-]+\/[a-f0-9-]{36}\.(xlsx|xls|csv)$/.test(path)
 }
+
+// Leave room for multipart fields below both the action and hosting payload limits.
+export const MAX_FORM_UPLOAD_BYTES = 3_500_000
+export function validFormUploadSize(size: number) {
+  return Number.isSafeInteger(size) && size > 0 && size <= MAX_FORM_UPLOAD_BYTES
+}

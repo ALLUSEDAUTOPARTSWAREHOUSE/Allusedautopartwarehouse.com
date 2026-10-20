@@ -61,3 +61,15 @@ test('callbacks require SDK verification and only mark matching upload staged', 
   assert.equal(updated, true)
   assert.equal((await route(null, async () => { throw Error('bad signature secret') }).POST(request('blob.upload-completed'))).status, 400)
 })
+
+test('small form limits leave multipart headroom and direct larger files to staging', () => {
+  assert.equal(policy.validFormUploadSize(3_500_000), true)
+  assert.equal(policy.validFormUploadSize(1_500_000), true)
+  for (const size of [0, -1, 3_500_001, NaN]) assert.equal(policy.validFormUploadSize(size), false)
+  const config = readFileSync('next.config.ts', 'utf8')
+  assert.match(config, /bodySizeLimit: "4mb"/)
+  const client = readFileSync('components/admin/merchant/catalog-sync-panel.tsx', 'utf8')
+  assert.match(client, /event.preventDefault\(\)/)
+  assert.match(client, /validFormUploadSize\(file.size\)/)
+  assert.match(readFileSync('app/admin/catalog-actions.ts', 'utf8'), /validFormUploadSize\(file.size\)/)
+})
