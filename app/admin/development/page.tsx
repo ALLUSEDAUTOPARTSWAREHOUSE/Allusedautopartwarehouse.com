@@ -11,11 +11,12 @@ export default async function Workspace() {
     <header className="rounded-2xl border bg-card p-6">
       <p className="text-xs font-semibold tracking-widest text-primary">DEVELOPMENT CONTROL CENTER</p>
       <h1 className="mt-2 text-3xl font-bold">APIs, integrations & website development</h1>
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Use one place to configure integrations, check required environment variables, and describe new features or website fixes to the AI assistant. Secret values stay in Vercel, not in this dashboard.</p>
+      <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Use one place to configure integrations, check required environment variables, and describe new features or website fixes to the AI assistant. Secret values stay in Netlify or the relevant provider, not in this dashboard.</p>
       <Link href="/admin/ai-chat" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Bot className="size-4" /> Open AI development assistant <ArrowUpRight className="size-4" /></Link>
     </header>
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {[
+        { href: '/admin/operations-center', label: 'AI Operations Center', detail: 'Live diagnostics, sales/support and AI triage', icon: Bot },
         { href: '/admin/merchant', label: 'Google Merchant Center', detail: 'Feed health and product diagnostics', icon: Store },
         { href: '/admin/marketing/social', label: 'Social accounts', detail: 'Provider authorization setup', icon: Facebook },
         { href: '/admin/payments', label: 'Payment methods', detail: 'Gateways and checkout configuration', icon: CreditCard },
