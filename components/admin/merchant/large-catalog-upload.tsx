@@ -98,12 +98,12 @@ export function LargeCatalogUpload({ brands }: { brands: { slug: string; label: 
       <label>Spreadsheet<input name="file" type="file" accept=".xlsx,.xls,.csv" required disabled={busy} className="ml-2" /></label>
       <p className="text-xs text-muted-foreground">Maximum staged file size: {MAX_CATALOG_UPLOAD_BYTES.toLocaleString()} bytes. Storage and transfer charges may apply.</p>
       <button disabled={busy} className="w-fit rounded border px-4 py-2 disabled:opacity-50">{busy ? `Uploading ${progress}%` : 'Upload spreadsheet'}</button>
-      {busy && <button type="button" onClick={() => controller?.abort()} className="w-fit rounded border px-4 py-2">Stop upload</button>}
+      {busy && <button type="button" onClick={() => controller?.abort()} className="w-fit rounded border px-4 py-2">Cancel loading</button>}
       {busy && <progress aria-label="File upload progress" value={progress} max={100} className="w-full" />}
     </form>
     <p role="status" className="text-sm">{message}</p>
     <div className="space-y-3">
-      <h4 className="text-sm font-semibold">Recent staged files</h4>
+      <div className="flex items-center justify-between"><h4 className="text-sm font-semibold">Sheet status · recent staged files</h4><button type="button" onClick={() => void refresh()} className="rounded border px-3 py-2 text-sm">Refresh sheet status</button></div>
       {listError && <p role="alert" className="text-sm">Staging records are unavailable. Check database configuration; displayed records may be stale.</p>}
       {records.length === 0 && !listError && <p className="text-sm text-muted-foreground">No staged files found yet.</p>}
       {records.map(record => {
@@ -111,9 +111,9 @@ export function LargeCatalogUpload({ brands }: { brands: { slug: string; label: 
         const active = workingPath === record.pathname
         return <article key={record.pathname} className="space-y-2 rounded-lg border p-3">
           <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0"><p className="break-all font-medium">{record.original_name}</p><p className="text-xs text-muted-foreground">{record.brand} · {record.expected_bytes ? `${(Number(record.expected_bytes) / (1024 * 1024)).toFixed(1)} MB · ` : ''}{record.status === 'uploaded' ? 'Stored · ready to preview' : record.status === 'imported' ? 'Imported to catalog' : 'Upload pending / unconfirmed'}</p></div>
+            <div className="min-w-0"><p className="break-all font-medium">{record.original_name}</p><p className="text-xs text-muted-foreground">{record.brand} · {record.expected_bytes ? `${(Number(record.expected_bytes) / (1024 * 1024)).toFixed(1)} MB · ` : ''}{active ? 'Processing request' : preview && record.status === 'uploaded' ? 'Preview ready · not imported' : record.status === 'uploaded' ? 'Stored · ready to preview' : record.status === 'imported' ? 'Imported to catalog' : 'Upload pending / unconfirmed'}</p></div>
             {record.status === 'uploading' && <button type="button" disabled={!!workingPath} onClick={() => void runImport(record, 'reconcile')} className="rounded border px-3 py-1.5 text-sm disabled:opacity-50">{active ? 'Checking…' : 'Check stored file'}</button>}
-            {record.status === 'uploaded' && <div className="flex gap-2"><button type="button" disabled={!!workingPath} onClick={() => void runImport(record, 'preview')} className="rounded border px-3 py-1.5 text-sm disabled:opacity-50">{active ? 'Working…' : 'Preview rows'}</button><button type="button" disabled={!!workingPath || !preview} onClick={() => void runImport(record, 'import')} className="rounded bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-40">Confirm import</button></div>}
+            {record.status === 'uploaded' && <div className="flex gap-2"><button type="button" disabled={!!workingPath} onClick={() => void runImport(record, 'preview')} className="rounded border px-3 py-1.5 text-sm disabled:opacity-50">{active ? 'Working…' : 'Preview import — no changes'}</button><button type="button" disabled={!!workingPath || !preview} onClick={() => void runImport(record, 'import')} className="rounded bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-40">Confirm import</button></div>}
           </div>
           {preview && record.status === 'uploaded' && <p className="text-xs text-muted-foreground">Last preview: {preview.inserted} usable rows · {preview.skipped} skipped · {preview.missingPrices} missing prices. Re-preview after changing the file.</p>}
           {rowMessages[record.pathname] && <p role="status" className="text-sm">{rowMessages[record.pathname]}</p>}

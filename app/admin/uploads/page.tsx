@@ -1,3 +1,4 @@
+import { SheetDashboardActions } from '@/components/admin/merchant/sheet-dashboard-actions'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getAdminSession } from '@/lib/admin-auth'
@@ -40,7 +41,9 @@ export default async function UploadWorkspace() {
    <p className="text-xs text-muted-foreground">These cards are transparent status links, not proof of successful external delivery. Do not paste API secrets into this page. A real connection requires authorized credentials and a server-side integration.</p>
   </section>
   <section className="space-y-3"><h2 className="text-lg font-semibold">Catalog health</h2><UploadMonitor/></section>
-  <section className="space-y-3"><h2 className="text-lg font-semibold">Upload and import products</h2><p className="text-sm text-muted-foreground">Use the large uploader to stage a file, preview it, then confirm import. Imported rows are saved to the database and feed caches are revalidated; external channels still fetch or sync separately.</p><LargeCatalogUpload brands={brands}/></section>
-  <section className="space-y-4 rounded-2xl border bg-card p-5"><h2 className="text-lg font-semibold">Small spreadsheet import</h2><p className="text-sm text-muted-foreground">For files within the direct-import size limit, preview the rows and confirm before saving.</p><UploadSheetForm brands={brands}/></section>
+  <section id="sheet-preview" className="space-y-4 rounded-2xl border bg-card p-5"><h2 className="text-lg font-semibold">1 · Preview import — no changes</h2><p className="text-sm text-muted-foreground">Choose a brand and sheet, preview the rows, then explicitly confirm saving. Preview does not publish products.</p><UploadSheetForm brands={brands}/></section>
+  <section className="space-y-3"><h2 className="text-lg font-semibold">2 · Sheet status & large uploads</h2><p className="text-sm text-muted-foreground">Track stored files, validation and imports here. Cancel stops the file transfer only; an import already submitted may still finish.</p><LargeCatalogUpload brands={brands}/></section>
+  <SheetDashboardActions/>
+
  </div>
 }
