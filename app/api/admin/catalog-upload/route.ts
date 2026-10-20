@@ -17,10 +17,11 @@ export async function POST(request: Request) {
     if (!(await getAdminSession())) return Response.json({ error: 'Unauthorized' }, { status: 401 })
     if (request.headers.get('origin') !== new URL(request.url).origin) return Response.json({ error: 'Invalid origin' }, { status: 403 })
   }
-  if (!process.env.BLOB_READ_WRITE_TOKEN) return Response.json({ error: 'Private Blob storage is not configured.' }, { status: 503 })
+  if (!(process.env.CATALOG_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN)) return Response.json({ error: 'Private Blob storage is not configured.' }, { status: 503 })
   try {
     const result = await handleUpload({
       request, body,
+      token: process.env.CATALOG_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         const payload = JSON.parse(clientPayload || '{}')
         const brand = pathname.split('/')[1]
