@@ -5,6 +5,57 @@ import { eveChannel } from "eve/channels/eve";
 type ClerkClient = ReturnType<typeof createClerkClient>;
 let cachedClerkClient: ClerkClient | undefined;
 
+function parseAllowlist(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+}
+
+// Eve is the AUAPW Operations Agent: an admin-only surface with access to
+// orders, customer data, and destructive/customer-impacting actions. Clerk
+// authentication only proves *who* the caller is; it does not prove they are
+// an administrator. We therefore require an explicit admin authorization
+// policy and fail closed (deny) when no policy is configured, mirroring the
+// repo's existing allowlist-based admin model (GITHUB_ADMIN_ALLOWED_IDS).
+function isAuthorizedAdmin(auth: {
+  userId: string;
+  orgId?: string | null;
+  orgRole?: string | null;
+  orgPermissions?: string[] | null;
+}): boolean {
+  const allowedUserIds = parseAllowlist(process.env.EVE_ADMIN_USER_IDS);
+  const requiredOrgId = process.env.EVE_ADMIN_ORG_ID?.trim() || undefined;
+  const requiredRole = process.env.EVE_ADMIN_ORG_ROLE?.trim() || undefined;
+  const requiredPermission = process.env.EVE_ADMIN_ORG_PERMISSION?.trim() || undefined;
+
+  // Fail closed: if no admin policy is configured, do not grant access to any
+  // authenticated Clerk user. This prevents a privilege-escalation gap when
+  // the Clerk application permits non-admin (e.g. customer) sign-ups.
+  if (!allowedUserIds.length && !requiredOrgId && !requiredRole && !requiredPermission) {
+    return false;
+  }
+
+  // Explicit user allowlist bypasses org checks.
+  if (allowedUserIds.length && allowedUserIds.includes(auth.userId)) {
+    return true;
+  }
+
+  // Org-based checks require the caller to be acting within the required org
+  // (when one is configured) and to satisfy every configured role/permission.
+  const orgChecksConfigured = Boolean(requiredOrgId || requiredRole || requiredPermission);
+  if (!orgChecksConfigured) return false;
+
+  if (requiredOrgId && auth.orgId !== requiredOrgId) return false;
+  if (requiredRole && auth.orgRole !== requiredRole) return false;
+  if (requiredPermission && !(auth.orgPermissions ?? []).includes(requiredPermission)) {
+    return false;
+  }
+
+  return true;
+}
+
 function getClerkClient(): ClerkClient | null {
   const secretKey = process.env.CLERK_SECRET_KEY;
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -42,6 +93,9 @@ const clerkAuth: AuthFn<Request> = async (request) => {
 
   const auth = state.toAuth();
   if (!auth.userId) return null;
+
+  // Authentication is not authorization: only admins may operate Eve.
+  if (!isAuthorizedAdmin(auth)) return null;
 
   return {
     authenticator: "clerk",
