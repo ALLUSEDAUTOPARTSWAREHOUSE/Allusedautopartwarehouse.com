@@ -8,6 +8,7 @@ const GROUPS = [
   { title: 'Overview', links: [
     { href: '/admin/workspace', label: 'Unified workspace', icon: PanelsTopLeft },
     { href: '/admin/dashboard', label: 'Control center', icon: LayoutDashboard },
+    { href: '/admin/operations-center', label: 'AI Operations Center', icon: Bot },
   ] },
   { title: 'Products', links: [{ href: '/admin/products', label: 'Brands & products', icon: Package }, { href: '/admin/uploads', label: 'Upload monitor', icon: Package }] },
   { title: 'Sales & support', links: [
