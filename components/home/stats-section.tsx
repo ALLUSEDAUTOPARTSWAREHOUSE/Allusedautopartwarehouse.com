@@ -8,7 +8,7 @@ export function StatsSection() {
 
   return (
     <section className="bg-[rgba(15,17,25,0.85)] border-b border-border/30 backdrop-blur-xl">
-      <div className="mx-auto max-w-[1280px] grid grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto max-w-[1680px] grid grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, i) => (
           <div
             key={stat.label}

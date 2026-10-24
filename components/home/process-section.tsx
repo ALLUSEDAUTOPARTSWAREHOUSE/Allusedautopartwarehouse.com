@@ -13,7 +13,7 @@ export function ProcessSection() {
       <div className="metal-line absolute top-0 left-0 right-0" />
       <div className="metal-line absolute bottom-0 left-0 right-0" />
 
-      <div className="mx-auto max-w-[1280px] px-6 relative z-10">
+      <div className="mx-auto max-w-[1680px] px-6 relative z-10">
 
         {/* Section header */}
         <div className="text-center mb-12">

@@ -97,7 +97,7 @@ export default async function AdminMerchantPage({
       })
 
   return (
-    <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-8">
+    <div className="flex w-full min-w-0 flex-col gap-8">
       <header>
         <h1 className="text-2xl font-bold text-foreground">Products</h1>
         <p className="text-sm text-muted-foreground">
