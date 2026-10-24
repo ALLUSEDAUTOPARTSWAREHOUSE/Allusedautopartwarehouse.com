@@ -48,7 +48,7 @@ const features = [
 export function FeaturesGridSection() {
   return (
     <section className="py-16 sm:py-24 lg:py-32 bg-gradient-to-b from-background via-slate-900/20 to-background">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1680px] px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16 sm:mb-20">
           <span className="inline-block text-xs font-bold uppercase tracking-widest text-foreground/60 mb-4">Why Choose AUAPW</span>
