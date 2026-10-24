@@ -1,3 +1,5 @@
+import { CatalogCommandCenter } from '@/components/admin/catalog-command-center'
+import { CATALOG_RESET_AT } from "@/lib/catalog-reset-policy"
 import { CatalogHealthDashboard } from "@/components/admin/merchant/catalog-health-dashboard"
 import { getBrandLogoUrl } from "@/lib/data"
 import Link from "next/link"
@@ -17,7 +19,7 @@ import {
 import type { ProductFixCardProps } from "@/components/admin/merchant/product-fix-card"
 import { FixPagesList } from "@/components/admin/merchant/fix-pages-list"
 import { CatalogSyncPanel } from "@/components/admin/merchant/catalog-sync-panel"
-import { listManualProducts } from "@/lib/manual-products"
+import { listManualProductsPage } from "@/lib/manual-products"
 import { getSalesMode } from "@/lib/catalog-fields"
 
 export const dynamic = "force-dynamic"
@@ -29,7 +31,7 @@ const inputClass = "rounded-md border border-border bg-card px-3 py-2 text-sm te
 export default async function AdminMerchantPage({
   searchParams,
 }: {
-  searchParams: Promise<{ brand?: string; q?: string; issue?: string | string[] }>
+  searchParams: Promise<{ brand?: string; q?: string; issue?: string | string[]; uploadsPage?: string }>
 }) {
   if (!(await getAdminSession())) redirect("/admin/login")
 
@@ -38,14 +40,24 @@ export default async function AdminMerchantPage({
   const rawIssues = Array.isArray(params.issue) ? params.issue : params.issue ? [params.issue] : []
   const issues = (Object.keys(ISSUE_LABELS) as IssueCode[]).filter((c) => rawIssues.includes(c))
   const q = params.q?.trim().slice(0, 100) || undefined
+  const uploadsPage = Math.min(100000, Math.max(1, Number.parseInt(params.uploadsPage || '1', 10) || 1))
+  const uploadPageUrl = (page: number) => {
+    const query = new URLSearchParams()
+    if (brand) query.set('brand', brand)
+    if (q) query.set('q', q)
+    issues.forEach(issue => query.append('issue', issue))
+    query.set('uploadsPage', String(page))
+    return `/admin/products?${query}#catalog-upload`
+  }
   const searching = Boolean(brand || issues.length || q)
 
-  const [recentOverrides, search, manualProducts] = await Promise.all([
+  const [recentOverrides, search, manualPage] = await Promise.all([
     listRecentOverrides(500),
     searching ? searchProductsForAdmin({ brand, q, issues, limit: 30 }) : null,
-    listManualProducts(),
+    listManualProductsPage(brand, uploadsPage),
   ])
 
+  const manualProducts = manualPage.products
   const brandStats = await getFeedStats()
   const selectedStats = brandStats.find(item => item.slug === brand)
 
@@ -85,7 +97,7 @@ export default async function AdminMerchantPage({
       })
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-8">
       <header>
         <h1 className="text-2xl font-bold text-foreground">Products</h1>
         <p className="text-sm text-muted-foreground">
@@ -93,8 +105,14 @@ export default async function AdminMerchantPage({
         </p>
       </header>
 
+      <CatalogCommandCenter />
       <CatalogHealthDashboard stats={brand ? brandStats.filter(item => item.slug === brand) : brandStats} checkedAt={new Date().toISOString()} />
 
+      <section className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-5" aria-label="Catalog replacement mode">
+        <h2 className="font-semibold">All brands: replacement uploads only</h2>
+        <p className="mt-2 text-sm">Old bundled products and earlier uploads are preserved but no longer served by the brand catalog. Only spreadsheet records uploaded or re-imported after {CATALOG_RESET_AT} appear. Brands without replacement uploads are empty.</p>
+        <p className="mt-2 text-sm">The uploaded/manual editor below also lists preserved records; its row count is not the live catalog count. Preview each brand sheet before saving. Large-file staging alone does not import products. Google account removal remains separate.</p>
+      </section>
       <section aria-labelledby="brand-heading" className="space-y-3">
         <h2 id="brand-heading" className="text-xl font-semibold">Choose a brand</h2>
         <p className="text-sm text-muted-foreground">Tap a brand to open its product workspace. These controls affect admin navigation only.</p>
@@ -152,6 +170,11 @@ export default async function AdminMerchantPage({
       </section>}
 
       <div id="catalog-upload" className="scroll-mt-24">
+      <nav aria-label="Uploaded product pages" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border p-4">
+        <p className="text-sm">Uploaded/manual records · page {uploadsPage} · up to 50 records. Bulk selection covers this page unless explicitly choosing all records for a brand.</p>
+        {uploadsPage > 1 && <Link prefetch={false} href={uploadPageUrl(uploadsPage - 1)} className="rounded border px-3 py-2 text-sm">Previous</Link>}
+        {manualPage.hasMore && <Link prefetch={false} href={uploadPageUrl(uploadsPage + 1)} className="rounded border px-3 py-2 text-sm">Next</Link>}
+      </nav>
       <CatalogSyncPanel
         brands={(brand ? BRAND_DIRECTORY.filter(b => b.slug === brand) : BRAND_DIRECTORY).map((b) => ({ slug: b.slug, label: b.label }))}
         manualProducts={manualProducts.filter(p => !brand || p.brand === brand).map((p) => ({

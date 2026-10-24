@@ -122,7 +122,7 @@ function ManualProductForm({ brands }: { brands: { slug: string; label: string }
   )
 }
 
-function UploadSheetForm({ brands }: { brands: { slug: string; label: string }[] }) {
+export function UploadSheetForm({ brands }: { brands: { slug: string; label: string }[] }) {
   const [state, action, pending] = useActionState(uploadProductSheet, initial)
 
   return (
@@ -249,7 +249,7 @@ function BulkProductForm({ brands, manualProducts }: CatalogSyncPanelProps) {
         form.current?.querySelectorAll<HTMLInputElement>('input[name="slug"]').forEach(box => { box.checked = false })
         setSelectionCount(0)
       }}>Clear selection</button>
-      <span className="text-sm">{selectionCount} selected · {products.length} matching uploaded/manual products</span>
+      <span className="text-sm">{selectionCount} selected · {products.length} uploaded/manual products on this page</span>
     </div>
     {!products.length && <p role="status" className="text-sm">No uploaded/manual products match these filters. Upload this brand's sheet first, or clear the filters. Bundled catalog products are edited in the product cards below; this bulk panel does not remove them.</p>}
     <div key={`${brand}-${query}-${missingPrice}-${missingImage}-${category}-${state.message}`} className="max-h-64 overflow-auto">
@@ -311,7 +311,7 @@ export function CatalogSyncPanel({ brands, manualProducts }: CatalogSyncPanelPro
       {manualProducts.length > 0 && (
         <div className="flex flex-col gap-2">
           <h3 className="text-sm font-semibold text-foreground">
-            Manually added products ({manualProducts.length})
+            Uploaded/manual products on this page ({manualProducts.length})
           </h3>
           <ul className="flex flex-col gap-2">
             {manualProducts.map((p) => (

@@ -1,3 +1,4 @@
+import { UPLOADED_ONLY_CATALOG, isReplacementUpload } from "@/lib/catalog-reset-policy"
 import "server-only"
 import { read, utils } from "xlsx"
 import { pool } from "@/lib/db"
@@ -100,6 +101,17 @@ export async function listManualProducts(brand?: string): Promise<ManualProduct[
       )
     : await pool.query<ManualProductRow>("SELECT * FROM manual_products ORDER BY created_at DESC")
   return rows.map(mapRow)
+}
+
+/** Bounded admin-only listing; storefront overlay retains its full data load. */
+export async function listManualProductsPage(brand: string | undefined, page: number) {
+  const limit = 50
+  const offset = (Math.max(1, page) - 1) * limit
+  const { rows } = await pool.query<ManualProductRow>(
+    "SELECT * FROM manual_products WHERE ($1::text IS NULL OR brand = $1) ORDER BY created_at DESC, id DESC LIMIT $2 OFFSET $3",
+    [brand ?? null, limit + 1, offset],
+  )
+  return { products: rows.slice(0, limit).map(mapRow), hasMore: rows.length > limit }
 }
 
 export interface ManualProductInput {
@@ -242,8 +254,20 @@ export async function importProductSheet(brand: string, buffer: Buffer, mode: "a
 export async function primeManualOverlay(brand: string): Promise<void> {
   try {
     const rows = await listManualProducts(brand)
-    setManualOverlay(brand, rows.map(toBrandProduct))
+    // Hide markers preserve source rows, so exclude them from listings and search too.
+    const { rows: hiddenRows } = await pool.query<{ slug: string }>(
+      "SELECT slug FROM product_overrides WHERE brand = $1 AND hidden = true",
+      [brand],
+    )
+    const hidden = new Set(hiddenRows.map(row => row.slug))
+    setManualOverlay(
+      brand,
+      rows
+        .filter(row => (!UPLOADED_ONLY_CATALOG || isReplacementUpload(row)) && !hidden.has(row.slug))
+        .map(toBrandProduct),
+    )
   } catch (error) {
+    setManualOverlay(brand, [])
     console.error("[manual-products] overlay priming failed:", (error as Error).message)
   }
 }
