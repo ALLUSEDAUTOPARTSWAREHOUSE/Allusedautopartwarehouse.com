@@ -3,13 +3,21 @@ import { APIError } from 'better-auth/api'
 import { betterAuth } from 'better-auth'
 import { pool } from '@/lib/db'
 
+function inviteTokenFromRequest(headers?: Headers | null) {
+  const fromHeader = headers?.get('x-auapw-invite')
+  if (fromHeader) return fromHeader
+  const cookie = headers?.get('cookie') ?? ''
+  const match = cookie.match(/(?:^|; )auapw_invite=([^;]*)/)
+  return match ? decodeURIComponent(match[1]) : null
+}
+
 export const auth = betterAuth({
   database: pool,
   databaseHooks: {
     user: {
       create: {
         before: async (user, context) => {
-          if (!await consumeCustomerInvite(user.email, context?.headers?.get('x-auapw-invite'))) {
+          if (!await consumeCustomerInvite(user.email, inviteTokenFromRequest(context?.headers))) {
             throw new APIError('FORBIDDEN', { message: 'An unused, unexpired invitation for this email is required.' })
           }
           return { data: user }
@@ -29,6 +37,17 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
+  },
+  socialProviders: {
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            prompt: 'select_account',
+          },
+        }
+      : {}),
   },
   trustedOrigins: [
     ...(process.env.NODE_ENV === 'development' ? ['http://localhost:3000'] : []),

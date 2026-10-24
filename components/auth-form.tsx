@@ -1,6 +1,6 @@
 'use client'
 
-import { Eye, EyeOff, ArrowRight, ShieldCheck, PackageSearch, Wrench, Chrome, Apple } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, ShieldCheck, PackageSearch, Chrome } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-export function AuthForm({ mode, redirectTo = '/', inviteToken }: { mode: 'sign-in' | 'sign-up'; redirectTo?: string; inviteToken?: string }) {
+export function AuthForm({ mode, redirectTo = '/customer/dashboard', inviteToken, googleEnabled = false }: { mode: 'sign-in' | 'sign-up'; redirectTo?: string; inviteToken?: string; googleEnabled?: boolean }) {
   const router = useRouter()
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -20,17 +20,28 @@ export function AuthForm({ mode, redirectTo = '/', inviteToken }: { mode: 'sign-
   const [loading, setLoading] = useState(false)
 
   const isSignUp = mode === 'sign-up'
-  const target = redirectTo.startsWith('/') && !redirectTo.startsWith('//') && !redirectTo.includes(String.fromCharCode(92)) && !redirectTo.split(/[?#]/, 1)[0].split('/').some((part) => part === '.' || part === '..') ? redirectTo : '/'
+  const target = redirectTo.startsWith('/') && !redirectTo.startsWith('//') && !redirectTo.includes(String.fromCharCode(92)) && !redirectTo.split(/[?#]/, 1)[0].split('/').some((part) => part === '.' || part === '..') ? redirectTo : '/customer/dashboard'
   const switchHref = `${isSignUp ? '/sign-in' : '/sign-up'}?redirectTo=${encodeURIComponent(target)}`
 
-  const handleSocialAuth = async (provider: 'google' | 'apple') => {
+  const handleSocialAuth = async (provider: 'google') => {
+    if (!googleEnabled) {
+      setError('Google sign-in is not configured yet. Use email and password, or add Google OAuth credentials.')
+      return
+    }
     setError(null)
     setLoading(true)
     try {
-      const result = await authClient.signIn.social({ provider, callbackURL: target })
-      if (result.error) setError(result.error.message ?? `Unable to continue with ${provider}. Please try again.`)
+      if (isSignUp && inviteToken) {
+        document.cookie = `auapw_invite=${encodeURIComponent(inviteToken)}; Path=/; Max-Age=600; SameSite=None; Secure`
+      }
+      const result = await authClient.signIn.social({
+        provider,
+        callbackURL: target,
+        errorCallbackURL: isSignUp ? `/sign-up?invite=${encodeURIComponent(inviteToken || '')}` : '/sign-in',
+      })
+      if (result.error) setError(result.error.message ?? 'Unable to continue with Google. Please try again.')
     } catch {
-      setError(`Unable to continue with ${provider}. Please try again.`)
+      setError('Unable to continue with Google. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -105,11 +116,12 @@ export function AuthForm({ mode, redirectTo = '/', inviteToken }: { mode: 'sign-
                 <Button type="submit" disabled={loading} className="h-12 w-full rounded-xl bg-[#f36b21] font-semibold text-white shadow-sm transition hover:bg-[#d95c19] disabled:opacity-60">{loading ? 'Please wait…' : isSignUp ? 'Create account' : 'Sign in'} <ArrowRight className="ml-2 size-4" /></Button>
               </form>
 
-              <div className="my-7 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400"><span className="h-px flex-1 bg-neutral-200" />Or continue with<span className="h-px flex-1 bg-neutral-200" /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <Button type="button" variant="outline" disabled={loading} onClick={() => handleSocialAuth('google')} className="h-11 rounded-xl border-neutral-200 bg-white font-medium text-neutral-800 hover:bg-neutral-50"><Chrome className="mr-2 size-4" />Google</Button>
-                <Button type="button" variant="outline" disabled={loading} onClick={() => handleSocialAuth('apple')} className="h-11 rounded-xl border-neutral-200 bg-white font-medium text-neutral-800 hover:bg-neutral-50"><Apple className="mr-2 size-4" />Apple</Button>
-              </div>
+              {googleEnabled ? (
+                <>
+                  <div className="my-7 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400"><span className="h-px flex-1 bg-neutral-200" />Or continue with<span className="h-px flex-1 bg-neutral-200" /></div>
+                  <Button type="button" variant="outline" disabled={loading} onClick={() => handleSocialAuth('google')} className="h-11 w-full rounded-xl border-neutral-200 bg-white font-medium text-neutral-800 hover:bg-neutral-50"><Chrome className="mr-2 size-4" />Continue with Google</Button>
+                </>
+              ) : null}
               <p className="mt-7 text-center text-sm text-neutral-500">{isSignUp ? 'Already have an account?' : "Don’t have an account?"}{' '}<Link href={switchHref} className="font-semibold text-[#d95c19] underline-offset-4 hover:underline">{isSignUp ? 'Sign in' : 'Create account'}</Link></p>
               <p className="mt-8 text-center text-[11px] leading-5 text-neutral-400">By continuing, you agree to use your account responsibly. Customer access does not grant administrator permissions.</p>
             </div>

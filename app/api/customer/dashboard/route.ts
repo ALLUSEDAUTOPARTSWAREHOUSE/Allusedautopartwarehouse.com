@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { pool } from "@/lib/db"
-import { ensureLeadProductColumns } from "@/lib/followup"
+import { ensureLeadProductColumns, ensureOrderInvoiceColumns } from "@/lib/followup"
+import { parseStatusHistory } from "@/lib/order-status"
 
 const iso = (value: unknown) => value instanceof Date ? value.toISOString() : value ? String(value) : null
 const safeInternalPath = (value: unknown): string | null => {
@@ -22,10 +23,10 @@ export async function GET(request: Request) {
 
   try {
     // Add only missing quote-link columns before reading the dashboard; existing rows remain unchanged.
-    await ensureLeadProductColumns()
+    await Promise.all([ensureLeadProductColumns(), ensureOrderInvoiceColumns()])
     const [orderResult, quoteResult] = await Promise.all([
       pool.query(
-        `SELECT ordernumber, status, createdat, totalamount, items
+        `SELECT ordernumber, status, createdat, updatedat, totalamount, items, customer_status_note, status_history
            FROM public.orders
           WHERE userid = $1 AND userid <> $2
           ORDER BY createdat DESC
@@ -57,9 +58,12 @@ export async function GET(request: Request) {
         orderNumber: String(row.ordernumber),
         status: String(row.status ?? "pending"),
         createdAt: iso(row.createdat),
+        updatedAt: iso(row.updatedat),
         total: Number(row.totalamount) || 0,
         items,
         itemCount: items.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0),
+        customerNote: typeof row.customer_status_note === "string" ? row.customer_status_note.slice(0, 1000) : null,
+        history: parseStatusHistory(row.status_history),
       }
     })
 

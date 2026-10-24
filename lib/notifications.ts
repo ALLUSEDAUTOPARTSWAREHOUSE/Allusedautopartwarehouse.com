@@ -1,5 +1,8 @@
+import { createElement } from 'react'
+import NotificationEmail from '@/emails/notification'
 import { db } from './db'
 import { auditLog } from './db/schema'
+import { emailFromAddress, sendReactEmail } from './mailer'
 
 export type NotificationType = 
   | 'new_customer'
@@ -250,12 +253,10 @@ export async function sendNotification(payload: NotificationPayload) {
 
   console.log(`[v0] Sending ${type} notification to ${recipient}`)
 
-  // Generate email template
   const template = generateEmailTemplate(type, data)
 
-  // Send via different channels
   if (payload.sendEmail !== false) {
-    await sendEmailNotification(recipient, template, priority)
+    await sendEmailNotification(recipient, template)
   }
 
   if (payload.sendTeams) {
@@ -274,33 +275,23 @@ export async function sendNotification(payload: NotificationPayload) {
 async function sendEmailNotification(
   recipient: string | string[],
   template: EmailTemplate,
-  priority: string
 ) {
   const recipients = Array.isArray(recipient) ? recipient : [recipient]
 
   for (const email of recipients) {
-    try {
-      // Use Resend email service
-      const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'notifications@allusedautopartswarehouse.com',
-          to: email,
-          subject: template.subject,
-          html: template.htmlBody,
-          reply_to: 'support@allusedautopartswarehouse.com',
-        }),
-      })
-
-      if (!response.ok) {
-        console.error(`[v0] Failed to send email to ${email}:`, await response.text())
-      }
-    } catch (error) {
-      console.error(`[v0] Email error for ${email}:`, error)
+    const result = await sendReactEmail({
+      from: emailFromAddress(),
+      to: email,
+      subject: template.subject,
+      replyTo: 'support@allusedautopartswarehouse.com',
+      react: createElement(NotificationEmail, {
+        title: template.subject,
+        preview: template.subject,
+        intro: template.textBody,
+      }),
+    })
+    if (!result.ok) {
+      console.error(`[v0] Failed to send email to ${email}:`, result.error)
     }
   }
 }

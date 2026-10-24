@@ -1,5 +1,8 @@
+import { createElement } from 'react'
+import CustomerInviteEmail from '@/emails/customer-invite'
 import { getAdminSession } from '@/lib/admin-auth'
 import { createCustomerInvite, revokeCustomerInvite } from '@/lib/customer-invites'
+import { sendReactEmail } from '@/lib/mailer'
 import { z } from 'zod'
 
 export async function POST(request: Request) {
@@ -18,12 +21,17 @@ export async function POST(request: Request) {
     token = await createCustomerInvite(body.data.email)
     const link = new URL('/sign-up', base.origin)
     link.searchParams.set('invite', token)
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to: [body.data.email], subject: 'Your AUAPW account invitation',
-        text: `You are invited to create an AUAPW customer account. Open this link and use the email address that received this invitation:\n\n${link}\n\nThe link expires in 72 hours and can be used once. If unexpected, ignore this email.` }),
+    const result = await sendReactEmail({
+      from,
+      to: [body.data.email],
+      subject: 'Your AUAPW account invitation',
+      react: createElement(CustomerInviteEmail, {
+        inviteUrl: link.toString(),
+        expiresHours: 72,
+        siteUrl: base.origin,
+      }),
     })
-    if (!response.ok) throw new Error('Provider rejected invitation')
+    if (!result.ok) throw new Error('Provider rejected invitation')
     return Response.json({ message: 'Invitation accepted by the email provider. Delivery is not yet confirmed.' })
   } catch {
     if (token) await revokeCustomerInvite(token).catch(() => undefined)

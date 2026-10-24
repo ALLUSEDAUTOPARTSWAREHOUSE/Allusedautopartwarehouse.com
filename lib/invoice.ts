@@ -1,3 +1,4 @@
+import type { InvoiceEmailProps } from "@/emails/invoice"
 import { getBrandLabel } from "@/lib/brand-catalog"
 import { getBrandLogoUrl } from "@/lib/data"
 import type { CustomerOrder, OrderLine } from "@/lib/followup"
@@ -189,6 +190,63 @@ function termsPreviewHtml() {
          <p style="margin:0;color:#4b5563;font-size:12px;line-height:1.5">${escapeHtml(section.paragraphs[0])}</p>`,
     )
     .join("")
+}
+
+export function buildInvoiceEmailModel(
+  order: CustomerOrder,
+  siteUrl: string,
+  kind: InvoiceEmailKind,
+): { subject: string; props: InvoiceEmailProps } {
+  const { title, subject } = statusHeadline(kind, order.orderNumber)
+  const viewInvoice = invoiceUrl(order, siteUrl)
+  const intro =
+    kind === "verify"
+      ? `Please verify ${order.customerEmail || "your email"} to confirm order ${order.orderNumber}. Your order will be processed after payment confirmation.`
+      : kind === "paid"
+        ? `Thank you. Payment is confirmed for order ${order.orderNumber}. We are now processing your order.`
+        : kind === "reserved"
+          ? `This part is reserved for you — no payment has been taken. A specialist will call ${order.customerPhone || "you"} to confirm fitment and take payment only once you approve it.`
+          : `Your email is confirmed for order ${order.orderNumber}. Your order will be processed after payment confirmation.`
+
+  const props: InvoiceEmailProps = {
+    kind,
+    title,
+    intro,
+    orderNumber: order.orderNumber,
+    createdAt: order.createdAt,
+    customerName: order.customerName || "Customer",
+    customerEmail: order.customerEmail || "",
+    customerPhone: order.customerPhone || "",
+    shippingAddress: order.shippingAddress || "",
+    items: order.items.map((line) => {
+      const logo = brandLogoPath(line.make)
+      return {
+        name: line.name,
+        brand: getBrandLabel(line.make),
+        logoUrl: logo ? absoluteUrl(logo, siteUrl) : undefined,
+        href: productHref(line, siteUrl),
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+        lineTotal: line.lineTotal,
+      }
+    }),
+    subtotal: order.subtotal,
+    shippingCost: order.shippingCost,
+    tax: order.tax,
+    totalAmount: order.totalAmount,
+    ctaUrl:
+      kind === "verify" && order.emailVerifyToken
+        ? verifyOrderUrl(order.emailVerifyToken, siteUrl)
+        : viewInvoice,
+    ctaLabel: kind === "verify" ? "Verify email and confirm order" : "View branded invoice",
+    terms: INVOICE_TERMS.slice(0, 3).map((section) => ({
+      title: section.title,
+      body: section.paragraphs[0],
+    })),
+    siteUrl,
+  }
+
+  return { subject, props }
 }
 
 export function buildCustomerInvoiceEmail(order: CustomerOrder, siteUrl: string, kind: InvoiceEmailKind) {

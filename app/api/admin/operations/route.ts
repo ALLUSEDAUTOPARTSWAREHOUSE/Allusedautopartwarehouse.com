@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { desc, eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { listings } from '@/lib/db/schema'
@@ -73,6 +74,8 @@ export async function PATCH(request: NextRequest) {
       if (!existing) return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
       const internalNotes = typeof body.internalNotes === 'string' ? body.internalNotes.trim().slice(0, 5000) : existing.internalNotes ?? ''
       await updateOrder(id, { status: status as typeof ORDER_STATUSES[number], internalNotes })
+      revalidatePath('/admin/orders')
+      revalidatePath('/customer/dashboard')
       return NextResponse.json({ success: true })
     }
 

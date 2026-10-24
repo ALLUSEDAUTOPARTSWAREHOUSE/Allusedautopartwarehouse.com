@@ -1,50 +1,26 @@
 import "server-only"
-import { Resend } from "resend"
+
+import { createElement, type ReactElement } from "react"
+import InvoiceEmail from "@/emails/invoice"
+import OrderStatusEmail from "@/emails/order-status"
+import QuoteOfferEmail from "@/emails/quote-offer"
+import QuoteReceivedEmail from "@/emails/quote-received"
+import StaffAlertEmail from "@/emails/staff-alert"
+import { formatMoney } from "@/emails/brand"
 import type { CustomerOrder, QuoteLead } from "@/lib/followup"
 import type { DashboardMetrics } from "@/lib/admin-metrics"
 import type { FeedAlert, FeedSnapshot } from "@/lib/merchant-health"
 import { PHONE_DISPLAY, SHIPPING, WARRANTY_SUMMARY } from "@/lib/site-policy"
 import { pool } from "@/lib/db"
-import { absoluteUrl, buildCustomerInvoiceEmail, invoiceUrl, type InvoiceEmailKind } from "@/lib/invoice"
+import {
+  absoluteUrl,
+  buildInvoiceEmailModel,
+  invoiceUrl,
+  type InvoiceEmailKind,
+} from "@/lib/invoice"
+import { sendReactEmail, type MailResult } from "@/lib/mailer"
 
 const STAFF_EMAIL = process.env.FOLLOWUP_EMAIL || "support@auapw.com"
-const SUPPORT_EMAIL = "support@auapw.com"
-const FROM =
-  process.env.EMAIL_FROM ||
-  (process.env.RESEND_EMAIL_DOMAIN
-    ? `AUAPW Website <notifications@${process.env.RESEND_EMAIL_DOMAIN}>`
-    : "AUAPW Website <onboarding@resend.dev>")
-
-const escapeHtml = (s: unknown) =>
-  String(s ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;")
-
-const money = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-
-function rows(pairs: [string, unknown][]) {
-  return pairs
-    .map(
-      ([k, v]) =>
-        `<tr><td style="padding:6px 0;color:#6b7280;width:120px">${escapeHtml(k)}</td><td style="padding:6px 0;font-weight:bold">${escapeHtml(v || "—")}</td></tr>`,
-    )
-    .join("")
-}
-
-function shell(title: string, body: string, adminPath: string, siteUrl: string) {
-  return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-    <div style="background:#0f1117;color:#fff;padding:20px;border-radius:8px 8px 0 0">
-      <h2 style="margin:0">${escapeHtml(title)}</h2>
-    </div>
-    <div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px">
-      ${body}
-      <p style="margin-top:20px"><a href="${escapeHtml(siteUrl + adminPath)}" style="background:#f59e0b;color:#0f1117;padding:10px 16px;border-radius:6px;text-decoration:none;font-weight:bold">Open in admin</a></p>
-    </div>
-  </div>`
-}
 
 export interface SendResult {
   ok: boolean
@@ -69,7 +45,6 @@ async function operationsRecipients(): Promise<string[]> {
     const activeStaffEmails = rows
       .map((row: { email: string }) => String(row.email).trim().toLowerCase())
       .filter((email: string) => email.includes("@") && !email.startsWith("@") && !email.endsWith("@") && !email.includes(" "))
-    // Keep the configured operations inbox copied in while also notifying the roster.
     return [...new Set([STAFF_EMAIL.toLowerCase(), ...activeStaffEmails])].slice(0, 31)
   } catch {
     console.error("[followup] Could not read team notification recipients; using FOLLOWUP_EMAIL fallback.")
@@ -77,55 +52,54 @@ async function operationsRecipients(): Promise<string[]> {
   }
 }
 
-async function sendToOperations(subject: string, html: string, replyTo?: string): Promise<SendResult> {
+async function sendToOperations(
+  subject: string,
+  react: ReactElement,
+  replyTo?: string,
+  idempotencyKey?: string,
+): Promise<SendResult> {
   const recipients = await operationsRecipients()
-  // Send individual messages so team addresses are not exposed to one another.
-  const results = await Promise.all(recipients.map((recipient) => sendWithResult(subject, html, [recipient], replyTo)))
+  const results = await Promise.all(
+    recipients.map((recipient) =>
+      sendWithResult(subject, react, [recipient], replyTo, idempotencyKey ? `${idempotencyKey}/${recipient}` : undefined),
+    ),
+  )
   const sentCount = results.filter((result) => result.ok).length
   const ok = sentCount === recipients.length
   return {
     ok,
     sentCount,
     recipientCount: recipients.length,
-    ...(ok ? {} : { error: sentCount === 0
-      ? "No team notification emails were accepted. Check RESEND_API_KEY and the verified EMAIL_FROM/RESEND_EMAIL_DOMAIN sender."
-      : `Only ${sentCount} of ${recipients.length} team notification emails were accepted. Check Resend delivery for the failures.` }),
+    ...(ok
+      ? {}
+      : {
+          error:
+            sentCount === 0
+              ? "No team notification emails were accepted. Check RESEND_API_KEY and the verified EMAIL_FROM/RESEND_EMAIL_DOMAIN sender."
+              : `Only ${sentCount} of ${recipients.length} team notification emails were accepted. Check Resend delivery for the failures.`,
+        }),
   }
 }
 
 async function sendWithResult(
   subject: string,
-  html: string,
+  react: ReactElement,
   to: string[] = [STAFF_EMAIL],
   replyTo?: string,
+  idempotencyKey?: string,
 ): Promise<SendResult> {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) {
-    console.error("[followup] RESEND_API_KEY missing; email not sent (record is saved in admin)")
-    return { ok: false, error: "RESEND_API_KEY is not set in Vercel" }
-  }
-  try {
-    const { error } = await new Resend(apiKey).emails.send({
-      from: FROM,
-      to,
-      subject,
-      html,
-      ...(replyTo ? { replyTo } : {}),
-    })
-    if (error) {
-      console.error("[followup] Resend error:", error.message)
-      return { ok: false, error: error.message }
-    }
-    return { ok: true }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error("[followup] Email send failed:", message)
-    return { ok: false, error: message }
-  }
+  const result: MailResult = await sendReactEmail({
+    to,
+    subject,
+    react,
+    replyTo,
+    idempotencyKey,
+  })
+  return result
 }
 
-async function send(subject: string, html: string, to: string[] = [STAFF_EMAIL], replyTo?: string): Promise<boolean> {
-  return (await sendWithResult(subject, html, to, replyTo)).ok
+async function send(subject: string, react: ReactElement, to: string[] = [STAFF_EMAIL], replyTo?: string): Promise<boolean> {
+  return (await sendWithResult(subject, react, to, replyTo)).ok
 }
 
 /** True when emails can go to customers: Resend's shared test sender only delivers to the account owner. */
@@ -140,85 +114,96 @@ export function customerEmailReady(): { ok: boolean; reason?: string } {
   return { ok: true }
 }
 
-function customerShell(title: string, body: string, siteUrl = "https://allusedautopartwarehouse.com") {
-  return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-    <div style="background:#0f1117;color:#fff;padding:20px;border-radius:8px 8px 0 0">
-      <img src="${escapeHtml(`${siteUrl}/auapw-logo.png`)}" alt="All Used Auto Parts Warehouse" width="180" style="display:block;max-width:180px;height:auto;margin-bottom:16px;background:#fff;padding:8px;border-radius:4px" />
-      <h2 style="margin:0">${escapeHtml(title)}</h2>
-    </div>
-    <div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px">
-      ${body}
-      <p style="margin-top:20px;color:#6b7280;font-size:13px">Questions? Call ${escapeHtml(PHONE_DISPLAY)} or reply to this email.</p>
-    </div>
-  </div>`
+function vehicleLabel(lead: QuoteLead) {
+  return [lead.year, lead.make, lead.model].filter(Boolean).join(" ")
+}
+
+function quoteProductUrl(lead: QuoteLead, siteUrl: string) {
+  if (!lead.productUrl) return undefined
+  if (lead.productUrl.startsWith("/") && !lead.productUrl.startsWith("//")) return siteUrl + lead.productUrl
+  return undefined
 }
 
 export async function notifyNewChat(
   chat: { conversationId: string; name?: string | null; email?: string | null; pageUrl?: string | null; body: string },
   siteUrl: string,
 ) {
-  const body = `<table style="width:100%;border-collapse:collapse">${rows([
-    ["Name", chat.name],
-    ["Email", chat.email],
-    ["Page", chat.pageUrl],
-    ["Message", chat.body],
-  ])}</table>`
   return sendToOperations(
     `New live chat${chat.name ? ` from ${chat.name}` : ""}`,
-    shell("New Live Chat", body, `/admin/chats?c=${encodeURIComponent(chat.conversationId)}`, siteUrl),
+    createElement(StaffAlertEmail, {
+      title: "New live chat",
+      preview: `New live chat${chat.name ? ` from ${chat.name}` : ""}`,
+      rows: [
+        { label: "Name", value: chat.name || "—" },
+        { label: "Email", value: chat.email || "—" },
+        { label: "Page", value: chat.pageUrl || "—" },
+        { label: "Message", value: chat.body },
+      ],
+      ctaUrl: `${siteUrl}/admin/chats?c=${encodeURIComponent(chat.conversationId)}`,
+      siteUrl,
+    }),
     chat.email || undefined,
+    `staff-chat/${chat.conversationId}`,
   )
 }
 
 export async function notifyNewQuote(lead: QuoteLead, siteUrl: string) {
-  const vehicle = [lead.year, lead.make, lead.model].filter(Boolean).join(" ")
-  const body = `<table style="width:100%;border-collapse:collapse">${rows([
-    ["Quote #", lead.id],
-    ["Product", lead.productName],
-    ["Product page", lead.productUrl],
-    ["Part", lead.partType],
-    ["Vehicle", vehicle],
-    ["Option", lead.partOption],
-    ["Name", lead.fullName],
-    ["Phone", lead.phone],
-    ["Email", lead.email],
-    ["State / ZIP", [lead.state, lead.zip].filter(Boolean).join(" ")],
-    ["Notes", lead.notes],
-    ["Source", lead.source],
-  ])}</table>`
+  const vehicle = vehicleLabel(lead)
   return sendToOperations(
     `New quote #${lead.id}: ${vehicle || lead.make} ${lead.partType}`.trim(),
-    shell("New Quote Request", body, "/admin/quotes", siteUrl),
+    createElement(StaffAlertEmail, {
+      title: "New quote request",
+      preview: `New quote #${lead.id}: ${vehicle || lead.partType}`,
+      rows: [
+        { label: "Quote #", value: String(lead.id) },
+        { label: "Product", value: lead.productName || "—" },
+        { label: "Product page", value: lead.productUrl || "—" },
+        { label: "Part", value: lead.partType },
+        { label: "Vehicle", value: vehicle || "—" },
+        { label: "Option", value: lead.partOption || "—" },
+        { label: "Name", value: lead.fullName },
+        { label: "Phone", value: lead.phone },
+        { label: "Email", value: lead.email || "—" },
+        { label: "State / ZIP", value: [lead.state, lead.zip].filter(Boolean).join(" ") || "—" },
+        { label: "Notes", value: lead.notes || "—" },
+        { label: "Source", value: lead.source || "—" },
+      ],
+      ctaUrl: `${siteUrl}/admin/quotes`,
+      siteUrl,
+    }),
     lead.email || undefined,
+    `staff-quote/${lead.id}`,
   )
 }
 
 export async function notifyNewOrder(order: CustomerOrder, siteUrl: string) {
-  const items = order.items
-    .map((l) => {
-      const href = l.url ? absoluteUrl(l.url, siteUrl) : ""
-      const name = href
-        ? `<a href="${escapeHtml(href)}">${escapeHtml(l.name)}</a>`
-        : escapeHtml(l.name)
-      return `<li>${name} × ${l.quantity} — ${money(l.lineTotal)}</li>`
-    })
-    .join("")
-  const body = `<table style="width:100%;border-collapse:collapse">${rows([
-    ["Order #", order.orderNumber],
-    ["Name", order.customerName],
-    ["Phone", order.customerPhone],
-    ["Email", order.customerEmail],
-    ["Ship to", order.shippingAddress],
-    ["Notes", order.customerNotes],
-    ["Payment", order.paymentGateway ?? "phone"],
-    ["Status", order.status],
-    ["Total", money(order.totalAmount)],
-    ["Invoice", invoiceUrl(order, siteUrl)],
-  ])}</table><h3>Items</h3><ul>${items}</ul>`
+  const items = order.items.map((line) => {
+    const href = line.url ? absoluteUrl(line.url, siteUrl) : ""
+    return `${line.name} × ${line.quantity} — ${formatMoney(line.lineTotal)}${href ? ` (${href})` : ""}`
+  })
   return sendToOperations(
-    `New order ${order.orderNumber} — ${money(order.totalAmount)}`,
-    shell("New Order — call to confirm & take payment", body, "/admin/orders", siteUrl),
+    `New order ${order.orderNumber} — ${formatMoney(order.totalAmount)}`,
+    createElement(StaffAlertEmail, {
+      title: "New order — call to confirm and take payment",
+      preview: `New order ${order.orderNumber} — ${formatMoney(order.totalAmount)}`,
+      rows: [
+        { label: "Order #", value: order.orderNumber },
+        { label: "Name", value: order.customerName || "—" },
+        { label: "Phone", value: order.customerPhone || "—" },
+        { label: "Email", value: order.customerEmail || "—" },
+        { label: "Ship to", value: order.shippingAddress || "—" },
+        { label: "Notes", value: order.customerNotes || "—" },
+        { label: "Payment", value: order.paymentGateway ?? "phone" },
+        { label: "Status", value: order.status },
+        { label: "Total", value: formatMoney(order.totalAmount) },
+        { label: "Invoice", value: invoiceUrl(order, siteUrl) },
+      ],
+      items,
+      ctaUrl: `${siteUrl}/admin/orders`,
+      siteUrl,
+    }),
     order.customerEmail || undefined,
+    `staff-order/${order.orderNumber}`,
   )
 }
 
@@ -232,8 +217,14 @@ function invoiceKindFor(order: CustomerOrder): InvoiceEmailKind {
 export async function sendCustomerOrderVerification(order: CustomerOrder, siteUrl: string) {
   if (!order.customerEmail) return { ok: false, error: "No customer email address was provided." }
   if (!order.emailVerifyToken) return { ok: false, error: "This order has no email verification token." }
-  const { subject, html } = buildCustomerInvoiceEmail(order, siteUrl, "verify")
-  return sendWithResult(subject, html, [order.customerEmail])
+  const { subject, props } = buildInvoiceEmailModel(order, siteUrl, "verify")
+  return sendWithResult(
+    subject,
+    createElement(InvoiceEmail, props),
+    [order.customerEmail],
+    undefined,
+    `order-verify/${order.orderNumber}`,
+  )
 }
 
 /**
@@ -242,32 +233,29 @@ export async function sendCustomerOrderVerification(order: CustomerOrder, siteUr
  */
 export async function sendCustomerOrderInvoice(order: CustomerOrder, siteUrl: string) {
   if (!order.customerEmail) return { ok: false, error: "No customer email address was provided." }
-  const { subject, html } = buildCustomerInvoiceEmail(order, siteUrl, invoiceKindFor(order))
-  return sendWithResult(subject, html, [order.customerEmail])
+  const { subject, props } = buildInvoiceEmailModel(order, siteUrl, invoiceKindFor(order))
+  return sendWithResult(subject, createElement(InvoiceEmail, props), [order.customerEmail])
 }
 
 /** Send a receipt-style acknowledgement after a quote request is saved. */
 export async function sendCustomerQuoteAcknowledgement(lead: QuoteLead, siteUrl: string): Promise<SendResult> {
   if (!lead.email) return { ok: false, error: "The customer did not provide an email address." }
-  const vehicle = [lead.year, lead.make, lead.model].filter(Boolean).join(" ")
-  const body = `
-    <p>Hello ${escapeHtml(lead.fullName)},</p>
-    <p>We've received your quote request and saved it as reference <strong>#${lead.id}</strong>.</p>
-    <table style="width:100%;border-collapse:collapse">${rows([
-      ["Requested part", lead.partType],
-      ["Vehicle", vehicle],
-      ["Option", lead.partOption],
-      ["Submitted", new Date(lead.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })],
-    ])}</table>
-    ${lead.productName ? `<p>Product of interest: <strong>${escapeHtml(lead.productName)}</strong></p>` : ""}
-    ${lead.productUrl && lead.productUrl.startsWith("/") && !lead.productUrl.startsWith("//")
-      ? `<p><a href="${escapeHtml(siteUrl + lead.productUrl)}">View the exact product page</a></p>`
-      : ""}
-    <p>A parts specialist will review the request and contact you. This acknowledgement is not a price quote or fitment confirmation.</p>`
   return sendWithResult(
     `We received your AUAPW quote request #${lead.id}`,
-    customerShell("Quote Request Received", body),
+    createElement(QuoteReceivedEmail, {
+      customerName: lead.fullName,
+      quoteId: lead.id,
+      partType: lead.partType,
+      vehicle: vehicleLabel(lead),
+      option: lead.partOption,
+      submittedAt: lead.createdAt,
+      productName: lead.productName,
+      productUrl: quoteProductUrl(lead, siteUrl),
+      siteUrl,
+    }),
     [lead.email],
+    undefined,
+    `quote-ack/${lead.id}`,
   )
 }
 
@@ -282,16 +270,22 @@ export async function notifyFollowupAssignment(input: {
 }): Promise<SendResult> {
   const noun = input.recordType === "order" ? "order" : "quote request"
   const path = input.recordType === "order" ? "/admin/orders" : "/admin/quotes"
-  const html = shell(
-    `Follow-up assigned: ${noun} ${input.reference}`,
-    `<p>Hello ${escapeHtml(input.name)},</p><p>A customer ${noun} has been assigned to you.</p><table style="width:100%;border-collapse:collapse">${rows([
-      ["Reference", input.reference],
-      ["Details", input.summary],
-    ])}</table><p>Please review the record and update its status/notes in the admin.</p>`,
-    path,
-    input.siteUrl,
+  return sendWithResult(
+    `AUAPW follow-up assigned — ${noun} ${input.reference}`,
+    createElement(StaffAlertEmail, {
+      title: `Follow-up assigned: ${noun} ${input.reference}`,
+      preview: `A customer ${noun} has been assigned to you`,
+      greeting: `Hello ${input.name},`,
+      intro: `A customer ${noun} has been assigned to you. Please review the record and update its status/notes in the admin.`,
+      rows: [
+        { label: "Reference", value: input.reference },
+        { label: "Details", value: input.summary },
+      ],
+      ctaUrl: `${input.siteUrl}${path}`,
+      siteUrl: input.siteUrl,
+    }),
+    [input.email],
   )
-  return sendWithResult(`AUAPW follow-up assigned — ${noun} ${input.reference}`, html, [input.email])
 }
 
 /**
@@ -325,54 +319,60 @@ export async function sendDailyReport(
     })
   }
 
-  const alertHtml = alerts.length
-    ? `<h3 style="margin:20px 0 8px">Needs attention</h3><ul style="padding-left:18px;margin:0">${alerts
-        .map(
-          (al) =>
-            `<li style="margin:4px 0;color:${al.level === "critical" ? "#b91c1c" : "#92400e"}">${escapeHtml(al.message)}</li>`,
-        )
-        .join("")}</ul>`
-    : `<p style="margin-top:20px;color:#047857">Nothing needs attention — all checks passed.</p>`
-
-  const body = `
-    <h3 style="margin:0 0 8px">Yesterday</h3>
-    <table style="width:100%;border-collapse:collapse">${rows([
-      ["Quote requests", String(y.quotes)],
-      ["Orders placed", String(y.orders)],
-      ["Paid revenue", money(y.revenue)],
-    ])}</table>
-    <h3 style="margin:20px 0 8px">Waiting on you</h3>
-    <table style="width:100%;border-collapse:collapse">${rows([
-      ["New quotes", String(a.newQuotes)],
-      ["Pending orders", String(a.pendingOrders)],
-      ["Reserved (fitment)", String(a.reservedOrders)],
-      ["Confirmed, unpaid", String(a.unpaidConfirmedOrders)],
-    ])}</table>
-    <h3 style="margin:20px 0 8px">Google Shopping</h3>
-    <table style="width:100%;border-collapse:collapse">${rows([
-      [
-        "Products in feed",
-        `${snapshot.eligible.toLocaleString("en-US")} of ${snapshot.total.toLocaleString("en-US")}${
-          delta === null || delta === 0 ? "" : ` (${delta > 0 ? "+" : ""}${delta.toLocaleString("en-US")})`
-        }`,
-      ],
-      [
-        "Google last fetched",
-        feed.lastGoogleFetch
-          ? new Date(feed.lastGoogleFetch).toLocaleString("en-US", {
-              dateStyle: "medium",
-              timeStyle: "short",
-              timeZone: metrics.timeZone,
-            })
-          : "Never",
-      ],
-    ])}</table>
-    ${alertHtml}`
-
-  const headline = `${y.quotes} quote${y.quotes === 1 ? "" : "s"}, ${y.orders} order${y.orders === 1 ? "" : "s"}, ${money(y.revenue)} paid`
+  const headline = `${y.quotes} quote${y.quotes === 1 ? "" : "s"}, ${y.orders} order${y.orders === 1 ? "" : "s"}, ${formatMoney(y.revenue)} paid`
   return send(
-    `${alerts.length ? `⚠ ${alerts.length} alert${alerts.length === 1 ? "" : "s"} · ` : ""}AUAPW daily report — ${headline}`,
-    shell(`Daily report · ${snapshot.day}`, body, "/admin/dashboard", siteUrl),
+    `${alerts.length ? `${alerts.length} alert${alerts.length === 1 ? "" : "s"} · ` : ""}AUAPW daily report — ${headline}`,
+    createElement(StaffAlertEmail, {
+      title: `Daily report · ${snapshot.day}`,
+      preview: headline,
+      intro: alerts.length === 0 ? "Nothing needs attention — all checks passed." : undefined,
+      sections: [
+        {
+          heading: "Yesterday",
+          rows: [
+            { label: "Quote requests", value: String(y.quotes) },
+            { label: "Orders placed", value: String(y.orders) },
+            { label: "Paid revenue", value: formatMoney(y.revenue) },
+          ],
+        },
+        {
+          heading: "Waiting on you",
+          rows: [
+            { label: "New quotes", value: String(a.newQuotes) },
+            { label: "Pending orders", value: String(a.pendingOrders) },
+            { label: "Reserved (fitment)", value: String(a.reservedOrders) },
+            { label: "Confirmed, unpaid", value: String(a.unpaidConfirmedOrders) },
+          ],
+        },
+        {
+          heading: "Google Shopping",
+          rows: [
+            {
+              label: "Products in feed",
+              value: `${snapshot.eligible.toLocaleString("en-US")} of ${snapshot.total.toLocaleString("en-US")}${
+                delta === null || delta === 0 ? "" : ` (${delta > 0 ? "+" : ""}${delta.toLocaleString("en-US")})`
+              }`,
+            },
+            {
+              label: "Google last fetched",
+              value: feed.lastGoogleFetch
+                ? new Date(feed.lastGoogleFetch).toLocaleString("en-US", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                    timeZone: metrics.timeZone,
+                  })
+                : "Never",
+            },
+          ],
+        },
+      ],
+      alerts: alerts.map((alert) => ({
+        level: (alert.level === "critical" ? "critical" : "warning") as "warning" | "critical",
+        message: alert.message,
+      })),
+      ctaUrl: `${siteUrl}/admin/dashboard`,
+      siteUrl,
+    }),
   )
 }
 
@@ -422,22 +422,19 @@ export async function sendOrderStatusEmail(order: CustomerOrder, note: string, s
     title: "Order Update",
     text: `Your order status is now: ${order.status.replace(/_/g, " ")}.`,
   }
-  const items = order.items
-    .map((l) => `<li>${escapeHtml(l.name)} × ${l.quantity}</li>`)
-    .join("")
-  const body = `
-    <p>Hi ${escapeHtml(order.customerName) || "there"},</p>
-    <p>${escapeHtml(copy.text)}</p>
-    ${note ? `<p style="background:#f3f4f6;padding:12px;border-radius:6px;white-space:pre-wrap">${escapeHtml(note)}</p>` : ""}
-    <table style="width:100%;border-collapse:collapse">${rows([
-      ["Order #", order.orderNumber],
-      ["Total", money(order.totalAmount)],
-    ])}</table>
-    ${items ? `<h3>Items</h3><ul>${items}</ul>` : ""}
-    <p><a href="${escapeHtml(siteUrl)}" style="color:#2563eb">${escapeHtml(siteUrl.replace(/^https?:\/\//, ""))}</a></p>`
   return sendWithResult(
     `${copy.subject} — ${order.orderNumber}`,
-    customerShell(copy.title, body),
+    createElement(OrderStatusEmail, {
+      customerName: order.customerName || "there",
+      title: copy.title,
+      preview: `${copy.subject} — ${order.orderNumber}`,
+      body: copy.text,
+      orderNumber: order.orderNumber,
+      totalAmount: order.totalAmount,
+      items: order.items.map((line) => `${line.name} × ${line.quantity}`),
+      note: note || undefined,
+      siteUrl,
+    }),
     [order.customerEmail],
     STAFF_EMAIL,
   )
@@ -446,24 +443,20 @@ export async function sendOrderStatusEmail(order: CustomerOrder, note: string, s
 /** Written quote to the customer, sent from the admin Quotes page when "Email the quote" is ticked. */
 export async function sendQuoteEmail(lead: QuoteLead, amount: number, note: string, siteUrl: string): Promise<SendResult> {
   if (!lead.email) return { ok: false, error: "this quote request has no email address" }
-  const vehicle = [lead.year, lead.make, lead.model].filter(Boolean).join(" ")
+  const vehicle = vehicleLabel(lead)
   const part = `${vehicle ? `${vehicle} ` : ""}${lead.partType}`.trim()
-  const body = `
-    <p>Hi ${escapeHtml(lead.fullName) || "there"},</p>
-    <p>Thanks for your request. Here is your quote:</p>
-    <table style="width:100%;border-collapse:collapse">${rows([
-      ["Part", part],
-      ["Option", lead.partOption],
-      ["Price", money(amount)],
-      ["Shipping", SHIPPING.short],
-      ["Warranty", WARRANTY_SUMMARY],
-    ])}</table>
-    ${note ? `<p style="background:#f3f4f6;padding:12px;border-radius:6px;white-space:pre-wrap">${escapeHtml(note)}</p>` : ""}
-    <p style="margin-top:16px">To order, call <strong>${escapeHtml(PHONE_DISPLAY)}</strong> or simply reply to this email and we'll confirm fitment with your VIN before anything ships.</p>
-    <p><a href="${escapeHtml(siteUrl)}" style="color:#2563eb">${escapeHtml(siteUrl.replace(/^https?:\/\//, ""))}</a></p>`
   return sendWithResult(
-    `Your quote: ${part} — ${money(amount)}`,
-    customerShell("Your Parts Quote", body),
+    `Your quote: ${part} — ${formatMoney(amount)}`,
+    createElement(QuoteOfferEmail, {
+      customerName: lead.fullName,
+      part,
+      option: lead.partOption,
+      amount,
+      shipping: SHIPPING.short,
+      warranty: WARRANTY_SUMMARY,
+      note: note || undefined,
+      siteUrl,
+    }),
     [lead.email],
     STAFF_EMAIL,
   )

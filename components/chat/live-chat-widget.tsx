@@ -60,8 +60,8 @@ function ChatBody({ text }: { text: string }) {
 
 export function LiveChatWidget() {
   const pathname = usePathname()
-  const [open, setOpen] = useState(false)
-  const [tab, setTab] = useState<ChatTab>('chat')
+  const [open, setOpen] = useState(true)
+  const [tab, setTab] = useState<ChatTab>('quote')
   const [draft, setDraft] = useState('')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { authClient } from '@/lib/auth-client'
+import { OrderStatusTracker } from '@/components/customer/order-status-tracker'
+import { prettyOrderStatus, type StatusHistoryEntry } from '@/lib/order-status'
 import {
   LogOut,
   ShoppingCart,
@@ -14,7 +16,6 @@ import {
   RefreshCw,
   ExternalLink,
   AlertCircle,
-  CheckCircle2,
   Clock3,
 } from 'lucide-react'
 
@@ -23,9 +24,12 @@ type AccountOrder = {
   orderNumber: string
   status: string
   createdAt: string | null
+  updatedAt: string | null
   total: number
   items: AccountOrderItem[]
   itemCount: number
+  customerNote: string | null
+  history: StatusHistoryEntry[]
 }
 type AccountQuote = {
   id: number
@@ -54,7 +58,7 @@ const statusClass = (status: string) => {
   if (['cancelled', 'lost'].includes(status)) return 'border-destructive/30 bg-destructive/10 text-destructive'
   return 'border-amber-600/30 bg-amber-600/10 text-amber-700 dark:text-amber-400'
 }
-const prettyStatus = (status: string) => status.replace(/_/g, ' ')
+const prettyStatus = prettyOrderStatus
 
 export default function CustomerDashboard() {
   const router = useRouter()
@@ -82,7 +86,7 @@ export default function CustomerDashboard() {
       if (!response.ok) throw new Error(result.error || 'Could not load your account right now.')
       setData(result as DashboardData)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load your account right now.')
+      if (!refresh) setError(err instanceof Error ? err.message : 'Could not load your account right now.')
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
@@ -91,6 +95,17 @@ export default function CustomerDashboard() {
 
   useEffect(() => {
     void loadDashboard()
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void loadDashboard(true)
+    }, 20000)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void loadDashboard(true)
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [loadDashboard])
 
   const handleLogout = async () => {
@@ -124,7 +139,7 @@ export default function CustomerDashboard() {
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">AUAPW Customer Portal</p>
             <h1 className="mt-1 truncate text-xl font-bold text-foreground sm:text-2xl">My Account</h1>
-            <p className="truncate text-sm text-muted-foreground">{data?.customer.name || data?.customer.email}</p>
+            <p className="truncate text-sm text-muted-foreground">{data?.customer.name || data?.customer.email} · live order status</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <button type="button" onClick={() => void loadDashboard(true)} disabled={isRefreshing} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted disabled:opacity-60">
@@ -175,7 +190,7 @@ export default function CustomerDashboard() {
                 <button type="button" onClick={() => setActiveTab('orders')} className="text-sm font-semibold text-primary hover:underline">View all</button>
               </div>
               <div className="divide-y divide-border">
-                {(data?.orders ?? []).slice(0, 5).map((order) => <div key={order.orderNumber} className="space-y-2 p-4">
+                {(data?.orders ?? []).slice(0, 5).map((order) => <div key={order.orderNumber} className="flex flex-col gap-2 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div><p className="font-mono text-sm font-semibold">{order.orderNumber}</p><p className="mt-1 text-xs text-muted-foreground">{when(order.createdAt)}</p></div>
                     <span className={`rounded-full border px-2 py-1 text-xs capitalize ${statusClass(order.status)}`}>{prettyStatus(order.status)}</span>
@@ -183,6 +198,7 @@ export default function CustomerDashboard() {
                   <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                     <span className="text-muted-foreground">{order.itemCount} item(s)</span><strong>{money(order.total)}</strong>
                   </div>
+                  {order.customerNote ? <p className="text-sm text-muted-foreground">{order.customerNote}</p> : null}
                 </div>)}
                 {data?.orders.length === 0 ? <p className="p-5 text-sm text-muted-foreground">No orders are linked to this account yet.</p> : null}
               </div>
@@ -210,14 +226,15 @@ export default function CustomerDashboard() {
           {data?.limitations ? <p className="rounded-lg border border-border bg-muted/30 p-4 text-xs leading-5 text-muted-foreground">{data.limitations}</p> : null}
         </section> : null}
 
-        {activeTab === 'orders' ? <section className="space-y-4">
-          <div><h2 className="text-xl font-bold">Order history</h2><p className="text-sm text-muted-foreground">Orders and reservations associated with your signed-in account.</p></div>
-          {(data?.orders ?? []).length ? (data?.orders ?? []).map((order) => <article key={order.orderNumber} className="rounded-xl border border-border bg-card p-5">
+        {activeTab === 'orders' ? <section className="flex flex-col gap-4">
+          <div><h2 className="text-xl font-bold">Order history</h2><p className="text-sm text-muted-foreground">Live status from our warehouse. This page refreshes automatically when we update your order.</p></div>
+          {(data?.orders ?? []).length ? (data?.orders ?? []).map((order) => <article key={order.orderNumber} className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div><p className="font-mono font-bold">{order.orderNumber}</p><p className="mt-1 text-xs text-muted-foreground">{when(order.createdAt)}</p></div>
-              <div className="text-right"><span className={`rounded-full border px-2 py-1 text-xs capitalize ${statusClass(order.status)}`}>{prettyStatus(order.status)}</span><p className="mt-2 text-lg font-bold">{money(order.total)}</p></div>
+              <p className="text-lg font-bold">{money(order.total)}</p>
             </div>
-            <div className="mt-4 divide-y divide-border rounded-md border border-border">
+            <OrderStatusTracker status={order.status} updatedAt={order.updatedAt} customerNote={order.customerNote} history={order.history} />
+            <div className="divide-y divide-border rounded-md border border-border">
               {order.items.map((item, index) => <div key={`${order.orderNumber}-${index}`} className="flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
                 {item.url ? <Link href={item.url} className="text-primary hover:underline">{item.name}</Link> : <span>{item.name}</span>}
                 <span className="text-muted-foreground">Qty {item.quantity}</span>

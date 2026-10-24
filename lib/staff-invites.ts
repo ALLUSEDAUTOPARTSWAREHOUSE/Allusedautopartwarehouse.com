@@ -1,6 +1,9 @@
 import 'server-only'
 import { createHash, randomBytes } from 'node:crypto'
+import { createElement } from 'react'
+import StaffInviteEmail from '@/emails/staff-invite'
 import { pool } from '@/lib/db'
+import { emailFromAddress, sendReactEmail } from '@/lib/mailer'
 
 const INVITE_TTL_HOURS = 72
 
@@ -44,21 +47,18 @@ export async function consumeStaffInvite(token: string, staffId: string) {
 }
 
 export async function sendStaffInviteEmail(params: { email: string; name: string; inviteUrl: string }) {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) throw new Error('RESEND_API_KEY is not configured')
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: process.env.ADMIN_RESET_FROM || 'notifications@allusedautopartswarehouse.com',
-      to: [params.email],
-      subject: 'You are invited to the AUAPW team portal',
-      text: `Hi ${params.name},\n\nYou have been invited to the All Used Auto Parts Warehouse team portal. Set your password to activate your account:\n\n${params.inviteUrl}\n\nThis link expires in ${INVITE_TTL_HOURS} hours. After setting your password, sign in at the staff login page. If you were not expecting this invitation, ignore this email.`,
+  const result = await sendReactEmail({
+    from: process.env.ADMIN_RESET_FROM || emailFromAddress(),
+    to: [params.email],
+    subject: 'You are invited to the AUAPW team portal',
+    react: createElement(StaffInviteEmail, {
+      name: params.name,
+      inviteUrl: params.inviteUrl,
+      expiresHours: INVITE_TTL_HOURS,
     }),
-    cache: 'no-store',
   })
-  if (!response.ok) {
-    console.error('[staff-invites] Email provider rejected invite email', response.status)
+  if (!result.ok) {
+    console.error('[staff-invites] Email provider rejected invite email', result.error)
     throw new Error('Unable to send the invitation email. Check the email provider configuration.')
   }
 }
