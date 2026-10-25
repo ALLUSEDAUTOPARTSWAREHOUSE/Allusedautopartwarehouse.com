@@ -88,7 +88,7 @@ export default async function AdminWorkspacePage() {
   if (!session) redirect('/admin/login')
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-7">
+    <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-7">
       <CatalogCommandCenter />
       <section className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
@@ -152,7 +152,7 @@ export default async function AdminWorkspacePage() {
           </div>
           <span className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex"><ShieldCheck className="size-4" /> Admin access required</span>
         </div>
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
           {workspaces.map((workspace, index) => {
             const Icon = workspace.icon
             return (
