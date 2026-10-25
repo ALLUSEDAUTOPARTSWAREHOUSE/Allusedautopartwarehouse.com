@@ -27,6 +27,8 @@ export interface BrandProduct {
   tiers?: { low: number; medium: number; high: number }
   imageUrl?: string
   productUrl?: string
+  stockQuantity?: number
+  availability?: string
   category: string
   partNumber: string
   mpn: string

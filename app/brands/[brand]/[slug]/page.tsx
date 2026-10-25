@@ -69,7 +69,8 @@ export default async function BrandProductPage({ params }: PageProps) {
   const override = await getProductOverride(brand, slug)
   if (override?.hidden) notFound()
   const product = applyOverrideToProduct(sheetProduct, override)
-  const availability = SCHEMA_AVAILABILITY[override?.availability ?? 'in_stock']
+  const availabilityKey = override?.availability ?? (product.availability?.includes('out') ? 'out_of_stock' : product.availability?.includes('back') ? 'backorder' : 'in_stock')
+  const availability = SCHEMA_AVAILABILITY[availabilityKey]
 
   const label = getBrandLabel(brand)
   const related = getRelatedBrandProducts(brand, product)
