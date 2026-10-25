@@ -20,7 +20,7 @@ export default async function AdminDashboardPage() {
       <CatalogCommandCenter />
       <OperationsCenter checks={checkEnvironment()} />
       <AdminDashboardClient />
-      <Link href="/admin/ai-chat" className="mx-auto w-full max-w-7xl rounded-lg border border-border bg-card p-5">
+      <Link href="/admin/ai-chat" className="mx-auto w-full max-w-[1600px] rounded-lg border border-border bg-card p-5">
         <span className="font-semibold">AI Agent — Support &amp; Development</span>
         <p className="text-sm text-muted-foreground">Generate customer reply drafts, FAQs, feature plans and code suggestions for your review.</p>
       </Link>
