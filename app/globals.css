@@ -167,6 +167,8 @@ section.bg-background,
   .max-w-6xl { max-width: min(100% - 3rem, 1500px) !important; }
   .max-w-\[1280px\] { max-width: min(100% - 3rem, 1600px) !important; }
   .max-w-\[1200px\] { max-width: min(100% - 3rem, 1500px) !important; }
+  .max-w-5xl { max-width: min(100% - 3rem, 1400px) !important; }
+  .max-w-4xl { max-width: min(100% - 3rem, 1280px) !important; }
 }
 
 @layer base {
@@ -2405,7 +2407,7 @@ footer .wordmark-3d {
   z-index: 10;
 }
 
-/* ════════════════════════════════════���══════════════════
+/* ══════════════════════════════════���═���══════════════════
    PROCESS SECTION — Diamond LED Flash Typography
    ═══════════════════════════════════════════════════════ */
 
