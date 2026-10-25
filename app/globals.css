@@ -161,6 +161,14 @@ section.bg-background,
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Use the wide desktop canvas without leaving large empty gutters on ultrawide screens. */
+@media (min-width: 1536px) {
+  .max-w-7xl { max-width: min(100% - 3rem, 1600px) !important; }
+  .max-w-6xl { max-width: min(100% - 3rem, 1500px) !important; }
+  .max-w-\[1280px\] { max-width: min(100% - 3rem, 1600px) !important; }
+  .max-w-\[1200px\] { max-width: min(100% - 3rem, 1500px) !important; }
+}
+
 @layer base {
   html {
     width: 100%;
