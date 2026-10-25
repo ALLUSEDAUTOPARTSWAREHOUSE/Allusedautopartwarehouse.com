@@ -141,7 +141,7 @@ export function LiveChatWidget() {
           <header className="flex items-center justify-between gap-3 border-b border-border bg-primary px-4 py-3 text-primary-foreground">
             <div className="flex items-center gap-3">
               <img
-                src="/images/icon-chat-mechanic.jpg"
+                src="/images/chat-mechanic-avatar.jpg"
                 alt=""
                 width={48}
                 height={48}
@@ -314,7 +314,7 @@ export function LiveChatWidget() {
           <X className="size-8" />
         ) : (
           <img
-            src="/images/icon-chat-mechanic.jpg"
+            src="/images/chat-mechanic-avatar.jpg"
             alt=""
             width={112}
             height={112}

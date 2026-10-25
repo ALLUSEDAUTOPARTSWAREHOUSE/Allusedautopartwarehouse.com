@@ -148,7 +148,7 @@ export function FloatingChatWidget() {
           <X className="w-6 h-6" />
         ) : (
           <img
-            src="/images/icon-chat-auapw.png"
+            src="/images/chat-mechanic-avatar.jpg"
             alt=""
             width={56}
             height={56}
@@ -164,7 +164,7 @@ export function FloatingChatWidget() {
           <div className="bg-gradient-to-r from-primary/20 to-primary/10 border-b border-border/30 p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img
-                src="/images/icon-chat-auapw.png"
+                src="/images/chat-mechanic-avatar.jpg"
                 alt="AUAPW Assistant"
                 width={32}
                 height={32}
@@ -191,7 +191,7 @@ export function FloatingChatWidget() {
             {currentChat.messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center gap-3">
                 <img
-                  src="/images/icon-chat-auapw.png"
+                  src="/images/chat-mechanic-avatar.jpg"
                   alt="AUAPW"
                   width={64}
                   height={64}
