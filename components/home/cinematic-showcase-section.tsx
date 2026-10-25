@@ -17,7 +17,7 @@ const STATS = [
 export function CinematicShowcaseSection() {
   return (
     <section className="relative bg-[#3a3d44] py-16 sm:py-20">
-      <div className="mx-auto max-w-[1680px] px-4 sm:px-6">
+      <div className="mx-auto max-w-[1280px] px-4 sm:px-6">
         {/* Section heading */}
         <div className="flex flex-col items-center text-center mb-8 sm:mb-10">
           <div className="flex items-center gap-3 mb-4">

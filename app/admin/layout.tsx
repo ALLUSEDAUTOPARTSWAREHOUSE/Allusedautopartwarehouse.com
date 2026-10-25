@@ -47,7 +47,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         </div>
       </header>
 
-      <main className="min-w-0 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">{children}</main>
+      <main className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8">{children}</main>
       {session ? <AssistantPopup /> : null}
     </div>
   )

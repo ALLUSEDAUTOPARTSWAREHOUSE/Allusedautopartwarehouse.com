@@ -4,7 +4,7 @@ import { CAR_MAKES } from "@/lib/data"
 export function MakesPillsSection() {
   return (
     <section className="py-20 bg-gradient-to-br from-background via-card to-background border-b border-border/30">
-      <div className="mx-auto max-w-[1680px] px-6">
+      <div className="mx-auto max-w-[1280px] px-6">
         <div className="flex items-end justify-between gap-6 mb-12 flex-wrap">
           <div>
             <div className="flex items-center gap-4 mb-5">

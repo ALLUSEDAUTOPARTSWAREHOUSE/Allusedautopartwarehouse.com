@@ -4,7 +4,7 @@ import { Star } from "lucide-react"
 export function TestimonialsSection() {
   return (
     <section className="py-20 bg-background">
-      <div className="mx-auto max-w-[1680px] px-6">
+      <div className="mx-auto max-w-[1280px] px-6">
         <div className="flex items-end justify-between gap-6 mb-14 flex-wrap">
           <div>
             <div className="flex items-center gap-4 mb-5">
