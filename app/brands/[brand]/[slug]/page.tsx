@@ -135,7 +135,7 @@ export default async function BrandProductPage({ params }: PageProps) {
       <main className="pt-24 lg:pt-28">
         {/* Breadcrumb */}
         <div className="bg-background border-b border-border/20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
+          <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8 py-3">
             <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
               <Link href="/" className="hover:text-primary transition-colors">Home</Link>
               <ChevronRight className="w-3 h-3" />
@@ -150,7 +150,7 @@ export default async function BrandProductPage({ params }: PageProps) {
 
         {/* Product Hero */}
         <section className="py-12 bg-background">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-12">
               {/* Image */}
               <div className="relative w-full aspect-[4/3] bg-muted rounded-2xl overflow-hidden border border-border/40 shadow-lg lg:sticky lg:top-28">
@@ -272,7 +272,7 @@ export default async function BrandProductPage({ params }: PageProps) {
 
   {/* Search another part */}
   <section className="border-y border-border/50 bg-card/20 py-10">
-  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8">
   <div className="mb-6 text-center">
   <h2 className="text-2xl font-black text-foreground">Looking for another {label} part?</h2>
   <p className="mt-2 text-sm text-muted-foreground">
@@ -290,7 +290,7 @@ export default async function BrandProductPage({ params }: PageProps) {
         {/* Related Products */}
         {related.length > 0 && (
           <section className="py-12 bg-card/20">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8">
               <h2 className="text-2xl font-black text-foreground mb-6">Related {label} Parts</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {related.map((rp) => {
