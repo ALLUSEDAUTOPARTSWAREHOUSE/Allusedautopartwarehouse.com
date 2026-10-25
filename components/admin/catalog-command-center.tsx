@@ -22,7 +22,7 @@ export function CatalogCommandCenter() {
     finally { setBusy(false) }
   }
   return <section className="space-y-6 rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-muted/40 p-6 sm:p-8" aria-labelledby="catalog-command-heading">
-    <header><p className="text-xs font-semibold uppercase tracking-[.2em] text-primary">AUAPW Digital Operations</p><h2 id="catalog-command-heading" className="mt-2 text-3xl font-bold">Your catalog command center</h2><p className="mt-3 max-w-3xl text-sm text-muted-foreground">Manage replacement inventory, review brand counts and resolve upload issues from one workspace. Product records are not physical stock quantities or confirmed Google listings.</p></header>
+    <header><p className="text-xs font-semibold uppercase tracking-[.2em] text-primary">AUAPW Digital Operations</p><h2 id="catalog-command-heading" className="mt-2 text-3xl font-bold">Your catalog command center</h2><p className="mt-3 max-w-3xl text-sm text-muted-foreground">Manage replacement inventory, review brand counts, edit availability status, and resolve upload issues from one workspace. Product records represent catalog availability; confirm physical stock before promising fulfillment.</p></header>
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {[
         { label: 'Brands & product editor', detail: 'Prices, images and visibility', href: '/admin/products', icon: Boxes },
