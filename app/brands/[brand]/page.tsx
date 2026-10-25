@@ -156,7 +156,7 @@ export default async function BrandCatalogPage({ params, searchParams }: PagePro
 
         {/* Luxury Stats + Details Section */}
         <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-b from-background to-background/50 border-b border-foreground/10 relative overflow-hidden">
-          <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
             {/* Breadcrumb */}
             <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-muted-foreground mb-8 flex-wrap font-medium">
               <Link href="/" className="hover:text-foreground/80 transition-colors">Home</Link>
@@ -229,7 +229,7 @@ export default async function BrandCatalogPage({ params, searchParams }: PagePro
         {/* Model filter table - Glassmorphism Design */}
         {models.length > 1 && (
           <section className="bg-gradient-to-b from-slate-900/40 to-slate-800/20 backdrop-blur-xl border-b border-white/10 py-8">
-            <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <h2 className="text-xs uppercase tracking-widest font-bold text-slate-300 mb-6">Filter by model</h2>
               <nav aria-label={`${label} models`} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <Link
@@ -266,7 +266,7 @@ export default async function BrandCatalogPage({ params, searchParams }: PagePro
 
         {/* Product grid */}
         <section className="py-10">
-          <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <p className="mb-6 text-sm text-muted-foreground">
               {result.total.toLocaleString()} parts{sp.model ? ` for ${label} ${sp.model}` : ''}
               {sp.q ? ` matching "${sp.q}"` : ''} — page {result.page} of {result.pageCount}
@@ -290,7 +290,7 @@ export default async function BrandCatalogPage({ params, searchParams }: PagePro
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {result.products.map((product) => (
                   <Link
                     key={product.canonicalSlug}
@@ -370,7 +370,7 @@ export default async function BrandCatalogPage({ params, searchParams }: PagePro
 
         {/* Other brands */}
         <section className="py-8 border-t border-border/20 bg-card/20">
-          <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground mb-3">
               Shop other brands
             </h2>
