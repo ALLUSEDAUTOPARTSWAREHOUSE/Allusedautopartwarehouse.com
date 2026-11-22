@@ -51,6 +51,12 @@ export function checkEnvironment(): EnvCheck[] {
       required: false,
       purpose: "AI assistant model access (Netlify-compatible API key)",
     },
+    {
+      name: "AUAPW_ADMIN_AI_MODEL",
+      set: anySet("AUAPW_ADMIN_AI_MODEL"),
+      required: false,
+      purpose: "Optional AI Gateway model override; defaults to openai/gpt-4o-mini",
+    },
   ]
 }
 
