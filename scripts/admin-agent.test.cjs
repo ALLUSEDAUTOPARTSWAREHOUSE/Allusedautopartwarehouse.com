@@ -40,3 +40,17 @@ test('agent UI describes and surfaces read-only suggestions and human approval c
   assert.match(panel, /Approve/)
   assert.match(panel, /Cancel/)
 })
+
+test('admin AI supports OpenAI and Claude model routing with OpenAI as the default', () => {
+  const config = read('lib/ai/model-config.ts')
+  const agent = read('lib/admin-assistant.ts')
+  const health = read('lib/admin-health.ts')
+  assert.match(config, /DEFAULT_ADMIN_AI_MODEL\s*=\s*["']openai\/gpt-4o-mini["']/)
+  assert.match(config, /openai\/gpt-4o-mini/)
+  assert.match(config, /anthropic\/claude-sonnet-4\.5/)
+  assert.match(config, /anthropic\/claude-haiku-4\.5/)
+  assert.match(config, /AUAPW_ADMIN_AI_MODEL/)
+  assert.match(agent, /model:\s*getAdminAssistantModel\(\)/)
+  assert.match(health, /AUAPW_ADMIN_AI_MODEL/)
+  assert.match(health, /AI_GATEWAY_API_KEY/)
+})
