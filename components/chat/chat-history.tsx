@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ChatSession, chatStorage } from '@/lib/chat-storage';
 import { Trash2, Download, Search, ChevronRight, FileJson, FileText } from 'lucide-react';
 import Link from 'next/link';
@@ -10,14 +10,14 @@ export function ChatHistory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'recent' | 'oldest' | 'name'>('recent');
 
-  useEffect(() => {
-    loadChats();
-  }, []);
-
-  const loadChats = () => {
+  const loadChats = useCallback(() => {
     const allChats = chatStorage.getAllChats();
     setChats(allChats);
-  };
+  }, []);
+
+  useEffect(() => {
+    loadChats();
+  }, [loadChats]);
 
   const filteredChats = searchQuery
     ? chatStorage.searchChats(searchQuery)

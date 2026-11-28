@@ -17,6 +17,7 @@ export const ADMIN_NAV = [
   { href: '/admin/payments', label: 'Payments', color: 'border-lime-500 text-lime-800 dark:text-lime-300', selected: 'bg-lime-100 dark:bg-lime-950' },
   { href: '/admin/team', label: 'Team', color: 'border-pink-500 text-pink-800 dark:text-pink-300', selected: 'bg-pink-100 dark:bg-pink-950' },
   { href: '/admin/settings', label: 'Settings', color: 'border-slate-500 text-slate-800 dark:text-slate-300', selected: 'bg-slate-100 dark:bg-slate-950' },
+  { href: '/admin/activity', label: 'Activity report', color: 'border-sky-500 text-sky-800 dark:text-sky-300', selected: 'bg-sky-100 dark:bg-sky-950' },
 ] as const
 
 type TabPreference = { href: string; label: string; visible: boolean; palette: number }
@@ -91,7 +92,7 @@ export function AdminNav() {
         <label className="text-xs"><input type="checkbox" checked={tab.visible} disabled={tab.href === '/admin/settings' || tab.href === '/admin/dashboard'} onChange={event => update(index, { visible: event.target.checked })} /> Show</label>
         <input aria-label={`Label for ${tab.href}`} maxLength={32} value={tab.label} onChange={event => update(index, { label: event.target.value })} className="w-36 rounded border bg-background px-2 py-1 text-sm" />
         <select aria-label={`Color for ${tab.href}`} value={tab.palette} onChange={event => update(index, { palette: Number(event.target.value) })} className="rounded border bg-background text-sm">
-          {['Blue', 'Amber', 'Orange', 'Cyan', 'Teal', 'Violet', 'Emerald', 'Indigo', 'Lime', 'Pink', 'Slate'].map((name, i) => <option key={name} value={i}>{name}</option>)}
+          {['Blue', 'Amber', 'Orange', 'Cyan', 'Teal', 'Fuchsia', 'Violet', 'Emerald', 'Indigo', 'Lime', 'Pink', 'Slate', 'Sky'].map((name, i) => <option key={name} value={i}>{name}</option>)}
         </select>
         <button type="button" aria-label={`Move ${tab.label} earlier`} disabled={index === 0} onClick={() => move(index, -1)} className="rounded border px-2 disabled:opacity-40">↑</button>
         <button type="button" aria-label={`Move ${tab.label} later`} disabled={index === tabs.length - 1} onClick={() => move(index, 1)} className="rounded border px-2 disabled:opacity-40">↓</button>

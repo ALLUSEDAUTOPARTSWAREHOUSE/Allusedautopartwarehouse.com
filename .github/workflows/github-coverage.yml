@@ -20,7 +20,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          # The assignment/access regression fixtures use Node's built-in SQLite.
+          node-version: "24"
       - name: Enable Corepack
         shell: bash
         run: corepack enable

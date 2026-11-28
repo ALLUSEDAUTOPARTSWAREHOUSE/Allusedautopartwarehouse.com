@@ -1,7 +1,9 @@
 import "server-only"
 import { randomUUID } from "crypto"
+import type { PoolClient } from "pg"
 import { pool } from "@/lib/db"
 import { parseStatusHistory, type StatusHistoryEntry } from "@/lib/order-status"
+import { writeSavedAction, type ActivityActor } from "@/lib/record-activity"
 
 export const QUOTE_STATUSES = ["new", "contacted", "quoted", "won", "lost"] as const
 export const ORDER_STATUSES = [
@@ -430,55 +432,111 @@ export async function countByStatus(table: "leads" | "orders"): Promise<Record<s
   return Object.fromEntries(rows.map((r) => [r.status, r.n]))
 }
 
+export class FollowupSaveError extends Error {
+  constructor(message: string, readonly status = 503, readonly code = "FOLLOWUP_SAVE_FAILED") {
+    super(message)
+    this.name = "FollowupSaveError"
+  }
+}
+
+/** Callers pass the verified server session, never browser-supplied actor fields. */
+function followupAdminActor(session: { email: string }): ActivityActor {
+  const email = typeof session?.email === "string" ? session.email.trim().toLowerCase() : ""
+  if (!email || email.length > 320 || /[\u0000-\u001f]/.test(email)) throw new FollowupSaveError("Administrator sign-in is required.", 401, "UNAUTHORIZED")
+  return { id: `admin:${email}`, name: email, role: "admin" }
+}
+
+async function auditedFollowupSave<T>(save: (client: PoolClient) => Promise<T>): Promise<T> {
+  let client: PoolClient | undefined
+  let commitStarted = false
+  let failed = true
+  try {
+    client = await pool.connect()
+    await client.query("BEGIN")
+    const result = await save(client)
+    commitStarted = true
+    await client.query("COMMIT")
+    failed = false
+    return result
+  } catch (error) {
+    if (client) await client.query("ROLLBACK").catch(() => undefined)
+    if (commitStarted) throw new FollowupSaveError("The saved result could not be confirmed. Refresh the record and activity history before trying again.", 503, "FOLLOWUP_SAVE_UNCERTAIN")
+    if (error instanceof FollowupSaveError) throw error
+    const missingSchema = error && typeof error === "object" && "code" in error && ["42P01", "42703"].includes(String(error.code))
+    if (missingSchema) throw new FollowupSaveError("Follow-up storage is not ready. Apply the reviewed record-activity migration and ensure the existing order/lead schema is current. No follow-up change was saved.", 503, "FOLLOWUP_SCHEMA_UNAVAILABLE")
+    throw new FollowupSaveError("The follow-up change could not be saved. No follow-up change was committed. Refresh the record before trying again.")
+  } finally {
+    // Discard failed connections so an uncertain transaction is never reused.
+    client?.release(failed)
+  }
+}
+
 export async function updateQuoteLead(
   id: number,
-  patch: { status: QuoteStatus; internalNotes: string; quoteAmount: number | null },
+  patch: { status: QuoteStatus; internalNotes?: string; quoteAmount?: number | null },
+  session: { email: string },
 ) {
-  await pool.query(
-    `UPDATE public.leads SET status = $2, internal_notes = $3, quote_amount = $4, updated_at = now() WHERE id = $1`,
-    [id, patch.status, patch.internalNotes || null, patch.quoteAmount],
-  )
+  const actor = followupAdminActor(session)
+  if (!Number.isSafeInteger(id) || id < 1 || !QUOTE_STATUSES.includes(patch.status)) throw new FollowupSaveError("Invalid quote request or status.", 400, "INVALID_FOLLOWUP")
+  if ((patch.internalNotes !== undefined && (typeof patch.internalNotes !== "string" || patch.internalNotes.length > 5000)) ||
+    (patch.quoteAmount !== undefined && patch.quoteAmount !== null && (!Number.isFinite(patch.quoteAmount) || patch.quoteAmount < 0 || patch.quoteAmount > 99999999))) {
+    throw new FollowupSaveError("Invalid quote amount or notes.", 400, "INVALID_FOLLOWUP")
+  }
+  return auditedFollowupSave(async client => {
+    const { rows } = await client.query("SELECT status, internal_notes, quote_amount FROM public.leads WHERE id=$1 FOR UPDATE", [id])
+    const previous = rows[0]
+    if (!previous) throw new FollowupSaveError("The quote request no longer exists. No follow-up change was saved.", 404, "FOLLOWUP_NOT_FOUND")
+    const internalNotes = patch.internalNotes === undefined ? previous.internal_notes : patch.internalNotes || null
+    const quoteAmount = patch.quoteAmount === undefined ? previous.quote_amount : patch.quoteAmount
+    const updated = await client.query(
+      `UPDATE public.leads SET status = $2, internal_notes = $3, quote_amount = $4, updated_at = now() WHERE id = $1 RETURNING id`,
+      [id, patch.status, internalNotes, quoteAmount],
+    )
+    if (!updated.rows[0]) throw new FollowupSaveError("The quote request could not be saved. Refresh the record before trying again.", 409, "FOLLOWUP_NOT_SAVED")
+    await writeSavedAction(client, actor, "quote", String(id), patch.status)
+    return { previousStatus: String(previous.status), status: patch.status, statusChanged: previous.status !== patch.status }
+  })
 }
 
 export async function updateOrder(
   id: string,
-  patch: { status: OrderStatus; internalNotes: string; customerNote?: string },
+  patch: { status: OrderStatus; internalNotes?: string; customerNote?: string },
+  session: { email: string },
 ) {
-  await ensureOrderInvoiceColumns()
+  const actor = followupAdminActor(session)
+  if (!/^[\w-]{1,64}$/.test(id) || !ORDER_STATUSES.includes(patch.status)) throw new FollowupSaveError("Invalid order or status.", 400, "INVALID_FOLLOWUP")
+  if ((patch.internalNotes !== undefined && (typeof patch.internalNotes !== "string" || patch.internalNotes.length > 5000)) || (patch.customerNote !== undefined && typeof patch.customerNote !== "string")) throw new FollowupSaveError("Invalid order notes.", 400, "INVALID_FOLLOWUP")
   const customerNote = patch.customerNote?.trim().slice(0, 1000) || null
-  const historyEntry = JSON.stringify({
-    status: patch.status,
-    note: customerNote,
-    at: new Date().toISOString(),
+  // The existing order schema must be migrated before this mutation. Runtime
+  // DDL and broad token backfills must not run outside the audited transaction.
+  return auditedFollowupSave(async client => {
+    const { rows } = await client.query("SELECT status, internal_notes, customer_status_note FROM public.orders WHERE id=$1 FOR UPDATE", [id])
+    const previous = rows[0]
+    if (!previous) throw new FollowupSaveError("The order no longer exists. No follow-up change was saved.", 404, "FOLLOWUP_NOT_FOUND")
+    const previousStatus = String(previous.status)
+    const previousNote = previous.customer_status_note ? String(previous.customer_status_note) : null
+    const recordHistory = previousStatus !== patch.status || (customerNote !== null && customerNote !== previousNote)
+    const internalNotes = patch.internalNotes === undefined ? previous.internal_notes : patch.internalNotes || null
+    const historyEntry = JSON.stringify({ status: patch.status, note: customerNote, at: new Date().toISOString() })
+    const updated = recordHistory
+      ? await client.query(
+        `UPDATE public.orders
+            SET status = $2,
+                internal_notes = $3,
+                customer_status_note = coalesce($4, customer_status_note),
+                status_history = coalesce(status_history, '[]'::jsonb) || jsonb_build_array($5::jsonb),
+                updatedat = now()
+          WHERE id = $1 RETURNING id`,
+        [id, patch.status, internalNotes, customerNote, historyEntry],
+      )
+      : await client.query(
+        `UPDATE public.orders SET status = $2, internal_notes = $3, updatedat = now() WHERE id = $1 RETURNING id`,
+        [id, patch.status, internalNotes],
+      )
+    if (!updated.rows[0]) throw new FollowupSaveError("The order could not be saved. Refresh the record before trying again.", 409, "FOLLOWUP_NOT_SAVED")
+    await writeSavedAction(client, actor, "order", id, patch.status)
+    return { previousStatus, status: patch.status, statusChanged: previousStatus !== patch.status, historyRecorded: recordHistory }
   })
-  const { rows } = await pool.query(
-    `SELECT status, customer_status_note FROM public.orders WHERE id = $1 LIMIT 1`,
-    [id],
-  )
-  const previousStatus = rows[0] ? String(rows[0].status) : null
-  const previousNote = rows[0]?.customer_status_note ? String(rows[0].customer_status_note) : null
-  const recordHistory = previousStatus !== patch.status || (customerNote !== null && customerNote !== previousNote)
-
-  if (recordHistory) {
-    await pool.query(
-      `UPDATE public.orders
-          SET status = $2,
-              internal_notes = $3,
-              customer_status_note = coalesce($4, customer_status_note),
-              status_history = coalesce(status_history, '[]'::jsonb) || jsonb_build_array($5::jsonb),
-              updatedat = now()
-        WHERE id = $1`,
-      [id, patch.status, patch.internalNotes || null, customerNote, historyEntry],
-    )
-    return
-  }
-
-  await pool.query(
-    `UPDATE public.orders
-        SET status = $2, internal_notes = $3, updatedat = now()
-      WHERE id = $1`,
-    [id, patch.status, patch.internalNotes || null],
-  )
 }
 
 /** Admin-only callers must authenticate before invoking this lookup. */

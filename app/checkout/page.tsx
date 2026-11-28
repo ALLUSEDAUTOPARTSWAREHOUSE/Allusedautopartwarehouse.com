@@ -60,6 +60,14 @@ export default function CheckoutPage() {
   const [gateways, setGateways] = useState<PaymentGateway[]>([])
   const [selectedGateway, setSelectedGateway] = useState<string | null>(null)
   const [loadingItemId, setLoadingItemId] = useState(false)
+  const [placedOrder, setPlacedOrder] = useState<{
+    orderNumber: string
+    totalAmount: number
+    reserved?: boolean
+    invoiceToken?: string | null
+    emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null
+  } | null>(null)
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false)
   // The cart lives in localStorage, so the server always renders it empty;
   // wait until mounted before rendering anything that depends on it.
   const [hydrated, setHydrated] = useState(false)
@@ -149,14 +157,6 @@ export default function CheckoutPage() {
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true)
   const [billingAddress, setBillingAddress] = useState({ name: '', address: '', city: '', state: '', zipCode: '', country: 'US' })
   const [error, setError] = useState<string | null>(null)
-  const [placedOrder, setPlacedOrder] = useState<{
-    orderNumber: string
-    totalAmount: number
-    reserved?: boolean
-    invoiceToken?: string | null
-    emailStatus?: { teamNotificationAccepted?: boolean; customerConfirmationAccepted?: boolean } | null
-  } | null>(null)
-  const [paymentConfirmed, setPaymentConfirmed] = useState(false)
 
   const totalPrice = isReservationCart ? 0 : getTotalPrice()
   const shipping = isReservationCart

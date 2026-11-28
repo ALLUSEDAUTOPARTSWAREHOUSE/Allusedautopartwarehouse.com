@@ -1,8 +1,9 @@
 import Link from "next/link"
 import { Mail, Phone } from "lucide-react"
 import type { CustomerSummary } from "@/lib/admin-customers"
-import type { CustomerOrder, QuoteLead } from "@/lib/followup"
-import { invoiceUrl, money, productPagePath } from "@/lib/invoice"
+import type { StaffOrder, StaffQuote } from "@/lib/staff-workspace"
+import { money, productPagePath } from "@/lib/invoice"
+import { RecordWorkPanel } from "@/components/admin/record-work-panel"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { Button } from "@/components/ui/button"
 
@@ -18,15 +19,21 @@ export function SalesWorkspace({
   orders,
   quotes,
   counts,
+  unavailable = false,
+  page = 1,
+  hasMore = false,
 }: {
   staffName: string
   staffEmail: string
   tab: "orders" | "customers" | "quotes"
   query?: string
   customers: CustomerSummary[]
-  orders: CustomerOrder[]
-  quotes: QuoteLead[]
+  orders: StaffOrder[]
+  quotes: StaffQuote[]
   counts: { orders: number; customers: number; quotes: number }
+  unavailable?: boolean
+  page?: number
+  hasMore?: boolean
 }) {
   const tabs = [
     { id: "orders" as const, label: "Orders", count: counts.orders },
@@ -40,8 +47,8 @@ export function SalesWorkspace({
       <h1 className="mt-2 text-3xl font-bold">Welcome, {staffName}</h1>
       <p className="mt-2 text-muted-foreground">Sales Agent · {staffEmail}</p>
       <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
-        Every checkout customer lands here as soon as they place an order. Customers verify their email to confirm the
-        order. Unpaid orders are processed after payment confirmation.
+        Orders, quote requests and customer summaries here cover your current assignments. Open a work record to log
+        your activity and report an outcome. Recorded order status and your reported outcome are shown separately.
       </p>
 
       <nav className="mt-8 flex flex-wrap gap-2">
@@ -53,7 +60,7 @@ export function SalesWorkspace({
               tab === item.id ? "border-primary bg-primary/10 font-semibold text-primary" : "border-border text-muted-foreground"
             }`}
           >
-            {item.label} ({item.count})
+            {item.label}{unavailable ? "" : ` (${item.count} on this page)`}
           </Link>
         ))}
       </nav>
@@ -72,13 +79,21 @@ export function SalesWorkspace({
         />
       </form>
 
-      {tab === "customers" ? (
+      {unavailable ? (
+        <p role="alert" className="mt-8 rounded-lg border border-destructive/40 bg-destructive/5 p-6 text-sm">Assigned records could not be loaded. This does not mean you have no work. Refresh the page or ask an administrator to check database and assignment access.</p>
+      ) : tab === "customers" ? (
         <CustomerTable customers={customers} query={query} />
       ) : tab === "quotes" ? (
         <QuoteList quotes={quotes} query={query} />
       ) : (
         <OrderList orders={orders} query={query} />
       )}
+
+      {!unavailable && <nav aria-label="Assigned records pagination" className="mt-6 flex items-center gap-4 text-sm">
+        {page > 1 && <Link className="text-primary underline" href={`/staff/sales?tab=${tab}&page=${page - 1}${query ? `&q=${encodeURIComponent(query)}` : ''}`}>Previous page</Link>}
+        <span className="text-muted-foreground">Page {page} · up to 50 assigned records per tab</span>
+        {hasMore && <Link className="text-primary underline" href={`/staff/sales?tab=${tab}&page=${page + 1}${query ? `&q=${encodeURIComponent(query)}` : ''}`}>Next page</Link>}
+      </nav>}
 
       <form
         action={async () => {
@@ -102,7 +117,7 @@ function CustomerTable({ customers, query }: { customers: CustomerSummary[]; que
   if (customers.length === 0) {
     return (
       <p className="mt-8 rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-        {query ? `No customers match “${query}”.` : "No checkout customers yet."}
+        {query ? `No assigned customers match “${query}” on this page.` : "No assigned customers on this page."}
       </p>
     )
   }
@@ -136,7 +151,7 @@ function CustomerTable({ customers, query }: { customers: CustomerSummary[]; que
               <dd className="font-semibold">{customer.orders}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Paid total</dt>
+              <dt className="text-muted-foreground">Recorded paid total</dt>
               <dd className="font-semibold">{money(customer.paidTotal)}</dd>
             </div>
             <div>
@@ -154,11 +169,11 @@ function CustomerTable({ customers, query }: { customers: CustomerSummary[]; que
   )
 }
 
-function OrderList({ orders, query }: { orders: CustomerOrder[]; query?: string }) {
+function OrderList({ orders, query }: { orders: StaffOrder[]; query?: string }) {
   if (orders.length === 0) {
     return (
       <p className="mt-8 rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-        {query ? `No orders match “${query}”.` : "No checkout orders yet."}
+        {query ? `No assigned orders match “${query}” on this page.` : "No assigned orders on this page."}
       </p>
     )
   }
@@ -206,23 +221,23 @@ function OrderList({ orders, query }: { orders: CustomerOrder[]; query?: string 
               </li>
             ))}
           </ul>
+          {order.itemsOmitted > 0 && <p role="status" className="mt-2 text-xs text-amber-700">{order.itemsOmitted} line item{order.itemsOmitted === 1 ? '' : 's'} could not be displayed. Ask an administrator to review the original record.</p>}
           <div className="mt-4 flex flex-wrap gap-3 text-sm">
-            <Link href={invoiceUrl(order, "")} className="font-semibold text-primary underline">
-              Open branded invoice
-            </Link>
             <span className="text-muted-foreground">Placed {when(order.createdAt)}</span>
+            <span className="text-muted-foreground">Updated {when(order.updatedAt)}</span>
           </div>
+          <RecordWorkPanel recordType="order" recordId={order.id} />
         </li>
       ))}
     </ul>
   )
 }
 
-function QuoteList({ quotes, query }: { quotes: QuoteLead[]; query?: string }) {
+function QuoteList({ quotes, query }: { quotes: StaffQuote[]; query?: string }) {
   if (quotes.length === 0) {
     return (
       <p className="mt-8 rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-        {query ? `No quotes match “${query}”.` : "No quote requests yet."}
+        {query ? `No assigned quotes match “${query}” on this page.` : "No assigned quote requests on this page."}
       </p>
     )
   }
@@ -236,14 +251,18 @@ function QuoteList({ quotes, query }: { quotes: QuoteLead[]; query?: string }) {
             <span className="text-xs text-muted-foreground">{when(quote.createdAt)}</span>
           </div>
           <p className="mt-2 font-medium">{quote.fullName}</p>
+          <p className="text-muted-foreground">{[quote.email, quote.phone].filter(Boolean).join(' · ')}</p>
           <p className="text-muted-foreground">
             {[quote.year, quote.make, quote.model, quote.partType].filter(Boolean).join(" ")}
           </p>
+          <p className="mt-2">Recorded quote amount: {quote.quoteAmount === null ? 'Not quoted' : money(quote.quoteAmount)}</p>
+          {quote.notes && <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{quote.notes}</p>}
           {quote.productUrl ? (
             <Link href={quote.productUrl} className="mt-2 inline-block text-primary underline" target="_blank">
               {quote.productName || "Product page"}
             </Link>
           ) : null}
+          <RecordWorkPanel recordType="quote" recordId={String(quote.id)} />
         </li>
       ))}
     </ul>

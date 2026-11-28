@@ -30,9 +30,17 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version: "24"
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Run regression tests
+        run: pnpm test
+      - name: Lint application
+        run: pnpm run lint
+      - name: Check application and route types
+        run: pnpm run typecheck
       - name: Build application
         run: pnpm run build
+      - name: Verify production startup and signed-out access
+        run: pnpm run test:production

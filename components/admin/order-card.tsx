@@ -5,6 +5,7 @@ import { useActionState } from "react"
 import { Mail, MapPin, Phone } from "lucide-react"
 import { saveOrderFollowup, type FollowupActionState } from "@/app/admin/followup-actions"
 import type { CustomerOrder } from "@/lib/followup"
+import { RecordWorkPanel } from "@/components/admin/record-work-panel"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { FollowupAssignmentSelect } from "@/components/admin/followup-assignment-select"
 import type { FollowupStaffOption, FollowupAssignment } from "@/lib/followup-assignments"
@@ -217,6 +218,7 @@ export function OrderCard({ order, statuses, staffOptions, assignment }: { order
           </form>
         </div>
       </div>
+      <RecordWorkPanel recordType="order" recordId={order.id} />
     </article>
   )
 }

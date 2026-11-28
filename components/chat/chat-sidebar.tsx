@@ -2,7 +2,7 @@
 
 import { ChatSession, chatStorage } from '@/lib/chat-storage';
 import { Trash2, Plus, ChevronRight, Search } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface ChatSidebarProps {
   onChatSelect: (chatId: string) => void;
@@ -15,6 +15,11 @@ export function ChatSidebar({ onChatSelect, onNewChat, currentChatId }: ChatSide
   const [searchQuery, setSearchQuery] = useState('');
   const [isOpen, setIsOpen] = useState(true);
 
+  const loadChats = useCallback(() => {
+    const allChats = chatStorage.getAllChats();
+    setChats(allChats);
+  }, []);
+
   useEffect(() => {
     loadChats();
     // Listen for storage changes
@@ -23,12 +28,7 @@ export function ChatSidebar({ onChatSelect, onNewChat, currentChatId }: ChatSide
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  const loadChats = () => {
-    const allChats = chatStorage.getAllChats();
-    setChats(allChats);
-  };
+  }, [loadChats]);
 
   const filteredChats = searchQuery
     ? chatStorage.searchChats(searchQuery)

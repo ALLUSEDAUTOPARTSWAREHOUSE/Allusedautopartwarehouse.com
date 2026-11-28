@@ -16,12 +16,13 @@ export function ChatContainer({ initialChatId }: ChatContainerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
-  useEffect(() => {
-    initializeChat(initialChatId);
-  }, [initialChatId]);
+  const createNewChat = useCallback(() => {
+    const newChat = chatStorage.createChat('New Chat');
+    setCurrentChat(newChat);
+  }, []);
 
-  const initializeChat = (initialId?: string) => {
-    const idToUse = initialId || chatStorage.getCurrentChatId();
+  useEffect(() => {
+    const idToUse = initialChatId || chatStorage.getCurrentChatId();
     if (idToUse) {
       const chat = chatStorage.getChat(idToUse);
       if (chat) {
@@ -31,12 +32,7 @@ export function ChatContainer({ initialChatId }: ChatContainerProps) {
       }
     }
     createNewChat();
-  };
-
-  const createNewChat = () => {
-    const newChat = chatStorage.createChat('New Chat');
-    setCurrentChat(newChat);
-  };
+  }, [initialChatId, createNewChat]);
 
   const handleChatSelect = (chatId: string) => {
     const chat = chatStorage.getChat(chatId);

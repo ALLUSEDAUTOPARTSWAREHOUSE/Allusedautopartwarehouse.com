@@ -1,6 +1,7 @@
-import { redirect } from "next/navigation"
+import Link from "next/link"
+import { notFound, redirect } from "next/navigation"
 import { getAdminSession } from "@/lib/admin-auth"
-import { QUOTE_STATUSES, countByStatus, listQuoteLeads } from "@/lib/followup"
+import { QUOTE_STATUSES, countByStatus, getQuoteLeadById, listQuoteLeads } from "@/lib/followup"
 import { FollowupFilters } from "@/components/admin/followup-filters"
 import { ExportLink } from "@/components/admin/export-link"
 import { QuoteLeadCard } from "@/components/admin/quote-lead-card"
@@ -13,14 +14,26 @@ export const metadata = { title: "Quote Requests | AUAPW Admin", robots: { index
 export default async function AdminQuotesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string }>
+  searchParams: Promise<{ status?: string | string[]; q?: string | string[]; recordId?: string | string[] }>
 }) {
   if (!(await getAdminSession())) redirect("/admin/login")
 
-  const { status: rawStatus, q } = await searchParams
+  const { status: rawStatus, q, recordId: rawRecordId } = await searchParams
   const status = QUOTE_STATUSES.find((s) => s === rawStatus)
-  const query = q?.trim().slice(0, 100) || undefined
-  const [leads, counts, staff] = await Promise.all([listQuoteLeads(status, query), countByStatus("leads"), getActiveSalesSupportStaff().catch(() => [])])
+  const query = typeof q === "string" ? q.trim().slice(0, 100) || undefined : undefined
+  // Reject malformed or missing exact records instead of showing unrelated leads.
+  const exact = rawRecordId !== undefined
+  if (exact && (typeof rawRecordId !== "string" || !/^[1-9]\d*$/.test(rawRecordId) || !Number.isSafeInteger(Number(rawRecordId)))) notFound()
+  const recordId = typeof rawRecordId === "string" ? Number(rawRecordId) : null
+  const loadLeads = async () => {
+    if (recordId === null) return listQuoteLeads(status, query)
+    const lead = await getQuoteLeadById(recordId)
+    if (!lead) notFound()
+    return [lead]
+  }
+  const [leads, counts, staff] = await Promise.all([
+    loadLeads(), exact ? Promise.resolve({}) : countByStatus("leads"), getActiveSalesSupportStaff().catch(() => []),
+  ])
   const [assignments, productInfoEntries] = await Promise.all([
     getFollowupAssignments("quote", leads.map((lead) => String(lead.id))).catch(() => new Map()),
     Promise.all(leads.map(async (lead) => [String(lead.id), await getQuoteProductInfo(lead)] as const)),
@@ -36,17 +49,22 @@ export default async function AdminQuotesPage({
             Every quote submitted on the website. Call the customer, then update the status and notes.
           </p>
         </div>
-        <ExportLink kind="quotes" status={status} query={query} />
+        {!exact ? <ExportLink kind="quotes" status={status} query={query} /> : null}
       </header>
 
-      <FollowupFilters
+      {exact ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+          <p>Viewing exact quote request <strong>#{recordId}</strong></p>
+          <Link href="/admin/quotes" className="font-semibold text-primary underline">View all quote requests</Link>
+        </div>
+      ) : <FollowupFilters
         basePath="/admin/quotes"
         statuses={QUOTE_STATUSES}
         counts={counts}
         activeStatus={status}
         query={query}
         searchPlaceholder="Search name, phone, email, make…"
-      />
+      />}
 
       {leads.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">

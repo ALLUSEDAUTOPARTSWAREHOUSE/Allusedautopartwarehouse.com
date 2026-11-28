@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Send, Trash2 } from 'lucide-react';
 import { ChatSession, Message, chatStorage } from '@/lib/chat-storage';
 import Link from 'next/link';
@@ -40,20 +40,17 @@ export function FloatingChatWidget() {
   const [userMessage, setUserMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // Initialize on mount so the floating button always renders on every page.
-    initializeChat();
+  const createNewChat = useCallback(() => {
+    const newChat = chatStorage.createChat();
+    setCurrentChat(newChat);
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [currentChat?.messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const initializeChat = () => {
+  useEffect(() => {
+    // Restore storage after mount so server and initial client renders agree.
     const currentId = chatStorage.getCurrentChatId();
     if (currentId) {
       const chat = chatStorage.getChat(currentId);
@@ -63,12 +60,7 @@ export function FloatingChatWidget() {
       }
     }
     createNewChat();
-  };
-
-  const createNewChat = () => {
-    const newChat = chatStorage.createChat();
-    setCurrentChat(newChat);
-  };
+  }, [createNewChat]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();

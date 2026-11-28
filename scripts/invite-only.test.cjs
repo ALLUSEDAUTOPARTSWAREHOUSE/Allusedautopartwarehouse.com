@@ -55,6 +55,8 @@ test('all new Better Auth users require an invitation, existing sessions are unc
 })
 test('customer invitation sending is admin-only and rejects cross-origin requests', async () => {
   const make = session => load('app/api/admin/customer-invites/route.ts', {
+    '@/emails/customer-invite': { default: () => null },
+    '@/lib/mailer': { sendReactEmail: () => assert.fail('sent invitation email') },
     '@/lib/admin-auth': { getAdminSession: async () => session },
     '@/lib/customer-invites': { createCustomerInvite: () => assert.fail('created invite'), revokeCustomerInvite: () => {} },
   }).POST
@@ -65,7 +67,7 @@ test('customer invitation sending is admin-only and rejects cross-origin request
 test('invalid staff tokens do not consume the valid invitation', async () => {
   process.env.ADMIN_SESSION_SECRET ||= 'test-only-secret'
   let used = false
-  const invite = load('lib/staff-invites.ts', { 'server-only': {}, '@/lib/db': { pool: { query: async (sql, args) => {
+  const invite = load('lib/staff-invites.ts', { 'server-only': {}, '@/emails/staff-invite': { default: () => null }, '@/lib/mailer': { sendReactEmail: () => assert.fail('sent email while consuming token'), emailFromAddress: () => 'sender@example.test' }, '@/lib/db': { pool: { query: async (sql, args) => {
     if (!sql.includes('RETURNING id')) return { rows: [] }
     assert.match(sql, /staff_id = \$1 AND token_hash = \$2/)
     const expected = require('node:crypto').createHash('sha256').update(`valid:${process.env.BETTER_AUTH_SECRET || process.env.ADMIN_SESSION_SECRET}`).digest('hex')
@@ -79,20 +81,24 @@ test('invalid staff tokens do not consume the valid invitation', async () => {
 })
 
 test('customer invite sender uses configured origin, never returns token, and revokes rejected email', async () => {
-  const old = { key: process.env.RESEND_API_KEY, from: process.env.ADMIN_RESET_FROM, url: process.env.AUAPW_PUBLIC_URL, fetch: global.fetch }
+  const old = { key: process.env.RESEND_API_KEY, from: process.env.ADMIN_RESET_FROM, url: process.env.AUAPW_PUBLIC_URL }
   process.env.RESEND_API_KEY = 'test-provider-key'
   process.env.ADMIN_RESET_FROM = 'sender@example.com'
   process.env.AUAPW_PUBLIC_URL = 'https://store.example'
   let revoked = false
   let accepted = true
-  global.fetch = async (_url, options) => {
-    const payload = JSON.parse(options.body)
-    assert.deepEqual(payload.to, ['user@example.com'])
-    assert.match(payload.text, /https:\/\/store.example\/sign-up\?invite=test-invite/)
+  const sendReactEmail = async options => {
+    assert.deepEqual(options.to, ['user@example.com'])
+    assert.equal(options.from, 'sender@example.com')
+    assert.equal(options.react.props.inviteUrl, 'https://store.example/sign-up?invite=test-invite')
+    assert.equal(options.react.props.expiresHours, 72)
+    assert.equal(options.react.props.siteUrl, 'https://store.example')
     return { ok: accepted }
   }
   try {
     const post = load('app/api/admin/customer-invites/route.ts', {
+      '@/emails/customer-invite': { default: () => null },
+      '@/lib/mailer': { sendReactEmail },
       '@/lib/admin-auth': { getAdminSession: async () => ({}) },
       '@/lib/customer-invites': { createCustomerInvite: async () => 'test-invite', revokeCustomerInvite: async () => { revoked = true } },
     }).POST
@@ -104,7 +110,6 @@ test('customer invite sender uses configured origin, never returns token, and re
     assert.equal((await post(req())).status, 503)
     assert.equal(revoked, true)
   } finally {
-    global.fetch = old.fetch
     for (const [name, value] of [['RESEND_API_KEY', old.key], ['ADMIN_RESET_FROM', old.from], ['AUAPW_PUBLIC_URL', old.url]]) {
       if (value === undefined) delete process.env[name]
       else process.env[name] = value
