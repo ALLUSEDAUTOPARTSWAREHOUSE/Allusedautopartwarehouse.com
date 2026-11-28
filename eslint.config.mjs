@@ -10,5 +10,5 @@ export default [
       'react-hooks/preserve-manual-memoization': 'off',
     },
   })),
-  { ignores: ['.next/**', 'out/**', 'build/**', 'node_modules/**'] },
+  { ignores: ['.next/**', '.eve/**', '.output/**', 'out/**', 'build/**', 'node_modules/**'] },
 ]

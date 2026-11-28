@@ -4,7 +4,7 @@ import { desc, eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { listings } from '@/lib/db/schema'
 import { getAdminSession } from '@/lib/admin-auth'
-import { countByStatus, getOrderById, getQuoteLeadById, listOrders, listQuoteLeads, updateOrder, updateQuoteLead, QUOTE_STATUSES, ORDER_STATUSES } from '@/lib/followup'
+import { countByStatus, listOrders, listQuoteLeads, updateOrder, updateQuoteLead, FollowupSaveError, QUOTE_STATUSES, ORDER_STATUSES } from '@/lib/followup'
 import { listCustomers } from '@/lib/admin-customers'
 
 export const dynamic = 'force-dynamic'
@@ -36,14 +36,19 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!await getAdminSession()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const session = await getAdminSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (request.headers.get('origin') !== new URL(request.url).origin) return NextResponse.json({ error: 'Invalid origin.' }, { status: 403 })
+  if (!request.headers.get('content-type')?.toLowerCase().startsWith('application/json')) return NextResponse.json({ error: 'Send JSON changes.' }, { status: 415 })
   try {
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return NextResponse.json({ error: 'Invalid change request.' }, { status: 400 })
     const id = typeof body.id === 'string' || typeof body.id === 'number' ? String(body.id).trim() : ''
     const type = body.type
     if (!id) return NextResponse.json({ error: 'Record ID is required.' }, { status: 400 })
 
     if (type === 'quote') {
+      if (!Number.isSafeInteger(Number(id)) || Number(id) < 1) return NextResponse.json({ error: 'Invalid quote request ID.' }, { status: 400 })
       const status = typeof body.status === 'string' ? body.status : ''
       if (!QUOTE_STATUSES.includes(status as typeof QUOTE_STATUSES[number])) return NextResponse.json({ error: 'Invalid quote status.' }, { status: 400 })
       const amountRaw = body.quoteAmount
@@ -56,26 +61,33 @@ export async function PATCH(request: NextRequest) {
           quoteAmount = Math.round(parsed * 100) / 100
         }
       }
-      const internalNotes = typeof body.internalNotes === 'string' ? body.internalNotes.trim().slice(0, 5000) : ''
-      const existing = await getQuoteLeadById(Number(id))
-      if (!existing) return NextResponse.json({ error: 'Quote request not found.' }, { status: 404 })
+      if (body.internalNotes !== undefined && typeof body.internalNotes !== 'string') return NextResponse.json({ error: 'Invalid internal notes.' }, { status: 400 })
+      const internalNotes = typeof body.internalNotes === 'string' ? body.internalNotes.trim().slice(0, 5000) : undefined
       await updateQuoteLead(Number(id), {
         status: status as typeof QUOTE_STATUSES[number],
-        internalNotes: body.internalNotes === undefined ? existing.internalNotes ?? '' : internalNotes,
-        quoteAmount: quoteAmount === undefined ? existing.quoteAmount : quoteAmount,
-      })
+        internalNotes,
+        quoteAmount,
+      }, session)
+      revalidatePath('/admin/quotes')
+      revalidatePath('/admin/sales')
+      revalidatePath('/admin/dashboard')
+      revalidatePath('/admin/activity')
       return NextResponse.json({ success: true })
     }
 
     if (type === 'order') {
+      if (!/^[\w-]{1,64}$/.test(id)) return NextResponse.json({ error: 'Invalid order ID.' }, { status: 400 })
       const status = typeof body.status === 'string' ? body.status : ''
       if (!ORDER_STATUSES.includes(status as typeof ORDER_STATUSES[number])) return NextResponse.json({ error: 'Invalid order status.' }, { status: 400 })
-      const existing = await getOrderById(id)
-      if (!existing) return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
-      const internalNotes = typeof body.internalNotes === 'string' ? body.internalNotes.trim().slice(0, 5000) : existing.internalNotes ?? ''
-      await updateOrder(id, { status: status as typeof ORDER_STATUSES[number], internalNotes })
+      if (body.internalNotes !== undefined && typeof body.internalNotes !== 'string') return NextResponse.json({ error: 'Invalid internal notes.' }, { status: 400 })
+      const internalNotes = typeof body.internalNotes === 'string' ? body.internalNotes.trim().slice(0, 5000) : undefined
+      await updateOrder(id, { status: status as typeof ORDER_STATUSES[number], internalNotes }, session)
       revalidatePath('/admin/orders')
+      revalidatePath('/admin/sales')
+      revalidatePath('/admin/dashboard')
+      revalidatePath('/admin/activity')
       revalidatePath('/customer/dashboard')
+      revalidatePath('/dashboard')
       return NextResponse.json({ success: true })
     }
 
@@ -102,7 +114,8 @@ export async function PATCH(request: NextRequest) {
     }
     return NextResponse.json({ error: 'Unsupported record type.' }, { status: 400 })
   } catch (error) {
-    console.error('[admin/operations] Failed to update operational record', error)
+    if (error instanceof FollowupSaveError) return NextResponse.json({ error: error.message, code: error.code }, { status: error.status })
+    console.error('[admin/operations] Failed to update operational record')
     return NextResponse.json({ error: 'Could not save this change.' }, { status: 500 })
   }
 }

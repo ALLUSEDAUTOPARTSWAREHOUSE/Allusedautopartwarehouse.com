@@ -5,6 +5,7 @@ import { useActionState } from "react"
 import { Mail, Phone } from "lucide-react"
 import { saveQuoteFollowup, type FollowupActionState } from "@/app/admin/followup-actions"
 import type { QuoteLead } from "@/lib/followup"
+import { RecordWorkPanel } from "@/components/admin/record-work-panel"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { FollowupAssignmentSelect } from "@/components/admin/followup-assignment-select"
 import type { FollowupStaffOption, FollowupAssignment } from "@/lib/followup-assignments"
@@ -167,6 +168,7 @@ export function QuoteLeadCard({ lead, statuses, staffOptions, assignment, produc
           </form>
         </div>
       </div>
+      <RecordWorkPanel recordType="quote" recordId={String(lead.id)} />
     </article>
   )
 }

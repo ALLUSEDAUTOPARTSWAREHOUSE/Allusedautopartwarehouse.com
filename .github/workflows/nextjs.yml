@@ -28,7 +28,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version: "24"
       - name: Verify Vercel credentials
         run: |
           test -n "$VERCEL_TOKEN" || { echo "Missing VERCEL_TOKEN secret"; exit 1; }

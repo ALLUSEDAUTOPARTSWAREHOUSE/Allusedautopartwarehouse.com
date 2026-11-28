@@ -4,14 +4,17 @@ const { readFileSync } = require('node:fs')
 
 const read = (path) => readFileSync(path, 'utf8')
 
-test('checkout customers land in the sales portal with order and invoice links', () => {
+test('sales portal uses assigned records with product links and verification status without bearer invoice links', () => {
   const salesPage = read('app/staff/sales/page.tsx')
   const workspace = read('components/staff/sales-workspace.tsx')
-  assert.match(salesPage, /listCustomers/)
-  assert.match(salesPage, /listOrders/)
-  assert.match(salesPage, /listQuoteLeads/)
-  assert.match(workspace, /Every checkout customer lands here/)
-  assert.match(workspace, /Open branded invoice/)
+  const assigned = read('lib/staff-workspace.ts')
+  assert.match(salesPage, /getAssignedWorkspace\(query, requestedPage\)/)
+  assert.doesNotMatch(salesPage, /listCustomers|listOrders|listQuoteLeads/)
+  assert.match(assigned, /WHERE a\.staff_id=\$1 AND s\.role=\$2 AND s\.email=\$3 AND s\.status='active'/)
+  assert.match(workspace, /productPagePath\(line\)/)
+  assert.match(workspace, /RecordWorkPanel recordType="order"/)
+  assert.doesNotMatch(workspace, /invoiceUrl|invoiceToken|emailVerifyToken|Open branded invoice/)
+  assert.doesNotMatch(assigned, /r\.invoice_token|r\.email_verify_token|r\.stripe_session_id/)
   assert.match(workspace, /Awaiting email verification/)
   assert.match(workspace, /Email verified/)
 })

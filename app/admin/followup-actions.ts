@@ -9,6 +9,7 @@ import {
   getQuoteLeadById,
   updateOrder,
   updateQuoteLead,
+  FollowupSaveError,
   type OrderStatus,
   type QuoteStatus,
 } from "@/lib/followup"
@@ -22,6 +23,10 @@ export interface FollowupActionState {
 }
 
 const notes = (v: FormDataEntryValue | null) => String(v ?? "").trim().slice(0, 4000)
+const failedFollowupSave = (error: unknown): FollowupActionState => ({
+  ok: false,
+  message: error instanceof FollowupSaveError ? error.message : "The follow-up change could not be saved. Refresh the record and check Settings → System Health before trying again.",
+})
 
 export async function saveFollowupAssignment(
   _prev: FollowupActionState,
@@ -89,7 +94,8 @@ export async function saveQuoteFollowup(
   _prev: FollowupActionState,
   formData: FormData,
 ): Promise<FollowupActionState> {
-  if (!(await getAdminSession())) return { ok: false, message: "Session expired. Please log in again." }
+  const session = await getAdminSession()
+  if (!session) return { ok: false, message: "Session expired. Please log in again." }
 
   const id = Number(formData.get("id"))
   const status = String(formData.get("status")) as QuoteStatus
@@ -106,9 +112,13 @@ export async function saveQuoteFollowup(
     return { ok: false, message: "Enter the quoted price before emailing the quote." }
   }
 
-  await updateQuoteLead(id, { status, internalNotes: notes(formData.get("internalNotes")), quoteAmount })
+  try {
+    await updateQuoteLead(id, { status, internalNotes: notes(formData.get("internalNotes")), quoteAmount }, session)
+  } catch (error) { return failedFollowupSave(error) }
   revalidatePath("/admin/quotes")
   revalidatePath("/admin/dashboard")
+  revalidatePath("/admin/sales")
+  revalidatePath("/admin/activity")
 
   if (!emailQuote) return { ok: true, message: "Saved" }
   const lead = await getQuoteLeadById(id)
@@ -123,7 +133,8 @@ export async function saveOrderFollowup(
   _prev: FollowupActionState,
   formData: FormData,
 ): Promise<FollowupActionState> {
-  if (!(await getAdminSession())) return { ok: false, message: "Session expired. Please log in again." }
+  const session = await getAdminSession()
+  if (!session) return { ok: false, message: "Session expired. Please log in again." }
 
   const id = String(formData.get("id") ?? "")
   const status = String(formData.get("status")) as OrderStatus
@@ -133,18 +144,23 @@ export async function saveOrderFollowup(
   if (!/^[\w-]{1,64}$/.test(id)) return { ok: false, message: "Invalid order." }
   if (!ORDER_STATUSES.includes(status)) return { ok: false, message: "Invalid status." }
 
-  const existing = await getOrderById(id)
-  if (!existing) return { ok: false, message: "Invalid order." }
   const customerMessage = notes(formData.get("customerMessage")).slice(0, 1000)
-  const statusChanged = existing.status !== status
-
-  await updateOrder(id, {
-    status,
-    internalNotes: notes(formData.get("internalNotes")),
-    customerNote: customerMessage || undefined,
-  })
+  let existing: Awaited<ReturnType<typeof getOrderById>> = null
+  let statusChanged = false
+  try {
+    existing = await getOrderById(id)
+    if (!existing) return { ok: false, message: "The order no longer exists. No follow-up change was saved." }
+    const saved = await updateOrder(id, {
+      status,
+      internalNotes: notes(formData.get("internalNotes")),
+      customerNote: customerMessage || undefined,
+    }, session)
+    statusChanged = saved.statusChanged
+  } catch (error) { return failedFollowupSave(error) }
   revalidatePath("/admin/orders")
   revalidatePath("/admin/dashboard")
+  revalidatePath("/admin/sales")
+  revalidatePath("/admin/activity")
   revalidatePath("/customer/dashboard")
   revalidatePath("/dashboard")
 
